@@ -1,5 +1,5 @@
 title: A quick intro to Angular Ivy
-date: 2018-02-25
+date: 2018-02-19
 tags: Angular
 ---
 
