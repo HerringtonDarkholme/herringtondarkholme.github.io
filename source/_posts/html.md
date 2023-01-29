@@ -1,6 +1,6 @@
 title: magic HTML.js
 date: 2014-05-17
-tags: Javascript
+tags: JavaScript
 ---
 
 {%img /images/html.jpg%}

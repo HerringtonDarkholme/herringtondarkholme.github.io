@@ -1,6 +1,6 @@
 title: Paamayim Nekudota Operator in ES7
 date: 2015-06-09
-tags: Javascript
+tags: JavaScript
 ---
 
 {%img /images/50799930.jpg%}
