@@ -78,4 +78,3 @@ marked:
 deploy:
   type: git
   repo: git@github.com:HerringtonDarkholme/herringtondarkholme.github.io.git
-  branch: main
