@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Type Safety in Vue.js | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="Static typing has become a hot word in frontend land: hundreds of tweets and blogs appears on social network and XXXX weekly, rivaling type checkers compete their features with each other. Correspondi">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Type Safety in Vue.js">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2016/08/21/vue-ts/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="Static typing has become a hot word in frontend land: hundreds of tweets and blogs appears on social network and XXXX weekly, rivaling type checkers compete their features with each other. Correspondi">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2016-08-21T07:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.879Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="TypeScript">
+<meta name="twitter:card" content="summary"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-vue-ts" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      Type Safety in Vue.js
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2016-08-21T07:00:00.000Z" itemprop="datePublished">August 21, 2016, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>Static typing has become a hot word in frontend land: hundreds of tweets and blogs appears on social network and <em>XXXX weekly</em>, rivaling type checkers compete their features with each other.</p>
+<p>Correspondingly new frameworks have a consciousness of type safety in their API design.<br><a target="_blank" rel="noopener" href="https://angular.io/">Angular2</a> has partial type safety in ViewModel code notwithstanding template code. (There has been <a target="_blank" rel="noopener" href="https://github.com/Microsoft/TypeScript/issues/6508">some efforts</a> to pursue more type safety, though)</p>
+<p><a target="_blank" rel="noopener" href="https://facebook.github.io/react/index.html">React</a> has full, and strict, when checked with <a target="_blank" rel="noopener" href="https://flowtype.org/docs/react.html">flow</a>, type safety by embedding templates in JavaScript(X).</p>
+<p>But stakeholders of <a target="_blank" rel="noopener" href="https://rc.vuejs.org/">Vue.js</a>, <del>the thirdwhee..</del> another popular MVVM framework , might be disappointed by Vue’s type-checker hostility…</p>
+<h2 id="Type-Checker-Hostile-API"><a href="#Type-Checker-Hostile-API" class="headerlink" title="Type Checker Hostile API"></a>Type Checker Hostile API</h2><p>Vue provides a set of simple and elegant <a target="_blank" rel="noopener" href="https://rc.vuejs.org/api/">API</a> via heavy use of reflection that extinguishes compiler’s type inference.</p>
+<p>It’s not Vue’s fault. Up to now static type checkers in JavaScript land have several limitations:</p>
+<ol>
+<li>They cannot understand modification to objects’ type or perform key-wise type inference. (more elaboration later)</li>
+<li>Some cannot annotate function’s <code>this</code> type. (not in <a target="_blank" rel="noopener" href="https://github.com/facebook/flow/issues/452">flowtype 0.30</a>, supported in TypeScript)</li>
+<li>Some cannot annotate <a target="_blank" rel="noopener" href="https://github.com/Microsoft/TypeScript/issues/1295">Type Property Type</a>. (not in TypeScript until <a target="_blank" rel="noopener" href="https://github.com/Microsoft/TypeScript/pull/10425">#10425</a> is merged, <a target="_blank" rel="noopener" href="https://github.com/facebook/flow/blob/master/src/typing/type_annotation.ml">flowtype</a> has <a target="_blank" rel="noopener" href="http://sitr.us/2015/05/31/advanced-features-in-flow.html">undocumented $Magic</a> type like <a target="_blank" rel="noopener" href="https://github.com/facebook/flow/blob/master/lib/react.js#L49">$Keys</a>, $Record)</li>
+</ol>
+<p>For point1, an example will elucidate itself.</p>
+<p>Suppose we are going to provide a type definition file for Vue’s <a target="_blank" rel="noopener" href="https://rc.vuejs.org/api/#Options-Data">config option</a>.</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">interface</span> <span class="title class_">VueConfig</span>&lt;D, P, PD, C, M, W&gt; &#123;</span><br><span class="line">  data?: D</span><br><span class="line">  props?: P</span><br><span class="line">  propData?: <span class="variable constant_">PD</span></span><br><span class="line">  computed?: C &amp; &#123;[<span class="attr">k</span>: <span class="built_in">string</span>]: <span class="function">(<span class="params"><span class="variable language_">this</span>:D &amp; P &amp; C &amp; M </span>) =&gt;</span> &#123;&#125;&#125;</span><br><span class="line">  methods?: M &amp; &#123;[<span class="attr">k</span>: <span class="built_in">string</span>]: <span class="function">(<span class="params"><span class="variable language_">this</span>:D &amp; P &amp; C &amp; M</span>) =&gt;</span> &#123;&#125;&#125;</span><br><span class="line">  watch?: W &amp; &#123;[<span class="attr">k</span>: <span class="built_in">string</span>]: <span class="function">(<span class="params"><span class="variable language_">this</span>:D &amp; P &amp; C &amp; M</span>) =&gt;</span> &#123;&#125;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>This is not very precise but does highlight some basic idea of Vue’s API. <code>computed</code> is a field of which the value is a function with <code>this</code> pointed to the object that has mixed in <code>data</code>, <code>props</code> and <code>method</code>. <code>this</code> in Vue’s option is an object made out of reflection.</p>
+<p>Then we will write some function like this.</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> getVue&lt;D, P, <span class="variable constant_">PD</span>, C, M, W&gt;(<span class="attr">opt</span>: <span class="title class_">VueConfig</span>&lt;D, P, <span class="variable constant_">PD</span>, C, M, W&gt;): D &amp; P &amp; C &amp; M</span><br><span class="line">  &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">null</span> <span class="comment">// placeholder</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> a = <span class="title function_">getVueConfig</span>(&#123;</span><br><span class="line">  <span class="attr">data</span>: &#123;</span><br><span class="line">    <span class="attr">a</span>: <span class="number">123</span>,</span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="attr">watch</span>: &#123;</span><br><span class="line">    <span class="attr">a</span>: <span class="keyword">function</span>(<span class="params"></span>) &#123;</span><br><span class="line">      <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="variable language_">this</span>.<span class="property">a</span>) <span class="comment">// oops</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>Compiler will complain about <code>this.a</code> in the watch function. Why? <code>this</code> cannot be inferred. To infer <code>this</code>, compiler will have to first infer <code>D, P, C, M</code> respectively. To infer <code>D &amp; P &amp; C &amp; M</code>, compiler will have to first infer the whole expression for resolving all the type arguments. But to infer the whole expression we need first infer <code>watch</code>, where we need to infer <code>this</code>. So comes a recursion. Compiler cannot be too eager to infer type otherwise it will jump into a recursion trap. Sloth is a virtue here, even <a target="_blank" rel="noopener" href="http://rezero.wikia.com/wiki/Petelgeuse_Romanee-Conti">Betelgeuse</a> cannot blame.</p>
+<h2 id="Alternative-API"><a href="#Alternative-API" class="headerlink" title="Alternative API"></a>Alternative API</h2><p>Vue’s original API is doomed to be hard to infer. However, we can build a thin layer of wrapper to leverage type checkers.</p>
+<p>I have two alternatives to present here. One is chaining DSL, a novel approach to induct type checking and inference into Vue. The other alternative is more established and angular like: class decorator.</p>
+<h2 id="Chaining-DSL"><a href="#Chaining-DSL" class="headerlink" title="Chaining DSL"></a>Chaining DSL</h2><p>We can work around the recursion problem by nudging compiler to do more diligent work. Because every method&#x2F;function call return a new type symbol, we can use it to escape from recursion trap:</p>
+<p>Definition:</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">declare</span> <span class="keyword">class</span> <span class="title class_">VueTyped</span>&lt;T&gt; &#123;</span><br><span class="line">  data&lt;D&gt;(<span class="attr">d</span>: D): <span class="title class_">VueTyped</span>&lt;T &amp; D&gt;</span><br><span class="line">  method&lt;M <span class="keyword">extends</span> &#123;[<span class="attr">k</span>:<span class="built_in">string</span>]: <span class="function">(<span class="params"><span class="variable language_">this</span>: T</span>) =&gt;</span> <span class="built_in">any</span>&#125;&gt;(<span class="attr">m</span>: M): <span class="title class_">VueTyped</span>&lt;T &amp; M&gt;</span><br><span class="line">  <span class="title function_">get</span>(): T</span><br><span class="line">  <span class="keyword">static</span> <span class="title function_">new</span>(): <span class="title class_">VueTyped</span>&lt;&#123;&#125;&gt;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Usage:</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">VueTyped</span>.<span class="title function_">new</span>()</span><br><span class="line">  .<span class="title function_">data</span>(&#123;<span class="attr">msg</span>: <span class="string">&#x27;hehehe&#x27;</span>&#125;)</span><br><span class="line">   <span class="comment">// return a new type symbol with field `msg`</span></span><br><span class="line">  .<span class="title function_">method</span>(&#123;<span class="title function_">method</span>(<span class="params"></span>) &#123;<span class="keyword">return</span> <span class="string">&#x27;hello: &#x27;</span> + <span class="variable language_">this</span>.<span class="property">msg</span>&#125;&#125;)</span><br><span class="line">  <span class="comment">// create a new type symbol with `msg` and `method`</span></span><br><span class="line">  .<span class="title function_">get</span>() <span class="comment">// type as &#123;msg: string, method(): string&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p> Quick explanation. <code>data</code> has a signature like <code>data&lt;D&gt;(d: D): VueTyped&lt;D &amp; T&gt;</code>. The intersection type in return position mocks <code>mixin</code> behavior. <code>method&lt;M extends &#123;[k:string]: (this: T) =&gt; any&#125;&gt;(m: M): VueTyped&lt;T &amp; M&gt;</code> is more complicated. Parameter <code>M</code> is required for compiler to garner properties of option passed to <code>method</code> call. <code>M</code> is bounded by a constraint that every function in <code>option</code> must have <code>this</code> typed as the object we defined previously and that only defined property can be accessed via <code>this</code>. The final returning intersection type acts the same as <code>data</code>.</p>
+<blockquote>
+<p>Note: <code>method</code> does not work for current TypeScript. Probably it is a <a target="_blank" rel="noopener" href="https://github.com/Microsoft/TypeScript/issues/10461">bug</a></p>
+</blockquote>
+<p> But step-wise inference still cannot resolve <code>watch</code> and <code>computed</code> property. <code>$Keys</code> magic type or <code>keysof</code> type does not exist in TS yet! Meanwhile, flowtype does not support <code>this</code>-typed function.</p>
+<p><code>computed</code> option is even harder to handle. There is no way to define <code>this</code> type in a getter&#x2F;setter method. If we do not pass a getter&#x2F;setter but a plain function as value, we cannot merge the computed properties into the resulting object.</p>
+<p>A verbose workaround is <a target="_blank" rel="noopener" href="http://blog.thoughtram.io/angular/2015/09/03/forward-references-in-angular-2.html">forward reference</a> in type annotation:</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> a = <span class="title class_">VueTyped</span>.<span class="title function_">new</span>()</span><br><span class="line">  .<span class="title function_">data</span>(&#123; <span class="attr">msg</span>: <span class="string">&#x27;hehe&#x27;</span> &#125;)</span><br><span class="line">  .<span class="title function_">computed</span>(&#123;</span><br><span class="line">    <span class="keyword">get</span> <span class="title function_">computed</span>(<span class="params"><span class="variable language_">this</span>: <span class="keyword">typeof</span> a</span>) &#123; <span class="comment">// forward reference</span></span><br><span class="line">      <span class="keyword">return</span> <span class="variable language_">this</span>.<span class="property">msg</span> + <span class="string">&#x27; from WET computed!&#x27;</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br><span class="line">  .<span class="title function_">get</span>()</span><br></pre></td></tr></table></figure>
+
+<p>It’s not <em>DRY</em>.</p>
+<p>Furthermore, this approach does not support language service feature like “looking for definition” or “finding all usage” because intersection type needs casting in implementation to work.</p>
+<blockquote>
+<p><strong>Irreparable! Irredeemable! Irremediable!</strong></p>
+</blockquote>
+<p>However, this approach has some benefits. First, it is easier to extend its functionality. If one would like to add <code>vuex</code> field in option, it just requires defining a new method. It also prevents cyclic dependency because you cannot use fields before declaring. The API itself is akin to its original version, and thusly the implementation is very thin.</p>
+<h2 id="Class-Decorator"><a href="#Class-Decorator" class="headerlink" title="Class Decorator"></a>Class Decorator</h2><p>This approach is much more conventional, and is discussed broadly in Vue’s <a target="_blank" rel="noopener" href="https://github.com/vuejs/vue/issues/478">issue</a>.</p>
+<p>The basic idea is to define as many methods as possible in a class and to decorate fields to add Vue specific logic.</p>
+<p>One exceptional API is provided by <a target="_blank" rel="noopener" href="https://github.com/vuejs/vue/issues/478">itsFrank’s vue-typescript</a></p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> * <span class="keyword">as</span> <span class="title class_">Vue</span> <span class="keyword">from</span> <span class="string">&#x27;vue&#x27;</span></span><br><span class="line"><span class="keyword">import</span> &#123; <span class="title class_">VueComponent</span>, <span class="title class_">Prop</span> &#125; <span class="keyword">from</span> <span class="string">&#x27;vue-typescript&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@VueComponent</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MyComponent</span> &#123;</span><br><span class="line">    <span class="meta">@Prop</span> <span class="attr">someProp</span>:<span class="built_in">string</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Prop</span>(&#123;</span><br><span class="line">        <span class="attr">type</span>: <span class="title class_">String</span></span><br><span class="line">    &#125;)</span><br><span class="line">    <span class="attr">someDefaultProp</span>:<span class="built_in">string</span> = <span class="string">&#x27;some default value&#x27;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Prop</span> <span class="attr">someObjProp</span>:&#123;<span class="attr">some_default</span>:<span class="built_in">string</span>&#125; = &#123;<span class="attr">some_default</span>: <span class="string">&#x27;value&#x27;</span>&#125;; <span class="comment">//vue-typescript makes sure to deep clone default values for array and object types</span></span><br><span class="line"></span><br><span class="line">    <span class="meta">@Prop</span> <span class="title function_">someFuncProp</span>(<span class="params"></span>)&#123; <span class="comment">//defined functions decorated with prop are treated as the default value</span></span><br><span class="line">        <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;logged from default function!&#x27;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="attr">someVar</span>:<span class="built_in">string</span> = <span class="string">&#x27;Hello!&#x27;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="title function_">doStuff</span>(<span class="params"></span>) &#123;</span><br><span class="line">        <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;I did stuff&#x27;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This TSish approach enables more capability of compiler tooling such as usage finding and definition lookup. Class decorator also guarantees every method’s <code>this</code> correctly points to class instance, which cannot be achieved in <strong>Chaining DSL</strong> approach.</p>
+<p>With higher abstraction comes more confusion. Indeed, class decorator smooths out the discrepancy between Vue and type checker. But syntactically its API is much further from Vue’s original one. Adding new API is also harder because every decorator is <a target="_blank" rel="noopener" href="https://github.com/itsFrank/vue-typescript/blob/master/src/vuecomponent.ts#L31">hard coded</a> in <code>VueComponent</code> decorator’s code. For example, adding <code>@vuex</code> is almost impossible without rolling out a new <code>VuexComponent</code>. It also cannot transform all Vue’s API, such as <code>watch</code> and <a target="_blank" rel="noopener" href="https://vuejs.org/guide/reactivity.html#Inside-Computed-Properties"><code>computed: &#123; cache: false &#125;</code></a>, into idiomatic TypeScript, leaving some orifices in type safety.</p>
+<p><del>I have an alternative API bike shedding but not ready to present. Maybe I will try it later.</del></p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>This article presents type-safety problem in Vue and two ways to mitigate the problem. Rewritten in ES015 and type-checked by one of the most advanced type checkers, Vue is designed in ES5 era and, satirically, is still <a target="_blank" rel="noopener" href="https://github.com/vuejs/vue/issues/478#issuecomment-129498731">designed for</a> ES5 code.</p>
+<p>Vue doesn’t come with type safety in mind. But this is might be a mirroring of some part in the community where some developers have almost kind of <em>Stockholm Syndrome</em>: they encounter so many type unsafe ordeals that they are very happy and proud with their lavish use of reflection which backfires to themselves.</p>
+<p>Yet one should always keep a leery eye a <code>Static Typist</code>‘s maniacal malarkey. Static typing system works the same way as <strong>BDSM</strong>: the more constraints, the more pleasure. Once having tasted the relish of bondage, a bottom will avariciously demand more complex tricks and more powerful constraints from typing system. That urge is so strong that the bottom loses incentives to lumber out of <em>the fifty shades of types</em>.</p>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/TypeScript/" rel="tag">TypeScript</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2016/10/02/vue-router/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Type Safe Routing for Vue.js
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/06/07/how-to-config-node-cdn/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          A collection of nodejs CDN for Celestial Imperial
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

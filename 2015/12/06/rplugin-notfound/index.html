@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Trouble Shooting NeoVim&#39;s rplugin not found | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="NeoVim is awesome. But after its 0.1 release, neovim is not that awesome, after all, in a old vimmer’s eye. To support XDG configuration, NeoVim changed default config paths. After that patch, neovim">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Trouble Shooting NeoVim&#39;s rplugin not found">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2015/12/06/rplugin-notfound/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="NeoVim is awesome. But after its 0.1 release, neovim is not that awesome, after all, in a old vimmer’s eye. To support XDG configuration, NeoVim changed default config paths. After that patch, neovim">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2015-12-06T08:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.876Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="Vim">
+<meta name="twitter:card" content="summary"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-rplugin-notfound" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      Trouble Shooting NeoVim&#39;s rplugin not found
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2015-12-06T08:00:00.000Z" itemprop="datePublished">December 6, 2015, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p><a target="_blank" rel="noopener" href="http://geoff.greer.fm/2015/01/15/why-neovim-is-better-than-vim/">NeoVim</a> is awesome. But after its 0.1 release, neovim is not that awesome, after all, in a old vimmer’s eye.</p>
+<p>To support <a target="_blank" rel="noopener" href="https://wiki.archlinux.org/index.php/Xdg-open">XDG</a> configuration, NeoVim <a target="_blank" rel="noopener" href="https://github.com/neovim/neovim/wiki/Following-HEAD#20151026">changed default config paths</a>. After that patch, neovim search <code>~/.config/nvim/init.vim</code> rather than our old friend <code>~/.nvimrc</code>. So I changed my zshrc to alias <code>v</code> to <code>nvim -u ~/.nvimrc</code>. So I can use old configuration without relocating files.</p>
+<p>It works fine, except <a target="_blank" rel="noopener" href="https://github.com/Shougo/deoplete.nvim">Deoplete</a> always complain about its remote plugin is not registered. When I execute <code>UpdateRemotePlugins</code> as Deoplete’s doc said, a new <code>.-rplugin-</code> file always spawn in my working directory. Without that weird file, Deoplete will never work.</p>
+<p>I think this is configuration problem. But how can I figure out what happened? I start to resolving this by guess.</p>
+<p><code>.-rplugin</code> is the critical file on which Deoplete depends. So NeoVim should search for it when booting. I searched for NeoVim’s repository for its usage. Yes, it does appear in neovim’s source, in <code>neovim/runtime/autoload/remote/host.vim</code>.</p>
+<p>It reads:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">let s:remote_plugins_manifest = fnamemodify(expand($MYVIMRC, 1), &#x27;:h&#x27;)</span><br><span class="line">      \.&#x27;/.&#x27;.fnamemodify($MYVIMRC, &#x27;:t&#x27;).&#x27;-rplugin~&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>Hmmm, NeoVim will find <code>.-rplugin</code> in the same directory of <code>$MYVIMRC</code>. But where does <code>$MYVIMRC</code> come from?</p>
+<p>Searching neovim’s doc gives me the answer. In <a target="_blank" rel="noopener" href="https://github.com/neovim/neovim/blob/84a5709a86cc8d2d90cc29eea26f254b9b5d85fa/runtime/doc/starting.txt#L394"><code>:h starting</code></a>, it writes:</p>
+<blockquote>
+<p>If Vim was started with “-u filename”, the file “filename” is used.<br>  All following initializations until 4. are skipped. $MYVIMRC is not<br>  set.</p>
+</blockquote>
+<p>Oh, so I have to relocate my <code>vimrc</code> file. After that, every thing works :).</p>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/Vim/" rel="tag">Vim</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2016/02/01/typesafe-di/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          TypeSafe DI in TypeScript
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/11/17/js-tracker/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          JavaScript Error tracking in browsers
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

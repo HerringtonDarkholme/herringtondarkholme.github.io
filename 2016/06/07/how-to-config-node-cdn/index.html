@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>A collection of nodejs CDN for Celestial Imperial | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="Living inside of the Great Fire Wall is a so onerous ordeal that survival guides can be compiled into an anthology. Here is how to configure various popular open source project to use their CDN in Ch*">
+<meta property="og:type" content="article">
+<meta property="og:title" content="A collection of nodejs CDN for Celestial Imperial">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2016/06/07/how-to-config-node-cdn/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="Living inside of the Great Fire Wall is a so onerous ordeal that survival guides can be compiled into an anthology. Here is how to configure various popular open source project to use their CDN in Ch*">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://herringtondarkholme.github.io/images/Hatsune.Miku.full.2006986.jpg">
+<meta property="article:published_time" content="2016-06-07T07:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.874Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="nodejs">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://herringtondarkholme.github.io/images/Hatsune.Miku.full.2006986.jpg"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-how-to-config-node-cdn" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      A collection of nodejs CDN for Celestial Imperial
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2016-06-07T07:00:00.000Z" itemprop="datePublished">June 7, 2016, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>Living inside of the Great Fire Wall is a so onerous ordeal that survival guides can be compiled into an anthology.</p>
+<p>Here is how to configure various popular open source project to use their CDN in Ch******na.</p>
+<p>Plenty of nodejs project provide environment variable to configure mirror&#x2F;CDN to download source code or binary.</p>
+<h2 id="nvm-x2F-nodejs"><a href="#nvm-x2F-nodejs" class="headerlink" title="nvm &#x2F; nodejs"></a>nvm &#x2F; nodejs</h2><p><a target="_blank" rel="noopener" href="https://cnodejs.org/topic/5338c5db7cbade005b023c98">Ref</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">NVM_NODEJS_ORG_MIRROR=https://npm.taobao.org/mirrors/node nvm install 4</span><br></pre></td></tr></table></figure>
+
+<h2 id="npm"><a href="#npm" class="headerlink" title="npm"></a>npm</h2><p><a target="_blank" rel="noopener" href="https://cnodejs.org/topic/5338c5db7cbade005b023c98">Ref</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm --registry=https://registry.npm.taobao.org install koa</span><br></pre></td></tr></table></figure>
+
+<p>Kudos to <a target="_blank" rel="noopener" href="https://cnodejs.org/user/fengmk2">fengmk2</a></p>
+<h2 id="PhantomJS"><a href="#PhantomJS" class="headerlink" title="PhantomJS"></a>PhantomJS</h2><p><a target="_blank" rel="noopener" href="https://cnodejs.org/topic/538ed941c3ee0b5820889f66">Ref</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">PHANTOMJS_CDNURL=https://npm.taobao.org/dist/phantomjs npm install phantomjs --registry=https://registry.npm.taobao.org --no-proxy</span><br></pre></td></tr></table></figure>
+
+<p>Kudos to <a target="_blank" rel="noopener" href="https://cnodejs.org/user/fengmk2">fengmk2</a>, again!</p>
+<h2 id="node-sass"><a href="#node-sass" class="headerlink" title="node-sass"></a>node-sass</h2><p><a target="_blank" rel="noopener" href="https://github.com/cnpm/cnpm/pull/76/files">Ref</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SASS_BINARY_SITE=https://registry.npmjs.org/node-sass npm install node-sass</span><br></pre></td></tr></table></figure>
+
+<p>Kudos, again and again, to fengmk2</p>
+<h2 id="Docker"><a href="#Docker" class="headerlink" title="Docker"></a>Docker</h2><p><a target="_blank" rel="noopener" href="http://www.imike.me/2016/04/20/Docker%E4%B8%8B%E4%BD%BF%E7%94%A8%E9%95%9C%E5%83%8F%E5%8A%A0%E9%80%9F/">Ref</a></p>
+<p>Install Docker</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -sSL http://acs-public-mirror.oss-cn-hangzhou.aliyuncs.com/docker-engine/internet | sh -</span><br></pre></td></tr></table></figure>
+
+<p>Config accelerator</p>
+<p>You need to register an account in <a target="_blank" rel="noopener" href="http://xxxxxx.m.daocloud.io/">daocloud.io</a>.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">&quot;DOCKER_OPTS=\&quot;--registry-mirror=http://xxxxxx.m.daocloud.io\&quot;&quot;</span> | sudo <span class="built_in">tee</span> -a /etc/default/docker</span><br><span class="line">sudo service docker restart</span><br></pre></td></tr></table></figure>
+
+<p>Kudos to daocloud.</p>
+<h2 id="Pypi"><a href="#Pypi" class="headerlink" title="Pypi"></a>Pypi</h2><p><a target="_blank" rel="noopener" href="http://www.cnblogs.com/meelo/p/4636340.html">Ref</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> &lt;~/.pip/pip.conf &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">[global]</span></span><br><span class="line"><span class="string">index-url = http://mirrors.aliyun.com/pypi/simple/</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+
+<p>Kudos to aliyun</p>
+<h2 id="sbt"><a href="#sbt" class="headerlink" title="sbt"></a>sbt</h2><p><a target="_blank" rel="noopener" href="http://freewind.in/posts/2619-sbt-global-repo/">Ref</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> &gt; ~/.sbt/repositories &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">[repositories]</span></span><br><span class="line"><span class="string">local</span></span><br><span class="line"><span class="string">osc: http://maven.oschina.net/content/groups/public/</span></span><br><span class="line"><span class="string">typesafe: http://repo.typesafe.com/typesafe/ivy-releases/, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext], bootOnly</span></span><br><span class="line"><span class="string">sonatype-oss-releases</span></span><br><span class="line"><span class="string">maven-central</span></span><br><span class="line"><span class="string">sonatype-oss-snapshots</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+
+<p>Kudos to <a target="_blank" rel="noopener" href="http://freewind.in/">freewind</a></p>
+<p>And these links is useful:<br><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000002474507">加速 SBT 下载依赖库的速度</a><br><a target="_blank" rel="noopener" href="http://afoo.me/posts/2014-11-05-how-make-sbt-jump-over-GFW.html">how to make sbt jump over GFW</a></p>
+<h2 id="Gopm"><a href="#Gopm" class="headerlink" title="Gopm"></a>Gopm</h2><p><a target="_blank" rel="noopener" href="https://github.com/gpmgo/gopm">Ref</a></p>
+<p>It is quite clear in the doc and help command.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">gopm get &lt;import path&gt;@[&lt;tag|commit|branch&gt;:&lt;value&gt;]</span><br><span class="line">gopm get &lt;package name&gt;@[&lt;tag|commit|branch&gt;:&lt;value&gt;]</span><br><span class="line"></span><br><span class="line">useful options:</span><br><span class="line">   --update, -u		update package(s) and dependencies <span class="keyword">if</span> any</span><br><span class="line">   --gopath, -g		download all packages to GOPATH</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>Hail Aliyun! Hail fengmk2!<br>For the unfortunate who live in a crappy ignorant country.</p>
+<img src="/images/Hatsune.Miku.full.2006986.jpg" class="">
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/nodejs/" rel="tag">nodejs</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2016/08/21/vue-ts/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Type Safety in Vue.js
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/02/26/dein/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          Trying out dein.vim -- a dark powered plugin manager
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="あくまでも紳士です">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:url" content="https://herringtondarkholme.github.io/page/4/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="あくまでも紳士です">
+<meta property="og:locale" content="en_US">
+<meta property="article:author" content="Herrington Darkholme">
+<meta name="twitter:card" content="summary"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      
+  
+    <article id="post-descriptor" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/04/12/descriptor/">QuickNote Descriptor in Python</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-04-12T07:00:00.000Z" itemprop="datePublished">April 12, 2014, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>TL;DR: Descriptor in Python is just getter&#x2F;setter</p>
+<p>Three ways to implement descriptor:</p>
+<ol>
+<li>Use a class that implement magic method <code>__get__</code>, <code>__set__</code>, <code>__delete__</code></li>
+<li>Use builtin function <code>property(fget=None, fset=None, fdel=None, doc=None)</code></li>
+<li>Use decorator form of <code>property</code>, like <code>@property def attr(): ...</code>, <code>@attr.setter</code>, <code>@attr.deleter</code></li>
+</ol>
+<p>Make sure all three methods are done at class level rather than at instance level.<br>(That is, write <code>my_attr = property(...)</code> under <code>class MyClass(object):</code> statement,<br>but not <code>self.my_attr = property(..)</code> in <code>__init__</code>)</p>
+<p>Because Python’s MRO is:</p>
+<ol>
+<li>find <code>attr</code> in <code>instance.__dict__</code> (instance level)</li>
+<li>if not found, find <code>attr</code> in <code>instance.__class__.__dict__</code>. If found, try return <code>attr.__get__</code>, otherwise return <code>attr</code> (class level)</li>
+<li>if not found, repeat step 2 on <code>instance.__class__.__base__</code> until <code>attr</code> found or no base class found</li>
+<li>if not found, try returning computed <code>attr</code> if <code>__getattr__</code> is defined</li>
+</ol>
+<p>So the descriptor magic is done at class level</p>
+<p>Pitfall:</p>
+<p>Because descriptor dwells at class level, if one uses descriptor class implementation, all instances may share one common variable.</p>
+<p>To fix that:</p>
+<ol>
+<li>Hoard one hidden variable in the instance</li>
+<li>Use a dictionary in descriptor class to store info of different instances.</li>
+</ol>
+<p>The second solution needs the class hashable. (So a meta class is needed to guarantee hashability)</p>
+<p>Personal view: To maintain Python’s <code>one simple way to work</code> Pythonists just introduced much more <code>complexity</code>.</p>
+<p>Reference:<br><a target="_blank" rel="noopener" href="http://www.ibm.com/developerworks/library/os-pythondescriptors/">http://www.ibm.com/developerworks/library/os-pythondescriptors/</a><br><a target="_blank" rel="noopener" href="http://nbviewer.ipython.org/urls/gist.github.com/ChrisBeaumont/5758381/raw/descriptor_writeup.ipynb">http://nbviewer.ipython.org/urls/gist.github.com/ChrisBeaumont/5758381/raw/descriptor_writeup.ipynb</a><br><a target="_blank" rel="noopener" href="http://docs.python.org/2/howto/descriptor.html">http://docs.python.org/2/howto/descriptor.html</a></p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-generator" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/02/17/generator/">Breadth First Search without Queue</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-02-17T08:00:00.000Z" itemprop="datePublished">February 17, 2014, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/generator.jpg" class="">
+<p>source: <a target="_blank" rel="noopener" href="http://www.pixiv.net/member_illust.php?id=1315311">かみやまねき</a></p>
+<h3 id="TL-DR-The-most-intuitive-implementation-of-BFS-is-using-Queue"><a href="#TL-DR-The-most-intuitive-implementation-of-BFS-is-using-Queue" class="headerlink" title="TL;DR: The most intuitive implementation of  BFS is using Queue"></a>TL;DR: The most intuitive implementation of  BFS is using Queue</h3><p>Just out of fun, I wonder whether BFS can be implemented without Queue.<br>While DFS can be easily done by recursion, naive BFS implementation just incurs loop mayhem.</p>
+<p>The first solution jumped into my mind is to add a depth parameter into BFS function.<br>The search function only visits nodes whose depth equals to the parameter and skips nodes whose depth does not.<br>I am <a target="_blank" rel="noopener" href="http://stackoverflow.com/a/2549825/2198656">not alone</a></p>
+<p><code>Generator</code> is <a target="_blank" rel="noopener" href="http://koajs.com/">sweeping</a> <a target="_blank" rel="noopener" href="https://github.com/petkaantonov/bluebird/blob/master/API.md#generators">NodeJS</a> community (admittedly this is my exaggeration). I’m quite obsessed with generator’s suspension power. Here’s my try in Python.</p>
+<pre><code>&#39;&#39;&#39;
+    implicit BFS, without queue or depth
+    incurs infinite circulation on loop graph
+    implement for fun (Really need a queue)
+&#39;&#39;&#39;
+def bfs_gen(node):
+    &#39;&#39;&#39;
+    generator function on a node, yield an iterator of frontier nodes
+    the first call yield an iterator contains the node itself
+    each subsequent call yields an iterator that is composed of children&#39;s gen
+    try line chains children&#39;s yields, and thus accumulates frontier nodes
+    By recursion, the root node&#39;s bfs_gen yields all frontier nodes on the graph
+    frontier is maintained on callstack, by the suspension feature of generators
+    &#39;&#39;&#39;
+    try:
+        yield iter((node.value, ))
+        # :( still needs a list to maintain generators
+        children = [bfs_gen(n) for n in node.children]
+    except AttributeError:
+        raise StopIteration
+
+    chain = 0xDEADBABE
+    while chain != ():
+        chain = ()
+        for child in children:
+            try:
+                chain = (e for it in (chain, next(child)) for e in it)
+            except StopIteration:
+                continue
+        yield chain
+
+def bfs(root, pred):
+    &#39;&#39;&#39;
+    make generator on root node
+    call next method to yield frontier nodes
+    apply predicate function on it, if any matches, return True
+    else continues to yield more frontier
+    &#39;&#39;&#39;
+    gens = bfs_gen(root)
+    try:
+        while not any(pred(v) for v in next(gens)):
+            continue
+        return True
+    except StopIteration:
+        return False
+
+def main():
+    &#39;&#39;&#39;
+    3 4 5 6
+     1   2
+       0
+    &#39;&#39;&#39;
+    from collections import namedtuple
+
+    node = namedtuple(&#39;Node&#39;, [&#39;value&#39;, &#39;children&#39;])
+    six   = node(6, [None])
+    five  = node(5, [None])
+    four  = node(4, [None])
+    three = node(3, [None])
+    two   = node(2, [five, six])
+    one   = node(1, [three, four])
+    zero  = node(0, [one, two])
+
+    def demo(value):
+        &#39;&#39;&#39;dumb log&#39;&#39;&#39;
+        print(value)
+        return False
+
+    # bfs(zero, demo)
+    for i in bfs_gen(zero):
+        demo(i.value)
+
+if __name__ == &#39;__main__&#39;:
+    main()
+</code></pre>
+<p>Wow, much ugly, very obscure. But a old post on certain <a target="_blank" rel="noopener" href="http://code.activestate.com/recipes/231503-breadth-first-traversal-of-tree/?in=user-218935">unsung site</a> gives me an interesting solution.</p>
+<pre><code>def bfs(root):
+    yield root
+    for node in bfs(root):
+        for child in node.children:
+            yield label(child)
+</code></pre>
+<p>Tada, done! Let’s peruse this piece of code.<br>We want a generator that yields a sequence of nodes, this can be done by induction.</p>
+<ol>
+<li>Given the root of a tree, clearly the first node of the sequence is the root</li>
+<li>Because the next level of frontier nodes in the sequence is the children of the current level frontier nodes, construct a new sequence that lags behind.</li>
+<li>yield each child given its parent.</li>
+</ol>
+<p>Doing this recursively makes a BFS generator.</p>
+<p>The trick part is the second step, for a normal function, this will make infinite loops. But <code>generator</code> is expanded dynamically, execution jumps out of BFS, eschewing looping condition. Suspension of code also implicitly stores searching states, where calling stacks morph into a Queue. Of course, visited nodes also need to be maintained in a list(not checked here). Termination check is absent, as well.</p>
+<p>Interestingly, adapting BFS into DFS only requires swapping two lines, just as substituting stack for queue in classical implementation.</p>
+<pre><code>def dfs(root):
+    yield root
+    for node in node.children:
+        for child in dfs(node):
+            yield child
+</code></pre>
+<p>Whatever fun generators have brought, BFS&#x2F;DFS should probably never done like this. Storing information in stack does not save space. Static language like C&#x2F;C++ lacks such generator feature. And, notably, <a target="_blank" rel="noopener" href="http://www.python.org/doc/essays/list2str.html">function overhead</a> and <a target="_blank" rel="noopener" href="http://www.ruby-doc.org/stdlib-1.8.7/libdoc/generator/rdoc/Generator.html">slow generator</a> in most script language make developers repugnant to such winding trick.</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-python-request" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/02/02/python-request/">Request is a good lib</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-02-02T08:00:00.000Z" itemprop="datePublished">February 2, 2014, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/python-request.jpg" class="">
+<p>source: <a target="_blank" rel="noopener" href="http://www.pixiv.net/member_illust.php?mode=big&illust_id=41320823">pixiv</a></p>
+<p>Web scrapping is a common task for script languages like python.<br>Yet Python standard libraries provide twisted utility to couple with this simple task. <code>urllib[23$]</code> ruins my python newbie days.<br>To achieve cookie support, you have to import cookielib, create a new cookie jar via the factory method, subclass a opener from the urllib, and finally use the forged opener to make a request.</p>
+<p>Bloated boilerplate code does not seem pythonic at all. We want a simple scrapping utility that provides concise API like http verbs and, preferably, automatic session management. <strong>Request</strong> is the library comes to rescue.</p>
+<p>The structure of Request:</p>
+<ul>
+<li>model</li>
+<li>session</li>
+<li>adapter</li>
+<li>api</li>
+<li>etc…</li>
+</ul>
+<p><code>model</code> irons response and request parameters into unified objects. Both <code>Request</code> and <code>Response</code> supports generator style and file style. Magic methods empowers <code>Request</code> pythonic syntax. The most dirty works(say, encoding stuffs) lies here.</p>
+<p><code>session</code> acts as controller in  MVC design. It combines adapter, which sends request, authentication and cookie session. Request’s streamlined API stems from an interface mocking real browsers.</p>
+<p><code>adapter</code> is a wrapper of urllib3, supporting connection pool management, <code>keep-alive</code> request and proxies.</p>
+<p><code>api</code> is just an alias for <code>1. open session 2. prepare request 3. send request</code>. And all other modules are helpers that do stuffs like encoding and making auth token.</p>
+<p>The design philosophy under Request is : <code>Simple is better than functionality</code>, however, it still grants users plenty of features.<br>Specific as the library aims to be, the philosophy underlying it applies much wider. jQuery’s almighty $, Chrome’s omnipotent omnibox, Google’s preeminent search engine and etc. Simplicity rocks, Usability counts.</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-vimscript" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/01/31/vimscript/">Vimscript the terrible way</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-01-31T08:00:00.000Z" itemprop="datePublished">January 31, 2014, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/Photo.jpg" class="">
+<p>source: <a target="_blank" rel="noopener" href="http://www.pixiv.net/member_illust.php?mode=medium&illust_id=41290048">pixiv</a></p>
+<blockquote>
+<p>Exercises: Drink a beer to console yourself about Vim’s coercion of strings to integers.<br>                                               – Steve Losh, Learning Vimscript the hard way</p>
+</blockquote>
+<p>Vim is a superb and classy text-editor, but VimScript, well, is far from a usable scripting language.</p>
+<p>Vimscript is extremely powerful, but has grown organically over the years into a twisty maze ready to ensnare the unwary who enter it.<br>Options and commands are often terse and hard to read</p>
+<p>On the surface, VimL looks like an agglomeration of Lua, Perl and primitive Vim configuration language. A litany of reserved words and special operators, along with Regex line-noises, gives rise to yet another write-only language. VimL supports both function call and primitive command, which seasons VimL with one more layer of complexity and inconsistency.</p>
+<p>This is culpable, but is not the most irremediable obfuscation of VimL. The tittle should belong to event system. Vim executes one and only one handler for an event once a time. To bind multiple handlers to one event, users have to write their own <a target="_blank" rel="noopener" href="http://vim.wikia.com/wiki/Overload_a_key_with_multiple_handlers">custom function</a>.</p>
+<p>It seems very easy for anyone, but at field, handling Vim plugin conflicts is a Herculean task. Vim comes out with many plugins loaded, and users’ .vimrc are liable to frequent editing. Maintaining a list of event handlers requires a user to face with plugins’ source code(verbose namespace, illegible syntax, Byzantine structure, or line noises fraught with all the aforementioned three). And this will be users’ chronic concern since Vim’s configuration are constantly changing. What’s more, VimL’s events are not sufficient. Until recent that  Vim 7.3 adds InsertPre event, there is no event for pressing arbitrary key. Users have to write recursive function to capture <a target="_blank" rel="noopener" href="http://vim.wikia.com/wiki/Capture_all_keys">all keys</a></p>
+<p>Lastly, there is little VimL material users can find. Vim’s help doc is the only comprehensive and up-to-date document, but it is awkwardly organized. Vim community also favors Python over VimL, indicating that VImL will have <a target="_blank" rel="noopener" href="http://www.vim.org/sponsor/vote_results.php">less chance</a> to get enhancement. Over the internet, few complaints and swearings about VimL are heard. It shall be interpreted as few VimL developers instead of few VimL defects.</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+
+
+  <nav id="page-nav" class="page-nav">
+    
+    <a class="extend prev" rel="prev" href="/page/3/">« Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span>
+  </nav>
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

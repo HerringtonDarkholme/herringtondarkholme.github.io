@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Grok control flow based analysis in TypeScript. | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="TL;DR: Compiler does not understand control flow in closure &#x2F; callback function. In flow based type analysis, copmiler will be either optimistic or pessimistic. TypeScript is optimistic. You can">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Grok control flow based analysis in TypeScript.">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2017/02/04/flow-sensitive/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="TL;DR: Compiler does not understand control flow in closure &#x2F; callback function. In flow based type analysis, copmiler will be either optimistic or pessimistic. TypeScript is optimistic. You can">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2017-02-04T08:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.873Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="TypeScript">
+<meta name="twitter:card" content="summary"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-flow-sensitive" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      Grok control flow based analysis in TypeScript.
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2017-02-04T08:00:00.000Z" itemprop="datePublished">February 4, 2017, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <h2 id="TL-DR"><a href="#TL-DR" class="headerlink" title="TL;DR:"></a>TL;DR:</h2><ol>
+<li>Compiler does not understand control flow in closure &#x2F; callback function.</li>
+<li>In flow based type analysis, copmiler will be either optimistic or pessimistic. TypeScript is optimistic.</li>
+<li>You can usually workaround (3) by using <code>const</code> or <code>readonly</code></li>
+</ol>
+<p>This is a long due introduction for TypeScript’s flow sensitive typing (also known as control flow based type analysis) since its <a target="_blank" rel="noopener" href="https://github.com/Microsoft/TypeScript/wiki/What%27s-new-in-TypeScript#control-flow-based-type-analysis">2.0 release</a>. It is so unfortunate that no official documentation is in TypeScript’s website for it (while both <a target="_blank" rel="noopener" href="https://flowtype.org/docs/dynamic-type-tests.html#">flow</a> and <a target="_blank" rel="noopener" href="https://kotlinlang.org/docs/reference/typecasts.html#smart-casts">kotlin</a> have!). But if you dig the issue list earnestly enough, you will always find some <a target="_blank" rel="noopener" href="https://github.com/Microsoft/TypeScript/issues/9998">hidden gems</a> there!</p>
+<p>To put it short, a variable’s type in a <a target="_blank" rel="noopener" href="https://www.wikiwand.com/en/Flow-sensitive_typing">flow sensitive type system</a> can change according to the control flow like <code>if</code> or <code>while</code>. For example, you can dynamically check the truthiness of  a nullable variable and if it isn’t null, compiler will automatically cast the variable type to non-null. Sweet?</p>
+<p>What can be bitter here? TypeScript is an imperative language like JavaScript. The side-effectful nature prevents compiler from inferring control flow when function call kicks in. Let’s see an example.</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">let</span> <span class="attr">a</span>: <span class="built_in">number</span> | <span class="literal">null</span> = <span class="number">42</span></span><br><span class="line"></span><br><span class="line"><span class="title function_">makeSideEffect</span>()</span><br><span class="line"></span><br><span class="line">a <span class="comment">// is a still a number?</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">makeSideEffect</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="comment">// omitted...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Without knowing what <code>makeSideEffect</code> is, we cannot guarantee variable <code>a</code> is still <code>number</code>. Side effect can be as innocuous and innocent as <code>console.log(&#39;the number of life&#39;, 42)</code>, or as evil as a billion dollar mistake like <code>a = null</code>, or even a control-flow entangler: <code>throw new Error(&#39;code unreachale&#39;)</code>.</p>
+<p>One might ask compiler to infer what <code>makeSideEffect</code> does since we can provide the source of the function.<br>However this is not practically feasible because of <a target="_blank" rel="noopener" href="https://basarat.gitbooks.io/typescript/content/docs/types/ambient/intro.html">ambient function</a> and (possibly polymorphic) recursion. Compiler will be trapped in infinite loops if we instruct it to infer arbitrary deep functions, as <a target="_blank" rel="noopener" href="https://www.wikiwand.com/en/Halting_problem">halting problem</a> per se.</p>
+<p>So a realistic compiler must guess what a function does by a consistent strategy. Naturally we have two alternatives:</p>
+<ol>
+<li>Assume every function does <strong>not</strong> have relevant side effect: e.g. assignment like <code>a = null</code>. We call this <strong>optimistic</strong>.</li>
+<li>Assume every function <strong>does</strong> have side effect. We call this strategy <strong>pessimistic</strong>.</li>
+</ol>
+<p>Spoiler: TypeScript uses optimistic strategy.</p>
+<p>We will walk through these two strategies and see how they work in practice.<br>But before that let’s see some common gotchas in flow sensitive typing.</p>
+<h2 id="Closure-x2F-Callback"><a href="#Closure-x2F-Callback" class="headerlink" title="Closure &#x2F; Callback"></a>Closure &#x2F; Callback</h2><p>Flow sensitive typing does not play well with callback functions or closures. This is explicitly mentioned in <a target="_blank" rel="noopener" href="https://kotlinlang.org/docs/reference/typecasts.html#smart-casts">Kotlin’s document</a>.</p>
+<blockquote>
+<p>var local variables - if the variable is not modified between the check and the usage and is not captured in a lambda that modifies it;</p>
+</blockquote>
+<p>Consider the following example.</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> <span class="attr">a</span>: <span class="built_in">string</span> | <span class="built_in">number</span> = <span class="number">42</span> <span class="comment">// smart cast to number</span></span><br><span class="line"><span class="built_in">setTimeout</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="keyword">typeof</span> a) <span class="comment">// what should be print?</span></span><br><span class="line">&#125;, <span class="number">100</span>)</span><br><span class="line">a = <span class="string">&#x27;string&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>As a developer, you can easily figure out that <code>string</code> will be output to console because <code>setTimeout</code> will call its function argument asynchronously, after assigning <code>string</code> to <code>a</code>. Unfortunately, this knowledge is not accessible to compiler. No keyword will tell compiler whether callback function will be called <em>immediately</em>, nor static analysis will tell the behavior of a function: <code>setTimeout</code> and <code>forEach</code> is the same in the view of compiler.</p>
+<p>So the following example will not compile.</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> <span class="attr">a</span>: <span class="built_in">string</span> | <span class="built_in">number</span> = <span class="number">42</span> <span class="comment">// smart cast to number</span></span><br><span class="line">someArray.<span class="title function_">forEach</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">  a.<span class="title function_">toFixed</span>() <span class="comment">// error, string | number does not have method `toFixed`</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>Note: compiler will still inline control flow analysis for <a target="_blank" rel="noopener" href="https://developer.mozilla.org/en-US/docs/Glossary/IIFE">IIFE(Immediately Invoked Function Expression)</a>.</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> <span class="attr">x</span>: <span class="built_in">string</span> | <span class="built_in">number</span> = <span class="string">&quot;OK&quot;</span>;</span><br><span class="line">(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">  x = <span class="number">10</span>;</span><br><span class="line">&#125;)();</span><br><span class="line"><span class="keyword">if</span> (x === <span class="number">10</span>) &#123; <span class="comment">// OK, assignment in IIFE</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>In the future, we might have a keyword like <a target="_blank" rel="noopener" href="https://github.com/Microsoft/TypeScript/issues/11498"><code>immediate</code></a> to help compiler reasoning more about control flow. But that’s a different story.</p>
+<p>Now let’s review the strategies for function call.</p>
+<h2 id="Optimistic-Flow-Sensitive-Typing"><a href="#Optimistic-Flow-Sensitive-Typing" class="headerlink" title="Optimistic Flow Sensitive Typing"></a>Optimistic Flow Sensitive Typing</h2><p>Optimistic flow typing assume a function without side-effect that changes a variable’s type. TypeScript chooses this strategy in its implementation.</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> <span class="attr">a</span>: <span class="built_in">number</span> | <span class="literal">null</span></span><br><span class="line">a = <span class="number">42</span> <span class="comment">// assign, now a is narrowed to type `number`</span></span><br><span class="line"><span class="title function_">sideEffect</span>() <span class="comment">// assume nothing happens here</span></span><br><span class="line">a.<span class="title function_">toFixed</span>() <span class="comment">// a still has `number` type</span></span><br></pre></td></tr></table></figure>
+
+<p>This assumption usually works well if code observes immutable rule. On the other hand, a stateful program will be tolled with the tax of explicit casting. One typical example is scanner in a compiler. (Both Angular template compiler and TypeScript itself are victims).</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// suppose we are tokenizing an HTML like language</span></span><br><span class="line"><span class="keyword">enum</span> <span class="title class_">Token</span> &#123; <span class="title class_">LeftBracket</span>, <span class="title class_">WhiteSpace</span>, <span class="title class_">Letter</span> ... &#125;</span><br><span class="line"><span class="keyword">let</span> token = <span class="title class_">Token</span>.<span class="property">WhiteSpace</span>;</span><br><span class="line"><span class="keyword">function</span> <span class="title function_">nextToken</span>(<span class="params"></span>) &#123;</span><br><span class="line">    token = <span class="title function_">readInput</span>(); <span class="comment">// return a Token</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">scan</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="comment">// token here is WhiteSpace</span></span><br><span class="line">  <span class="keyword">while</span> (token === <span class="title class_">Token</span>.<span class="property">WhiteSpace</span>) &#123;</span><br><span class="line">    <span class="comment">// skip white space, a common scenario</span></span><br><span class="line">    <span class="title function_">nextToken</span>()</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (token === <span class="title class_">Token</span>.<span class="property">LeftBracket</span>) &#123; <span class="comment">// error here</span></span><br><span class="line">    <span class="comment">// compiler thinks token is still WhiteSpace, optimistically but wrongly</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Such bad behavior also occurs on fields.</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// A function takes a string and try to parse</span></span><br><span class="line"><span class="comment">// if success, modify the result parameter to pass result to caller</span></span><br><span class="line"><span class="keyword">declare</span> <span class="keyword">function</span> <span class="title function_">tryParse</span>(<span class="params">x: <span class="built_in">string</span>, result: &#123; success: <span class="built_in">boolean</span>; value: <span class="built_in">number</span>; &#125;</span>): <span class="built_in">void</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">myFunc</span>(<span class="params">x: <span class="built_in">string</span></span>) &#123;</span><br><span class="line">    <span class="keyword">let</span> result = &#123; <span class="attr">success</span>: <span class="literal">false</span>, <span class="attr">value</span>: <span class="number">0</span> &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="title function_">trySomething</span>(x, result);</span><br><span class="line">    <span class="keyword">if</span> (result.<span class="property">success</span> === <span class="literal">true</span>) &#123; <span class="comment">// error!</span></span><br><span class="line">        <span class="keyword">return</span> result.<span class="property">value</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>An alternative here is returning a new result object so we need no inline mutation. But in some performance sensitive code path might we want parse a string without new object allocation, which reduces garbage collection pressure. After all, mutation is legal in JavaScript code, but TypeScript fails to capture it.</p>
+<p>Optimistic flow analysis sometimes is also unsound: a compiler verified program will cause runtime error. We can easily construct a function which reassigns a variable to an object of different type and uses it as of the original type, and thus a runtime error!</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">A</span> &#123; <span class="attr">a</span>: <span class="built_in">string</span>&#125;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">B</span> &#123; <span class="attr">b</span>: <span class="built_in">string</span>&#125;</span><br><span class="line"><span class="keyword">let</span> <span class="attr">ab</span>: A | B = <span class="keyword">new</span> A</span><br><span class="line"></span><br><span class="line"><span class="title function_">doEvil</span>()</span><br><span class="line">ab.<span class="property">b</span>.<span class="title function_">toString</span>() <span class="comment">// booooooom</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">doEvil</span>(<span class="params"></span>) &#123;</span><br><span class="line">  ab = <span class="keyword">new</span> B</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The above examples might leave to you a impression that compiler does much bad when doing optimistic control flow inference. In practice, however, a well architected program with disciplined control of side effect will not suffer much from compiler’s naive optimistism. <a target="_blank" rel="noopener" href="https://www.wikiwand.com/en/Presumption_of_innocence">Presumption of immutability innocence</a> will save you a lot type casting or variable rebinding found in pessimistic flow sensitive typing.</p>
+<h2 id="Pessimistic-Flow-Sensitive-Typing"><a href="#Pessimistic-Flow-Sensitive-Typing" class="headerlink" title="Pessimistic Flow Sensitive Typing"></a>Pessimistic Flow Sensitive Typing</h2><p>A pessimistic flow analysis places <a target="_blank" rel="noopener" href="https://www.wikiwand.com/en/Burden_of_proof">burden of typing proof</a> on programmers.<br>Every function call will invalidate previous control flow based narrowing. (<em>Pessimistic</em> possibly has a negative connotation, <em>conservative</em> may be a better word here). Thus programmers have to re-prove variable types is matching with previous control flow analysis.</p>
+<p>Examples in this section are crafted to be runnable under both TS and flow-type checker.<br>Note, only flow-type checker will produce error because flow is more pessimistic&#x2F;strict than TypeScript.</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">declare</span> <span class="keyword">function</span> <span class="title function_">log</span>(<span class="params">obj: <span class="built_in">any</span></span>): <span class="built_in">void</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> <span class="attr">a</span>: <span class="built_in">number</span> | <span class="built_in">string</span> = <span class="number">42</span></span><br><span class="line"></span><br><span class="line"><span class="title function_">log</span>(a) <span class="comment">// invalidation!</span></span><br><span class="line"></span><br><span class="line">a.<span class="title function_">toFixed</span>() <span class="comment">// error, a&#x27;s type is reverted to `number | string`</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// To work around it, you have to recheck the type of `a`</span></span><br><span class="line"><span class="keyword">typeof</span> a === <span class="string">&#x27;number&#x27;</span> &amp;&amp; a.<span class="title function_">toFixed</span>() <span class="comment">// works</span></span><br></pre></td></tr></table></figure>
+
+<p>Alas, pessimistism also breaks fields. Example taken from <a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/38531182/weird-method-cannot-be-called-on-possibly-null-undefined-value">stackoverflow</a>.</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">declare</span> <span class="keyword">function</span> <span class="title function_">assert</span>(<span class="params">obj: <span class="built_in">any</span></span>): <span class="built_in">void</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">TreeNode</span>&lt;V, E&gt; &#123;</span><br><span class="line">    <span class="attr">value</span>: V</span><br><span class="line">    <span class="attr">children</span>: <span class="title class_">Map</span>&lt;E, <span class="title class_">TreeNode</span>&lt;V,E&gt;&gt; | <span class="literal">null</span></span><br><span class="line"></span><br><span class="line">    <span class="title function_">constructor</span>(<span class="params">value: V</span>) &#123;</span><br><span class="line">        <span class="variable language_">this</span>.<span class="property">value</span> = value</span><br><span class="line">        <span class="variable language_">this</span>.<span class="property">children</span> = <span class="literal">null</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">accessChildren</span>(<span class="params">tree: TreeNode&lt;<span class="built_in">number</span>, <span class="built_in">string</span>&gt;</span>): <span class="built_in">void</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (tree.<span class="property">children</span> != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="title function_">assert</span>(<span class="literal">true</span>) <span class="comment">// negate type narrowing</span></span><br><span class="line">        tree.<span class="property">children</span>.<span class="title function_">forEach</span>(<span class="function">(<span class="params">v,k</span>) =&gt;</span> &#123;&#125;) <span class="comment">// error!</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>These false alarms root in the same problem as in optimistic strategy: compiler&#x2F;checker has no knowledge about a function’s side effect. To work with a pessimistic compiler, one has to assert&#x2F;check repeatedly so to guarantee no runtime error will occur. Indeed, this is a trade-off between runtime safety and code bloat.</p>
+<h2 id="Workaround"><a href="#Workaround" class="headerlink" title="Workaround"></a>Workaround</h2><p>Sadly, no known panacea for flow sensitive typing. We can mitigate the problem by introducing more immutability.</p>
+<h3 id="using-const"><a href="#using-const" class="headerlink" title="using const"></a>using <code>const</code></h3><p>Because a <code>const</code> identifier will never change its type.</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="attr">a</span>: <span class="built_in">string</span> | <span class="built_in">number</span> = <span class="title function_">someAPICall</span>() <span class="comment">// smart cast to number</span></span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">typeof</span> a === <span class="string">&#x27;string&#x27;</span>) &#123;</span><br><span class="line">  <span class="built_in">setTimeout</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">    a.<span class="title function_">substr</span>(<span class="number">0</span>) <span class="comment">// success, `const` identifier will not lose its narrrowed type</span></span><br><span class="line">  &#125;, <span class="number">100</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>And using <code>const</code> will provide you runtime safety or bypass pessimistic checker.</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">fn</span>(<span class="params">x: <span class="built_in">string</span> | <span class="literal">null</span></span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> y = x</span><br><span class="line">  <span class="keyword">function</span> <span class="title function_">assert</span>(<span class="params"></span>) &#123;</span><br><span class="line">    <span class="comment">// ... whatever</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (y !== <span class="literal">null</span>) &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(y.<span class="title function_">substr</span>(<span class="number">0</span>)); <span class="comment">// no error, no crash</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The same should apply to <code>readonly</code>, but current TypeScript does not seem to support it.</p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>Flow sensitive typing is an advanced type system feature. Working with control flow analysis smoothly requires programmers to control mutation effectively.</p>
+<p>Keeping mutation control in your mind. Flow sensitive typing will not in your way but make a pathway to a safer code base!</p>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/TypeScript/" rel="tag">TypeScript</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2017/10/12/vue-ts3/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Deep dive into Vue2.5 Typing -- A tour of advanced typing feature
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/11/05/how-to-write-copy-paste-friendly-code/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          How to write copy-paste friendly code -- An introductory parody
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

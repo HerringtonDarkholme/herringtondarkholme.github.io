@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Scala Symbol Soup Salvage | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="source: yande.re By no several pages could one explain or exhausted the absurd bizarre creepy daunting esoteric flabbergasting type system in Scala.Here are some aspects that Learn Scala by example d">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Scala Symbol Soup Salvage">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2014/04/15/scala/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="source: yande.re By no several pages could one explain or exhausted the absurd bizarre creepy daunting esoteric flabbergasting type system in Scala.Here are some aspects that Learn Scala by example d">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://herringtondarkholme.github.io/images/yandere.jpg">
+<meta property="article:published_time" content="2014-04-15T07:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.877Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="Scala">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://herringtondarkholme.github.io/images/yandere.jpg"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-scala" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      Scala Symbol Soup Salvage
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-04-15T07:00:00.000Z" itemprop="datePublished">April 15, 2014, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/yandere.jpg" class="">
+<p>source: <a target="_blank" rel="noopener" href="https://yande.re/post/show/284731/hatsune_miku-headphones-pantsu-shimapan-suemizu_yu">yande.re</a></p>
+<p>By no several pages could one explain or exhausted the absurd bizarre creepy daunting esoteric flabbergasting type system in Scala.<br>Here are some aspects that Learn Scala by example does not cover.</p>
+<h2 id="Digest"><a href="#Digest" class="headerlink" title="Digest:"></a>Digest:</h2><p><a target="_blank" rel="noopener" href="http://twitter.github.io/scala_school/advanced-types.html">http://twitter.github.io/scala_school/advanced-types.html</a></p>
+<h2 id="Context-Bound-and-Implicitly"><a href="#Context-Bound-and-Implicitly" class="headerlink" title="Context Bound and Implicitly:"></a>Context Bound and Implicitly:</h2><p><code>def sort[A : Ordered] =&gt; def sort[A](implicit x: Ordred[A])</code><br><code>def implicitly[T](implicit e: T) = e</code><br><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/3855595/what-is-the-scala-identifier-implicitly">http://stackoverflow.com/questions/3855595/what-is-the-scala-identifier-implicitly</a></p>
+<h2 id="Type-Bound"><a href="#Type-Bound" class="headerlink" title="Type Bound:"></a>Type Bound:</h2><p><code>=:= &lt;:&lt; &lt;%&lt;</code><br><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/3427345/what-do-and-mean-in-scala-2-8-and-where-are-they-documented">http://stackoverflow.com/questions/3427345/what-do-and-mean-in-scala-2-8-and-where-are-they-documented</a></p>
+<h2 id="Existential-Type"><a href="#Existential-Type" class="headerlink" title="Existential Type:"></a>Existential Type:</h2><p><code>def foo(x: Array[_]) =&gt; def foo(x: Array[T] forSome &#123;type T&#125;)</code><br><a target="_blank" rel="noopener" href="http://www.drmaciver.com/2008/03/existential-types-in-scala/">http://www.drmaciver.com/2008/03/existential-types-in-scala/</a></p>
+<h2 id="Self-Type"><a href="#Self-Type" class="headerlink" title="Self Type"></a>Self Type</h2><p><code>class BarUsingFooable &#123;self: Fooable =&gt; ....&#125; // yet-to-be Fooable, make this binded to self</code><br><a target="_blank" rel="noopener" href="https://coderwall.com/p/t_rapw">https://coderwall.com/p/t_rapw</a></p>
+<h2 id="Structural-Type"><a href="#Structural-Type" class="headerlink" title="Structural Type"></a>Structural Type</h2><p><code>def Quack(duck: &#123;def quack: Unit&#125;)// inline anonymous class like ducktyping</code><br><a target="_blank" rel="noopener" href="http://java.dzone.com/articles/duck-typing-scala-structural">http://java.dzone.com/articles/duck-typing-scala-structural</a></p>
+<h2 id="Abstract-Type-member"><a href="#Abstract-Type-member" class="headerlink" title="Abstract Type member"></a>Abstract Type member</h2><p><code>trait Job &#123;type A; def get: A&#125;</code><br><a target="_blank" rel="noopener" href="http://docs.scala-lang.org/tutorials/tour/abstract-types.html">http://docs.scala-lang.org/tutorials/tour/abstract-types.html</a></p>
+<h2 id="Type-Level-Programming"><a href="#Type-Level-Programming" class="headerlink" title="Type Level Programming:"></a>Type Level Programming:</h2><p><a target="_blank" rel="noopener" href="http://apocalisp.wordpress.com/2010/06/08/type-level-programming-in-scala/">http://apocalisp.wordpress.com/2010/06/08/type-level-programming-in-scala/</a></p>
+<h2 id="Miscellaneous"><a href="#Miscellaneous" class="headerlink" title="Miscellaneous:"></a>Miscellaneous:</h2><p><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/1025181/hidden-features-of-scala">http://stackoverflow.com/questions/1025181/hidden-features-of-scala</a></p>
+<h2 id="Last-but-not-least"><a href="#Last-but-not-least" class="headerlink" title="Last but not least:"></a>Last but not least:</h2><p><a target="_blank" rel="noopener" href="http://symbolhound.com/">Site significantly serving Scala symbol soup salvage saves spiritually severed souls</a></p>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/Scala/" rel="tag">Scala</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2014/05/11/yuki/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          至少、像那老坛酸菜牛肉面一样
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/04/12/descriptor/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          QuickNote Descriptor in Python
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

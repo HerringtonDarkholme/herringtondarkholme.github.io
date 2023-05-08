@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Rant on TypeScript type guard | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="source: Ad: hisuitei Recently TypeScript team has released TypeScript 1.4, adding a new feature called Union Type which is intended for better incorporation into native JavaScript.Type guard, as a na">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Rant on TypeScript type guard">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2015/01/17/typescript-rant/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="source: Ad: hisuitei Recently TypeScript team has released TypeScript 1.4, adding a new feature called Union Type which is intended for better incorporation into native JavaScript.Type guard, as a na">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://herringtondarkholme.github.io/images/hisuitei.jpg">
+<meta property="article:published_time" content="2015-01-17T08:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.878Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="JavaScript">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://herringtondarkholme.github.io/images/hisuitei.jpg"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-typescript-rant" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      Rant on TypeScript type guard
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2015-01-17T08:00:00.000Z" itemprop="datePublished">January 17, 2015, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/hisuitei.jpg" class="">
+<p>source: <a target="_blank" rel="noopener" href="http://hisuitei.com/">Ad: hisuitei</a></p>
+<p>Recently TypeScript team has released TypeScript 1.4, adding a new feature called <code>Union Type</code> which is intended for better incorporation into native JavaScript.<br>Type guard, as a natural dyad of union type, also comes into TypeScript world. But sadly, Microsoft choose a bizzare way to introduce type guard as they said in the <a target="_blank" rel="noopener" href="https://github.com/Microsoft/TypeScript/wiki/What%27s-new-in-TypeScript%3F#typescript-14">manual</a></p>
+<blockquote>
+<p>TypeScript now understands these conditions and will change type inference accordingly when used in an if block.</p>
+</blockquote>
+<p>It <em>accepts and only accepts</em> conditional statement like <code>if (typeof x === &#39;string&#39;)</code> as type guard.<br>TypeScript now creates new type like <code>number | string</code> meaning a type of either number or string.<br>Users can further refine the type by comparing the value <code>typeof</code> gives, like the example below:</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">createCustomer</span>(<span class="params">name: &#123; firstName: <span class="built_in">string</span>; lastName: <span class="built_in">string</span> &#125; | <span class="built_in">string</span></span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">typeof</span> name === <span class="string">&quot;string&quot;</span>) &#123;</span><br><span class="line">        <span class="comment">// Because of the typeof check in the if, we know name has type string</span></span><br><span class="line">        <span class="keyword">return</span> &#123; <span class="attr">fullName</span>: name &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// Since it&#x27;s not a string, we know name has</span></span><br><span class="line">        <span class="comment">// type &#123; firstName: string; lastName: string &#125;</span></span><br><span class="line">        <span class="keyword">return</span> &#123; <span class="attr">fullName</span>: name.<span class="property">firstName</span> + <span class="string">&quot; &quot;</span> + name.<span class="property">lastName</span> &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Both customers have type &#123; fullName: string &#125;</span></span><br><span class="line"><span class="keyword">var</span> customer = <span class="title function_">createCustomer</span>(<span class="string">&quot;John Smith&quot;</span>);</span><br><span class="line"><span class="keyword">var</span> customer2 = <span class="title function_">createCustomer</span>(&#123; <span class="attr">firstName</span>: <span class="string">&quot;Samuel&quot;</span>, <span class="attr">lastName</span>: <span class="string">&quot;Jones&quot;</span> &#125;);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>I would rather say this is a bad idea because:</p>
+<ol>
+<li>it intermixes type level constucts with value level constructs.</li>
+<li>for complex and flexible language like javascript, microsoft’s approach is unable to handle various expressions regarding types.</li>
+</ol>
+<p>Value level contructs are expression or statements dealing with values, e.g. assignment, comparison. <code>typeof</code> and <code>instanceof</code> in JavaScript are value level constructs because they generate boolean value, and their values can be passed to other variable or compared with other variable. Value type constucts do imply types, say, creating a new object of specific type, but they do not explicitly manipulate the types of expressions. There is no type casting JavaScript can do. On the other hand, type level constructs deals with types, for example, type annotation and generics.</p>
+<p>Doubling <code>typeof</code> as type guard blurs the demarcation between type level and value level, and naturally reduces program’s readability(somewhat subjective claim though). A variable can, without distinct syntax, change its type in a conditional block. <code>if</code> branching is ubiquitous typescript programs, from hello-world toys to cathedral-like projects. It’s quite hard to find the “type switch” for union type among other irrelevant <code>if</code>s. Also, one has to pay attention to call correct method of a same variable in different branches. So TypeScript’s type guard introduces a new <code>type scope</code> different from both lexical scope and function scope. It also cripples the compiler because now compiler has to check whether the condition in a <code>if</code> parentheses is type guard.</p>
+<p>What’s worse? Type guard is a value level constructs so it can interact with all other language constucts. But microsoft does not intend to support that. None of the following code compiles in TypeScript 1.4.1, but they ought to run correctly in plain javascript, if they can be compiled.</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">testNot</span>(<span class="params">x: <span class="built_in">string</span>|<span class="built_in">number</span>|<span class="built_in">Function</span></span>) &#123;</span><br><span class="line">  <span class="keyword">var</span> isNonNum = <span class="keyword">typeof</span> x !== <span class="string">&#x27;number&#x27;</span></span><br><span class="line">  <span class="keyword">if</span> (isNonNum) <span class="keyword">return</span> x.<span class="property">length</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">testReturn</span>(<span class="params">x: <span class="built_in">string</span>|<span class="built_in">number</span></span>) &#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> x === <span class="string">&#x27;number&#x27;</span>) <span class="keyword">return</span>;</span><br><span class="line">  <span class="keyword">return</span> x.<span class="property">length</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">testReturn</span>(<span class="params">x: <span class="built_in">string</span>|<span class="built_in">number</span></span>) &#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> x === <span class="string">&#x27;number&#x27;</span>) <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">Error</span>(<span class="string">&#x27;error type&#x27;</span>)</span><br><span class="line">  <span class="keyword">return</span> x.<span class="property">length</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">testFor</span>(<span class="params">xs: (<span class="built_in">string</span>|<span class="built_in">number</span>)[]</span>) &#123;</span><br><span class="line"> <span class="keyword">for</span>(<span class="keyword">var</span> i = <span class="number">0</span>, x = xs[i]; <span class="keyword">typeof</span> x === <span class="string">&#x27;string&#x27;</span>; i++) &#123;</span><br><span class="line">   <span class="variable language_">console</span>.<span class="title function_">log</span>(x.<span class="property">length</span>)</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">testWhile</span>(<span class="params">xs: [](<span class="built_in">string</span>|<span class="built_in">number</span>)</span>) &#123;</span><br><span class="line">  <span class="keyword">var</span> i = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">while</span> (<span class="keyword">typeof</span> xs[i] === <span class="string">&#x27;string&#x27;</span>) &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(xs[i].<span class="property">length</span>)</span><br><span class="line">    i++</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">testFilter</span>(<span class="params">xs: (<span class="built_in">string</span>|<span class="built_in">number</span>)[]</span>) &#123;</span><br><span class="line">  xs.<span class="title function_">filter</span>(<span class="function">(<span class="params">x</span>) =&gt;</span> <span class="keyword">typeof</span> x === <span class="string">&#x27;string&#x27;</span>).<span class="title function_">map</span>(<span class="function">(<span class="params">x</span>) =&gt;</span> x.<span class="property">length</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Indeed, TypeScript is not the first to mix type level and value level. Language constructs like <code>Pattern Match</code> also do that(and usually introduce bugs related to type inference, see scala bug track). But at least Pattern Match is a specialized syntax that does not interact much with other syntax. But Type guard is, well, too ubiquitous to be good.</p>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/JavaScript/" rel="tag">JavaScript</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2015/01/24/scala-sam/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Explaining Scala SAM type
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/12/28/yagami/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          大雅雅于俗
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

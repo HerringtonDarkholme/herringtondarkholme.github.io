@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Vue2 + TypeScript2 -- an introductory guide | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="Safety check and error detection are important to development experience. Vue has gone to great lengths to provide component information when typos or mistakes happen. But we can do better, error repo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue2 + TypeScript2 -- an introductory guide">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2016/10/03/vue2-ts2/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="Safety check and error detection are important to development experience. Vue has gone to great lengths to provide component information when typos or mistakes happen. But we can do better, error repo">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://github.com/HerringtonDarkholme/vue-ts-example/raw/master/screen.png">
+<meta property="og:image" content="https://s-media-cache-ak0.pinimg.com/originals/86/72/e6/8672e6fb04620cbcf72ab3b1222ae5b5.jpg">
+<meta property="article:published_time" content="2016-10-03T07:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.880Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="TypeScript">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/HerringtonDarkholme/vue-ts-example/raw/master/screen.png"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-vue2-ts2" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      Vue2 + TypeScript2 -- an introductory guide
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2016-10-03T07:00:00.000Z" itemprop="datePublished">October 3, 2016, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>Safety check and error detection are important to development experience. Vue has gone to <a target="_blank" rel="noopener" href="https://github.com/vuejs/vue/issues/3831#issuecomment-250996462">great lengths</a> to provide <a target="_blank" rel="noopener" href="https://github.com/vuejs/vue/pull/3656">component information</a> when typos or mistakes happen. But we can do better, error reporting can happen at compile time. This is why we want to use TypeScript with Vue.</p>
+<p><img src="https://github.com/HerringtonDarkholme/vue-ts-example/raw/master/screen.png" alt="final result"></p>
+<blockquote>
+<p>Our goal: writing Vue in TypeScript</p>
+</blockquote>
+<h2 id="Goals"><a href="#Goals" class="headerlink" title="Goals"></a>Goals</h2><p>In this guide we will finally achieve these goals:</p>
+<ul>
+<li>writing type safe vue instance declaration</li>
+<li>writing TypeScript in Vue’s <a target="_blank" rel="noopener" href="https://vuejs.org/guide/single-file-components.html">single file component</a></li>
+<li>semantic completion in pure TypeScript file</li>
+<li>type checking all TypeScript, even TypeScript in <code>*.vue</code>‘s script tag.</li>
+</ul>
+<blockquote>
+<p>All code example can be found <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/vue-ts-example">here</a>, with separte commits standing for sections in this article.</p>
+</blockquote>
+<h2 id="Prerequisite"><a href="#Prerequisite" class="headerlink" title="Prerequisite"></a>Prerequisite</h2><p>You have to know about TypeScript2.0 and Vue2.0. And optionally webpack’s knowledge is very useful. And of course if you’re reading this article you must have known <code>npm</code>.</p>
+<h2 id="Basic-setup"><a href="#Basic-setup" class="headerlink" title="Basic setup:"></a>Basic setup:</h2><p>First make a new directory for your project. And then init your new project and install dependencies.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> vue-ts-test</span><br><span class="line"><span class="built_in">cd</span> vue-ts-test</span><br><span class="line">npm init</span><br><span class="line"><span class="comment"># pressing `enter`s and done</span></span><br><span class="line">npm install vue --save</span><br><span class="line">npm install typescript --save</span><br></pre></td></tr></table></figure>
+
+<p>Note both vue and TypeScript need to be version 2. They have both definition files baked in so it’s much easier to start up with them than before. (I still respect definitely typed!)</p>
+<p>make html template, say, <code>index.html</code>:</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;app&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;node_modules/vue/dist/vue.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;app.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>Then in your <code>app.ts</code>:</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">declare</span> <span class="keyword">var</span> <span class="title class_">Vue</span>: <span class="built_in">any</span></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">Vue</span>(&#123;</span><br><span class="line">  <span class="attr">el</span>: <span class="string">&#x27;#app&#x27;</span>,</span><br><span class="line">  <span class="title function_">render</span>(<span class="params">h</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_">h</span>(<span class="string">&#x27;h1&#x27;</span>, <span class="string">&#x27;hello world&#x27;</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>And compile your code:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./node_modules/.bin/tsc app.ts</span><br></pre></td></tr></table></figure>
+
+<p>Then open <code>index.html</code> in your browswer! It should give you a hello world!</p>
+<h2 id="Exploring-Vue-with-TypeScript"><a href="#Exploring-Vue-with-TypeScript" class="headerlink" title="Exploring Vue with TypeScript"></a>Exploring Vue with TypeScript</h2><p>But there are a lot of feature missing in the above example. For example, you want a build step to combine all your scripts. You want component style co-locates with template and script, yet still sytnax highlighting  every thing.</p>
+<p>Let’s use Vue’s genius single file component. It requires <a target="_blank" rel="noopener" href="https://webpack.github.io/">webpack</a> and <a target="_blank" rel="noopener" href="http://vue-loader.vuejs.org/en/index.html">vue-loader</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">npm install webpack --save-dev</span><br><span class="line">npm install vue-loader --save-dev</span><br><span class="line">npm install css-loader --save-dev</span><br></pre></td></tr></table></figure>
+<p>Or you can use <a target="_blank" rel="noopener" href="https://github.com/vuejs/vue-cli">vue-cli</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vue init webpack-simple vue-ts-test</span><br></pre></td></tr></table></figure>
+
+<p>You need to make vue-loader to transpile your TypeScript code. <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/vue-ts-loader">vue-ts-loader</a> can work with vue-loader.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install vue-ts-loader --save-dev</span><br></pre></td></tr></table></figure>
+
+<p>And in <code>webpack.config.js</code></p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">module</span>.<span class="property">exports</span> = &#123;</span><br><span class="line">    <span class="attr">entry</span>: &#123; <span class="attr">app</span>: <span class="string">&#x27;./app.ts&#x27;</span>, &#125;,</span><br><span class="line">    <span class="attr">output</span>: &#123; <span class="attr">filename</span>: <span class="string">&#x27;app.js&#x27;</span> &#125;,</span><br><span class="line"></span><br><span class="line">    <span class="comment">// resolve TypeScript and Vue file</span></span><br><span class="line">    <span class="attr">resolve</span>: &#123;</span><br><span class="line">        <span class="attr">extensions</span>: [<span class="string">&#x27;&#x27;</span>, <span class="string">&#x27;.ts&#x27;</span>, <span class="string">&#x27;.vue&#x27;</span>, <span class="string">&#x27;.js&#x27;</span>]</span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    <span class="attr">module</span>: &#123;</span><br><span class="line">        <span class="attr">loaders</span>: [</span><br><span class="line">            &#123; <span class="attr">test</span>: <span class="regexp">/\.vue$/</span>, <span class="attr">loader</span>: <span class="string">&#x27;vue&#x27;</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">test</span>: <span class="regexp">/\.ts$/</span>, <span class="attr">loader</span>: <span class="string">&#x27;vue-ts&#x27;</span> &#125;</span><br><span class="line">        ],</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">vue</span>: &#123;</span><br><span class="line">      <span class="comment">// instruct vue-loader to load TypeScript</span></span><br><span class="line">      <span class="attr">loaders</span>: &#123; <span class="attr">js</span>: <span class="string">&#x27;vue-ts-loader&#x27;</span>, &#125;,</span><br><span class="line">      <span class="comment">// make TS&#x27; generated code cooperate with vue-loader</span></span><br><span class="line">      <span class="attr">esModule</span>: <span class="literal">true</span></span><br><span class="line">    &#125;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Now you can add write Vue code in single file component!</p>
+<p>Suppose in <code>app.vue</code></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">template</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">h1</span> @<span class="attr">click</span>=<span class="string">&quot;hello&quot;</span>&gt;</span>hello world<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">template</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span></span><br><span class="line"><span class="language-javascript">  <span class="attr">methods</span>: &#123;</span></span><br><span class="line"><span class="language-javascript">    <span class="comment">// type annotation!</span></span></span><br><span class="line"><span class="language-javascript">    <span class="title function_">hello</span>(): <span class="keyword">void</span> &#123;</span></span><br><span class="line"><span class="language-javascript">      <span class="title function_">alert</span>(<span class="string">&#x27;hello world&#x27;</span>)</span></span><br><span class="line"><span class="language-javascript">    &#125;</span></span><br><span class="line"><span class="language-javascript">  &#125;</span></span><br><span class="line"><span class="language-javascript">&#125;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>And now you can change your <code>app.ts</code> into an entry file.</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">declare</span> <span class="keyword">var</span> <span class="attr">require</span>: <span class="built_in">any</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="title class_">Vue</span> = <span class="built_in">require</span>(<span class="string">&#x27;vue&#x27;</span>)</span><br><span class="line"><span class="keyword">var</span> <span class="title class_">App</span> = <span class="built_in">require</span>(<span class="string">&#x27;./app.vue&#x27;</span>).<span class="property">default</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">Vue</span>(&#123;</span><br><span class="line">  <span class="attr">el</span>: <span class="string">&#x27;#app&#x27;</span>,</span><br><span class="line">  <span class="attr">components</span>: &#123; <span class="title class_">App</span> &#125;,</span><br><span class="line">  <span class="attr">render</span>: <span class="function"><span class="params">h</span> =&gt;</span> <span class="title function_">h</span>(<span class="string">&#x27;app&#x27;</span>)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>Now <code>webpack</code> your in your application directory. You can still see the <code>hello world</code>? Click it should give you an alert.</p>
+<p>Cool? And here is the <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/vue-ts-example/tree/f3d0d409d9b5de8b6f20b5a06b156b7313703475">source</a>.</p>
+<h2 id="Toward-a-more-type-safe-API"><a href="#Toward-a-more-type-safe-API" class="headerlink" title="Toward a more type safe API"></a>Toward a more type safe API</h2><p>Vue has a <a href="http://herringtondarkholme.github.io/2016/08/21/vue-ts/">typechecker hostile API</a>.<br>We can use helper library to get a better type checking. <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/av-ts">av-ts</a>, Awesome Vue for TypeScript, is a good start point to use.</p>
+<p>Install it by npm, again.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install --save av-ts</span><br></pre></td></tr></table></figure>
+
+<p>Then you can change your <code>app.vue</code> to this.</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">template</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">h1</span> @<span class="attr">click</span>=<span class="string">&quot;hello&quot;</span>&gt;</span>hello &#123;&#123;name&#125;&#125;<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">template</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript"><span class="comment">// import dependency</span></span></span><br><span class="line"><span class="language-javascript"><span class="keyword">import</span> &#123;<span class="title class_">Vue</span>, <span class="title class_">Component</span>&#125; <span class="keyword">from</span> <span class="string">&#x27;av-ts&#x27;</span></span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript"><span class="comment">// decorat vue class</span></span></span><br><span class="line"><span class="language-javascript">@<span class="title class_">Component</span></span></span><br><span class="line"><span class="language-javascript"><span class="keyword">export</span> <span class="keyword">default</span> <span class="keyword">class</span> <span class="title class_">App</span> <span class="keyword">extends</span> <span class="title class_ inherited__">Vue</span> &#123;</span></span><br><span class="line"><span class="language-javascript">  <span class="comment">// undecorated property will be packed in `data` option</span></span></span><br><span class="line"><span class="language-javascript">  name = <span class="string">&#x27;world&#x27;</span></span></span><br><span class="line"><span class="language-javascript">  <span class="comment">// undecorated method is just method</span></span></span><br><span class="line"><span class="language-javascript">  <span class="title function_">hello</span>(<span class="params"></span>) &#123;</span></span><br><span class="line"><span class="language-javascript">    <span class="title function_">alert</span>(<span class="string">&#x27;hello &#x27;</span> + <span class="variable language_">this</span>.<span class="property">name</span>)</span></span><br><span class="line"><span class="language-javascript">  &#125;</span></span><br><span class="line"><span class="language-javascript">&#125;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><code>webpack</code> will give you an error. Because decorator is still considered experimental. You need to switch it on explicitly.</p>
+<p>Add a <code>tsconfig.json</code> in your directory.</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;compilerOptions&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;module&quot;</span><span class="punctuation">:</span> <span class="string">&quot;commonjs&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;target&quot;</span><span class="punctuation">:</span> <span class="string">&quot;es5&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;experimentalDecorators&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>Now it compiles! Check it out in browser!</p>
+<p>av-ts has several features that isn’t present in other libraries.<br>First, <code>prop</code> is defined in class, so you can access these as properties in other methods without declaring in class again. Second, <code>data</code>, <code>render</code> and lifecycle hooks are declared by decorator, which is a mark to tell you these methods are different. Plus, their names and signatures can be checked by decorators. Third, extension is easy in av-ts. You can register new decorator, and still keep type safety.</p>
+<p>For source as a whole, you can take a look <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/vue-ts-example/tree/2609c7c754379c86788bb7bf515eb001989c0b6a">here</a>.</p>
+<h2 id="Even-more-typesafety"><a href="#Even-more-typesafety" class="headerlink" title="Even more typesafety"></a>Even more typesafety</h2><p><a target="_blank" rel="noopener" href="http://vuex.vuejs.org/en/index.html">Vuex</a> is another popular state management library for vue.</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/kilimanjaro">Kilimanjaro</a> is a type safe fork for Vuex.</p>
+<p>To create a store is familiar with its original API.</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123; create &#125; <span class="keyword">from</span> <span class="string">&#x27;kilimanjaro&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> store =</span><br><span class="line">  <span class="title function_">create</span>(&#123;<span class="attr">count</span>: <span class="number">0</span>&#125;) <span class="comment">// create a state with initial state</span></span><br><span class="line">  .<span class="title function_">getter</span>(<span class="string">&#x27;count&#x27;</span>, <span class="function"><span class="params">s</span> =&gt;</span> s.<span class="property">count</span>) <span class="comment">// a getter</span></span><br><span class="line">  .<span class="title function_">mutation</span>(<span class="string">&#x27;increment&#x27;</span>, <span class="function"><span class="params">s</span> =&gt;</span> <span class="function">() =&gt;</span> s.<span class="property">count</span>++) <span class="comment">// define a mutation</span></span><br><span class="line">  .<span class="title function_">mutation</span>(<span class="string">&#x27;decrement&#x27;</span>, <span class="function"><span class="params">s</span> =&gt;</span> <span class="function">() =&gt;</span> s.<span class="property">count</span>--) <span class="comment">// payload is in the second parameter parenthesis</span></span><br><span class="line">  .<span class="title function_">done</span>()</span><br><span class="line"></span><br><span class="line">store.<span class="title function_">commit</span>(<span class="string">&#x27;increment&#x27;</span>) <span class="comment">// make a state change</span></span><br><span class="line"><span class="comment">// store.commit(&#x27;ncrement&#x27;) // typo won&#x27;t compile! magic!</span></span><br></pre></td></tr></table></figure>
+
+<p>By heavy use of string literal type and overloading, kilimanjaro provides a similiar type safe API to vuex.<br>If you mistakenly commit a wrong mutation name, or the mutation payload does not have correct type, kilimanjaro will make TypeScript compiler report that for you.</p>
+<p>There is also component helper in kilimanjaro. Check the example below</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123;<span class="title class_">Vuex</span>, getHelper&#125; <span class="keyword">from</span> <span class="string">&#x27;kilimanjaro&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> &#123; getters, commit &#125; = <span class="title function_">getHelper</span>(store)</span><br><span class="line"></span><br><span class="line"><span class="meta">@Componet</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">App</span> <span class="keyword">extends</span> <span class="title class_ inherited__">Vue</span> &#123;</span><br><span class="line">  <span class="meta">@Vuex</span> <span class="attr">count</span>: <span class="built_in">number</span> = <span class="title function_">getters</span>(<span class="string">&#x27;count&#x27;</span>)</span><br><span class="line">  <span class="meta">@Vuex</span> <span class="attr">add</span>: <span class="title class_">Function</span> = <span class="title function_">commit</span>(<span class="string">&#x27;increment&#x27;</span>)</span><br><span class="line">  <span class="comment">// @Vuex typo: Function = commit(&#x27;ncrement&#x27;) // won&#x27;t compile</span></span><br><span class="line">  <span class="comment">// @Vuex wrong: string = getters(&#x27;count&#x27;) // type incompatible</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>You can get component helpers by calling <code>getHelper</code>. Helpers are function that take a getter&#x2F;mutation&#x2F;action name and return corresponding result. Given a mutation name, <code>commit</code> helper will return a function that, once called, changes store state. The similiar for <code>dispatch</code> helper.</p>
+<p><code>getters</code> is more magical. Given a getter name, it will return a <em>symbol</em> with correct result type. But at runtime, it will be changed to a <code>computed</code> accessor in the VM. The magic is done by the <code>Vuex</code> decorator, which is an extension of <code>av-ts</code>. Like mentioned above, av-ts is a very extensible library.</p>
+<blockquote>
+<p>For a working example, you can take a look <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/vue-ts-example">here</a>. And <a href="https://herringtondarkholme.github.io/vue-ts-example/">Live demo</a> is here.</p>
+</blockquote>
+<p>Vue-router is type safe enough for pragmatic usage. It is really a well written and designed library. Designing a library that provides 100% type safety is just an overkill bringing marginal benefits at huge cost of debugging compiling error.<br>If vue-router cannot cater for a type paranoid, this <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/paranoid-router">sketch</a> will be interesting.</p>
+<h2 id="Limitation"><a href="#Limitation" class="headerlink" title="Limitation"></a>Limitation</h2><p>You might want even more features from TypeScript, say</p>
+<ul>
+<li>semantic completion in single file component</li>
+<li>type checking template code</li>
+</ul>
+<p><img src="https://s-media-cache-ak0.pinimg.com/originals/86/72/e6/8672e6fb04620cbcf72ab3b1222ae5b5.jpg" alt="go home, you&#39;re drunk"></p>
+<p>They are way way hard to implement. Semantic completion in <code>vue</code> file requires editor support and <a target="_blank" rel="noopener" href="https://github.com/Microsoft/TypeScript/pull/10160">compiler support</a>. None of them is easy to implement.</p>
+<p>You can write your vm code in a separate file and import into your vue template. But that is opposite to the design philosophy of single file component. In reality, keeping <code>vue</code> small and clean is better choice. With small number of symbols in source file, generic completion should also work well. (at least as well as plain JavaScript)</p>
+<p>Template code is an even more heculean task. Vue compiles its template into <code>with(this) &#123; ... &#125;</code> format (<a target="_blank" rel="noopener" href="http://vuejs.org/guide/render-function.html">doc</a>). <code>with</code> statements are not checked in TypeScript, nor flow-type. Plus, vue compiler does analyze no expression, making it impossible to do checking without reimplementing a compiler. However, again, it is no worse than plain JavaScript.</p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>Vue is an elegant and lightweight library. With the integration of TypeScript, Vue can be more safe and productive!</p>
+<p>Compared to other frameworks, you can instantly get precompiled template code, small code footprint, flat learning curve.<br>But when it comes to scale bigger, you might want additional help.</p>
+<p>There are overhead to integrate TypeScript with Vue, indeed. But the error checking and refactoring help still worth your try.</p>
+<p>Tools we used to achieve type-safety</p>
+<ul>
+<li>TypeScript2 and Vue2, for their definition files</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/vue-ts-loader">vue-ts-loader</a>: load TypeScript in vue’s single file component</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/av-ts">av-ts</a>: wrap vue’s API in type safe way</li>
+</ul>
+<p>Optionally</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/kilimanjaro">kilimanjaro</a>: type safe vuex, requires deeper understanding of TypeScript’s advanced features.</li>
+</ul>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/TypeScript/" rel="tag">TypeScript</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2016/11/01/how-to-choose-vue-library/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Compare TypeScript libraries for Vue -- a review
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/10/02/vue-router/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          Type Safe Routing for Vue.js
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

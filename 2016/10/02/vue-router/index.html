@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Type Safe Routing for Vue.js | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="Vue router is elegant and type safe enough for most use cases. But I want to experiment how far typescript can help us. Typesafe routing isn’t easy to do. The easiest way to declare multiple class and">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Type Safe Routing for Vue.js">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2016/10/02/vue-router/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="Vue router is elegant and type safe enough for most use cases. But I want to experiment how far typescript can help us. Typesafe routing isn’t easy to do. The easiest way to declare multiple class and">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2016-10-02T07:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.879Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="TypeScript">
+<meta name="twitter:card" content="summary"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-vue-router" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      Type Safe Routing for Vue.js
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2016-10-02T07:00:00.000Z" itemprop="datePublished">October 2, 2016, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>Vue router is elegant and type safe enough for most use cases. But I want to experiment how far typescript can help us.</p>
+<p>Typesafe routing isn’t easy to do.</p>
+<p>The easiest way to declare multiple class and instantatiate their paramater type. For example, <a target="_blank" rel="noopener" href="https://github.com/angryzor/typesafe-urls">typed-url</a>. But this is too verbose.</p>
+<p>Another approach is to use functional <strong>combinator</strong>. To put it simple, combinator is high order function that can abstract various operation. Routing combinators usually are a bunch of functions that can accept strings as static url segment or a function as dynamic url parameter. Both <a target="_blank" rel="noopener" href="https://github.com/slamdata/purescript-routing/blob/master/GUIDE.md">purescript</a> and <a target="_blank" rel="noopener" href="https://speakerdeck.com/inamiy/type-safe-url-routing-in-swift">swift</a>. But monad is too monad-y. My head just explodes.</p>
+<p>One unique way to provide type routing is using reified generic! A demo <a target="_blank" rel="noopener" href="https://vimeo.com/172310206">video</a> has illustrted how to implment it.(Spoiler: for a function with type <code>A =&gt; Response</code>, one can access the class by  <code>A.type</code> and cast value by <code>guard let param: A = ....</code> in swift. Whoa, reification is powerful). Github repo is here: <a target="_blank" rel="noopener" href="https://github.com/NougatFramework/Switchboard">https://github.com/NougatFramework/Switchboard</a></p>
+<p>Compile time reflection is ideal for routing thing. Yesod uses template haskell to do this, <a target="_blank" rel="noopener" href="https://github.com/AndrewRademacher/routing-comparison/blob/master/yesod-test/src/Main.hs">Example</a>. Macro paradise!</p>
+<p>Scala has yet another unique construct called pattern match.  Tumblr’s <a target="_blank" rel="noopener" href="https://tumblr.github.io/colossus/">colossus</a> is a great example to use pattern match for type safe routing.</p>
+<p>And of course, haskell has many type safe routing library. Check out the <a target="_blank" rel="noopener" href="https://github.com/scotty-web/scotty/issues/60">review</a> for more info.</p>
+<p>JavaScript does not have powerful constructs like macro&#x2F;pattern match. Combinator is the only way to achieve type safety but for client side component based routing, declaring more functions solely for routing doesn’t feel natural. And specifically TypeScript is still too feeble to describe routing. However, by combining tagged template, function overloading (or fun-dep), and intersection type (or row polymorphism), we can still do some interesting thing. If this were written in flow-type, more interesting thing could happen.</p>
+<p>Frankly type safety in router does not grant you much: it cannot check tempalte code, it can only help you to double check the shape of parameters in <code>$route</code>. It can help you to type <code>router</code> instance better, but requires all routes to have a <code>name</code> field.</p>
+<p>This is only a sketch for type safe routing design. Useful? No. Concise? Partly. Safety outweighs ease of use? No. Maybe it’s only suitable for type safe paranoid.</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">interface</span> <span class="title class_">Route</span>&lt;T&gt; &#123;</span><br><span class="line">  &lt;K <span class="keyword">extends</span> <span class="built_in">string</span>, C&gt;(<span class="attr">c</span>: <span class="title class_">StaticRouteConfig</span>&lt;K, C&gt;): <span class="title class_">Routes</span>&lt;<span class="title class_">StaticRouteAct</span>&lt;K&gt; &amp; C &amp; T&gt;</span><br><span class="line">  &lt;K <span class="keyword">extends</span> <span class="built_in">string</span>, R, P <span class="keyword">extends</span> R, C&gt;(<span class="attr">c</span>: <span class="title class_">RouteConfig</span>&lt;K, R, P, C&gt;): <span class="title class_">Routes</span>&lt;<span class="title class_">RouteAct</span>&lt;K, P&gt; &amp; C &amp; T&gt;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">interface</span> <span class="title class_">StaticRouteAct</span>&lt;K&gt; &#123;</span><br><span class="line">  (<span class="attr">location</span>: &#123;<span class="attr">name</span>: K&#125;): <span class="built_in">void</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">interface</span> <span class="title class_">RouteAct</span>&lt;K, T&gt; &#123;</span><br><span class="line">  (<span class="attr">location</span>: &#123;<span class="attr">name</span>: K, <span class="attr">params</span>: T&#125;): <span class="built_in">void</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">interface</span> <span class="title class_">Router</span>&lt;T&gt; &#123;</span><br><span class="line">  <span class="attr">push</span>: T</span><br><span class="line">  <span class="attr">replace</span>: T</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">interface</span> <span class="title class_">Routes</span>&lt;T&gt; &#123;</span><br><span class="line">  <span class="attr">route</span>: <span class="title class_">Route</span>&lt;T&gt;</span><br><span class="line">  <span class="attr">done</span>: <span class="function">() =&gt;</span> <span class="title class_">Router</span>&lt;T&gt;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">interface</span> <span class="title class_">StaticRouteConfig</span>&lt;K <span class="keyword">extends</span> <span class="built_in">string</span>, C&gt; &#123;</span><br><span class="line">  <span class="attr">name</span>: K</span><br><span class="line">  <span class="attr">path</span>: <span class="title class_">StaticPath</span>,</span><br><span class="line">  children?: <span class="function">(<span class="params">p: OriginPath</span>) =&gt;</span> <span class="title class_">Routes</span>&lt;C&gt;</span><br><span class="line">  component?: &#123;$routes?: &#123;params?: &#123;&#125;&#125;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">interface</span> <span class="title class_">RouteConfig</span>&lt;K <span class="keyword">extends</span> <span class="built_in">string</span>, R, P <span class="keyword">extends</span> R, C&gt;&#123;</span><br><span class="line">  <span class="attr">name</span>: K</span><br><span class="line">  <span class="attr">path</span>: <span class="title class_">Path</span>&lt;P&gt;,</span><br><span class="line">  children?: <span class="function">(<span class="params">p: PathMaker&lt;P&gt;</span>) =&gt;</span> <span class="title class_">Routes</span>&lt;C&gt;</span><br><span class="line">  component?: &#123;$routes?: &#123;params?: R&#125;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">interface</span> <span class="title class_">Path</span>&lt;T&gt; &#123;</span><br><span class="line">  <span class="attr">__pathBrand</span>: T</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">interface</span> <span class="title class_">StaticPath</span> <span class="keyword">extends</span> <span class="title class_">Path</span>&lt;&#123;&#125;&gt; &#123;</span><br><span class="line">  <span class="attr">__staticPathBrand</span>: <span class="built_in">never</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">interface</span> <span class="title class_">PathMaker</span>&lt;<span class="title class_">Parent</span>&gt; &#123;</span><br><span class="line">  &lt;A, B&gt;(<span class="attr">t</span>: <span class="title class_">TemplateStringsArray</span>, <span class="attr">n</span>: A, <span class="attr">n2</span>: B): <span class="title class_">Path</span>&lt;A &amp; B &amp; <span class="title class_">Parent</span>&gt;</span><br><span class="line">  &lt;A&gt;(<span class="attr">t</span>: <span class="title class_">TemplateStringsArray</span>, <span class="attr">n</span>: A): <span class="title class_">Path</span>&lt;A &amp; <span class="title class_">Parent</span>&gt;</span><br><span class="line">  (<span class="attr">t</span>: <span class="title class_">TemplateStringsArray</span>): <span class="title class_">Path</span>&lt;<span class="title class_">Parent</span>&gt;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">interface</span> <span class="title class_">OriginPath</span> &#123;</span><br><span class="line">  <span class="attr">__originPathBrand</span>: <span class="built_in">never</span></span><br><span class="line">  &lt;A, B&gt;(<span class="attr">t</span>: <span class="title class_">TemplateStringsArray</span>, <span class="attr">n</span>: A, <span class="attr">n2</span>: B): <span class="title class_">Path</span>&lt;A &amp; B&gt;</span><br><span class="line">  &lt;A&gt;(<span class="attr">t</span>: <span class="title class_">TemplateStringsArray</span>, <span class="attr">n</span>: A): <span class="title class_">Path</span>&lt;A&gt;</span><br><span class="line">  (<span class="attr">t</span>: <span class="title class_">TemplateStringsArray</span>): <span class="title class_">StaticPath</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> <span class="title class_">UserComponent</span> =  &#123;<span class="attr">$routes</span>: &#123;<span class="attr">params</span>: &#123; <span class="attr">uid</span>: <span class="string">&#x27;333&#x27;</span>&#125;&#125;&#125;</span><br><span class="line"><span class="keyword">const</span> <span class="attr">unimplement</span>: <span class="built_in">never</span> = <span class="literal">null</span> <span class="keyword">as</span> <span class="built_in">never</span></span><br><span class="line"><span class="keyword">const</span> <span class="attr">route</span>: <span class="title class_">Route</span>&lt;<span class="built_in">never</span>&gt; = unimplement</span><br><span class="line"><span class="keyword">const</span> <span class="attr">p</span>: <span class="title class_">OriginPath</span> = unimplement</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> rs =</span><br><span class="line"><span class="title function_">route</span>(&#123;</span><br><span class="line">  <span class="attr">path</span>: p<span class="string">`user/<span class="subst">$&#123;&#123;uid: <span class="string">&#x27;&#x27;</span>&#125;&#125;</span>/profile/<span class="subst">$&#123;&#123;pageType: <span class="string">&#x27;&#x27;</span>&#125;&#125;</span>`</span>,</span><br><span class="line">  <span class="attr">name</span>: <span class="string">&#x27;user&#x27;</span>,</span><br><span class="line">  <span class="attr">component</span>: <span class="title class_">UserComponent</span>,</span><br><span class="line">  <span class="attr">children</span>: <span class="function"><span class="params">p</span> =&gt;</span> <span class="title function_">route</span>(&#123;</span><br><span class="line">    <span class="attr">name</span>: <span class="string">&#x27;tab&#x27;</span>,</span><br><span class="line">    <span class="attr">path</span>: p<span class="string">`tab/<span class="subst">$&#123;&#123;tab: <span class="string">&#x27;&#x27;</span>&#125;&#125;</span>`</span>,</span><br><span class="line">    <span class="attr">component</span>: &#123;<span class="attr">$routes</span>: &#123;<span class="attr">params</span>: &#123;<span class="attr">uid</span>: <span class="string">&#x27;123&#x27;</span>, <span class="attr">tab</span>: <span class="string">&#x27;333&#x27;</span>&#125;&#125;&#125;,</span><br><span class="line">  &#125;)</span><br><span class="line">&#125;)</span><br><span class="line">.<span class="title function_">route</span>(&#123;</span><br><span class="line">  <span class="attr">path</span>: p<span class="string">`post`</span>,</span><br><span class="line">  <span class="attr">name</span>: <span class="string">&#x27;post&#x27;</span></span><br><span class="line">&#125;)</span><br><span class="line">.<span class="title function_">done</span>()</span><br><span class="line"></span><br><span class="line">rs.<span class="title function_">push</span>(&#123;<span class="attr">name</span>: <span class="string">&#x27;post&#x27;</span>&#125;)</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/TypeScript/" rel="tag">TypeScript</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2016/10/03/vue2-ts2/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Vue2 + TypeScript2 -- an introductory guide
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/08/21/vue-ts/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          Type Safety in Vue.js
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

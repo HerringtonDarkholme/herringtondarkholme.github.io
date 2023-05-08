@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Request is a good lib | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="source: pixiv Web scrapping is a common task for script languages like python.Yet Python standard libraries provide twisted utility to couple with this simple task. urllib[23$] ruins my python newbie">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Request is a good lib">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2014/02/02/python-request/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="source: pixiv Web scrapping is a common task for script languages like python.Yet Python standard libraries provide twisted utility to couple with this simple task. urllib[23$] ruins my python newbie">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://herringtondarkholme.github.io/images/python-request.jpg">
+<meta property="article:published_time" content="2014-02-02T08:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.876Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="Python">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://herringtondarkholme.github.io/images/python-request.jpg"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-python-request" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      Request is a good lib
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-02-02T08:00:00.000Z" itemprop="datePublished">February 2, 2014, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/python-request.jpg" class="">
+<p>source: <a target="_blank" rel="noopener" href="http://www.pixiv.net/member_illust.php?mode=big&illust_id=41320823">pixiv</a></p>
+<p>Web scrapping is a common task for script languages like python.<br>Yet Python standard libraries provide twisted utility to couple with this simple task. <code>urllib[23$]</code> ruins my python newbie days.<br>To achieve cookie support, you have to import cookielib, create a new cookie jar via the factory method, subclass a opener from the urllib, and finally use the forged opener to make a request.</p>
+<p>Bloated boilerplate code does not seem pythonic at all. We want a simple scrapping utility that provides concise API like http verbs and, preferably, automatic session management. <strong>Request</strong> is the library comes to rescue.</p>
+<p>The structure of Request:</p>
+<ul>
+<li>model</li>
+<li>session</li>
+<li>adapter</li>
+<li>api</li>
+<li>etc…</li>
+</ul>
+<p><code>model</code> irons response and request parameters into unified objects. Both <code>Request</code> and <code>Response</code> supports generator style and file style. Magic methods empowers <code>Request</code> pythonic syntax. The most dirty works(say, encoding stuffs) lies here.</p>
+<p><code>session</code> acts as controller in  MVC design. It combines adapter, which sends request, authentication and cookie session. Request’s streamlined API stems from an interface mocking real browsers.</p>
+<p><code>adapter</code> is a wrapper of urllib3, supporting connection pool management, <code>keep-alive</code> request and proxies.</p>
+<p><code>api</code> is just an alias for <code>1. open session 2. prepare request 3. send request</code>. And all other modules are helpers that do stuffs like encoding and making auth token.</p>
+<p>The design philosophy under Request is : <code>Simple is better than functionality</code>, however, it still grants users plenty of features.<br>Specific as the library aims to be, the philosophy underlying it applies much wider. jQuery’s almighty $, Chrome’s omnipotent omnibox, Google’s preeminent search engine and etc. Simplicity rocks, Usability counts.</p>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/Python/" rel="tag">Python</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2014/02/17/generator/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Breadth First Search without Queue
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/01/31/vimscript/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          Vimscript the terrible way
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

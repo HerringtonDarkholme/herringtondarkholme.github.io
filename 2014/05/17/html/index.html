@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>magic HTML.js | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="source: pixiv HTML.js is a library full of syntactic sugar. It changes html elements dynamically so that the methods reflect their children node. For example, code like HTML.body.header.hgroup.h1 uti">
+<meta property="og:type" content="article">
+<meta property="og:title" content="magic HTML.js">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2014/05/17/html/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="source: pixiv HTML.js is a library full of syntactic sugar. It changes html elements dynamically so that the methods reflect their children node. For example, code like HTML.body.header.hgroup.h1 uti">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://herringtondarkholme.github.io/images/html.jpg">
+<meta property="article:published_time" content="2014-05-17T07:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.874Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="JavaScript">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://herringtondarkholme.github.io/images/html.jpg"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-html" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      magic HTML.js
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-05-17T07:00:00.000Z" itemprop="datePublished">May 17, 2014, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/html.jpg" class="">
+<p>source: <a target="_blank" rel="noopener" href="http://www.pixiv.net/member_illust.php?mode=medium&illust_id=43531055">pixiv</a></p>
+<p>HTML.js is a library full of syntactic sugar. It changes html elements dynamically so that the methods reflect their children node. For example, code like HTML.body.header.hgroup.h1 utilizes chain methods to mirror the structure of dom.</p>
+<p>ES5 <code>Object.defineProperty</code> and <code>mutationObserver</code> conjure up the magic. HTML.js provides an eponymous HTML api object initialized by an internal <code>node</code> method, which add all <em>tag</em> methods to its argument object. All <em>tag</em> methods are defined by <code>Object.defineProperty</code> with <code>get</code> option. So tag methods behave like getter methods: every time user access these attributes, tag methods return <em>HTMLifyed</em> elements that are ready to be chained (HTMLifyed elements are normal HTMLElements that have been extended by the internal node method mentioned above).</p>
+<p>Enable tag methods responsive to dom manipulation, HTML opts for mutationObserver to keep an eye on the root element. Once elements have been changed, mutationObserver detects the change and notifies HTML to refresh methods of the corresponding elements.</p>
+<p>However, syntactic sweetheart fails to belie some design deficits and practical problems in this library. <code>Getter</code> methods abstain legacy browsers that still occupy about 10% market share. MutationObserver itself is not that horribly slow, but registering a watchdog on <html> is almost certainly a performance killer for massive dom manipulations.</p>
+<p>But the most notorious code smell comes from yet another place, a pure design decision that functions returning either element or array. It is certainly one of the most sloppy practice in dynamic language. In static typed language those function can only have return type <code>Any</code>. Surely this is not informative and bothers user to take the risk of casting results. Indeed, the author mentioned this on the <a target="_blank" rel="noopener" href="http://nbubna.github.io/HTML/">homepage</a> and tried defend this api design by the excuse of conditional context where users can avoid quandary. But a good library shall be as much care-free as possible. Providing api that returns one single element is probably better than  leaving the users to guarantee element’s uniqueness. Ad-hoc polymorphism is determined by function arguments, not return type.</p>
+<p>HTML’s api reminds me of the keyword <code>null</code>.  Admittedly it is theoretically feasible to entrust programmers with the role of checking uniqueness&#x2F;existence. But why ぬるぽ is still one of the most prominent haunting apparition in our code?</p>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/JavaScript/" rel="tag">JavaScript</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2014/07/07/scaloid/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          How to set up a scaloid project from scratch
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/05/11/yuki/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          至少、像那老坛酸菜牛肉面一样
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Grok React Server Component by Quizzes | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="React Server Component is a new React architecture that the React team introduced at the end of 2020, which enables developers to render components on the server side, thereby boosting performance and">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Grok React Server Component by Quizzes">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2023/07/09/server-component/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="React Server Component is a new React architecture that the React team introduced at the end of 2020, which enables developers to render components on the server side, thereby boosting performance and">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2023-07-10T05:26:14.000Z">
+<meta property="article:modified_time" content="2023-05-08T04:29:13.326Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="React">
+<meta name="twitter:card" content="summary"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-server-component" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      Grok React Server Component by Quizzes
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2023-07-10T05:26:14.000Z" itemprop="datePublished">July 9, 2023, 10:26 PM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>React Server Component is a new React architecture that the React team introduced at the end of 2020, which enables developers to render components on the server side, thereby boosting performance and streamlining code.</p>
+<p>However, this innovation, though already more than two years old, still poses some novel challenges and issues, and many React experts are baffled or perplexed by it.<br>I believe it’s not only me how are confused by the heated discussion on Twitter and hours long video explaining the new paradigm.<br><a target="_blank" rel="noopener" href="https://twitter.com/dan_abramov">Dan Abramov</a> presented <a target="_blank" rel="noopener" href="https://twitter.com/dan_abramov/status/1648923232937058304">three quizzes</a> about React Server Component, arguably the hottest topic in the React community, to help the audience to understand the new technology better.</p>
+<p>This article will analyze the three quizzes that half of the React experts on Twitter didn’t get it right. I hope this can help you understand the RSC better.</p>
+<blockquote>
+<p>TLDR: React will render Client Component as a reference to the script on the server side, and Server Component will be streamed and rendered as a JSON-like UI. The references and JSON will be passed to the browser for coordination and view updates.</p>
+</blockquote>
+<h1 id="The-Three-RSC-Quizzes"><a href="#The-Three-RSC-Quizzes" class="headerlink" title="The Three RSC Quizzes"></a>The Three RSC Quizzes</h1><h2 id="First-Quiz"><a href="#First-Quiz" class="headerlink" title="First Quiz"></a>First Quiz</h2><figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">Note</span>(<span class="params">&#123; note &#125;</span>) &#123;</span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    <span class="language-xml"><span class="tag">&lt;<span class="name">Toggle</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">      <span class="tag">&lt;<span class="name">Details</span> <span class="attr">note</span>=<span class="string">&#123;note&#125;</span> /&gt;</span></span></span><br><span class="line"><span class="language-xml">    <span class="tag">&lt;/<span class="name">Toggle</span>&gt;</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>the <em>only</em> Client Component out of these is Toggle. It has state (<code>isOn</code>, initially false). It returns <code>&lt;&gt;&#123;isOn ? children : null&#125;&lt;/&gt;</code>.</p>
+<p>what happens when you <code>setIsOn(true)</code>?</p>
+<ul>
+<li>Details gets fetched</li>
+<li>Details appears instantly</li>
+</ul>
+<h2 id="Second-Quiz"><a href="#Second-Quiz" class="headerlink" title="Second Quiz"></a>Second Quiz</h2><p>Now say <code>isOn</code> is true. You’ve edited the note and told the router to “refresh” the route. This refetches the RSC tree for this route, and your <code>Note</code> server component receives a note prop with latest DB content.</p>
+<p>(1) does <code>Toggle</code> state get reset?<br>(2) does <code>Details</code> show fresh content?</p>
+<ul>
+<li>(1) yes and (2) yes</li>
+<li>(1) yes and (2) no</li>
+<li>(1) no and (2) yes</li>
+<li>(1) no and (2) no</li>
+</ul>
+<h2 id="Third-Quiz"><a href="#Third-Quiz" class="headerlink" title="Third Quiz"></a>Third Quiz</h2><p>Here’s a little twist.</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;<span class="title class_">Layout</span></span><br><span class="line">  left=&#123;<span class="language-xml"><span class="tag">&lt;<span class="name">Sidebar</span> /&gt;</span></span>&#125;</span><br><span class="line">  right=&#123;<span class="language-xml"><span class="tag">&lt;<span class="name">Content</span> /&gt;</span></span>&#125;</span><br><span class="line">/&gt;</span><br></pre></td></tr></table></figure>
+
+<p>All are Server components. But now your want to add a bit of state to <code>Layout</code>, like column width, that changes on mouse drag.</p>
+<p>Can you make <code>Layout</code> a Client component? If yes, what happens on drag?</p>
+<hr>
+<p>I believe some readers who don’t know RSC may be completely confused after reading these three questions and don’t understand what they are asking. So at first, we will briefly introduce what is RSC for those who are new here. If you already know the purpose of RSC, you can skip the section safely.</p>
+<h1 id="What-is-React-Server-Component"><a href="#What-is-React-Server-Component" class="headerlink" title="What is React Server Component?"></a>What is React Server Component?</h1><p>React Server Component is a special React component that does not run on the browser side, but instead on the server side. So that it can directly access the server’s data and resources, without obtain them through indirection APIs like REST or GraphQL, etc.</p>
+<p>React Server Component is a pattern that can help us reduce the number of network requests and the size of data, thereby improving the page loading speed and user experience. React Server Component can also serve dynamic content to users according to different requests and parameters, without having to recompile or deploy.</p>
+<p>The purpose of React Server Component is to let developers build applications that span the server and client, combining the rich interactivity of client-side applications and the optimized performance of traditional server rendering.<br>React Server Component can solve some problems that existing technologies cannot solve or solve well, such as:</p>
+<ul>
+<li><p>Zero package size: React Server Component’s code only runs on the server side and will never be downloaded to the client side, so it does not affect the client’s package size and startup time. The client only receives the rendered results of RSC.</p>
+</li>
+<li><p>Full access to backend: React Server Component can directly access backend data sources, such as databases, file systems or microservices without additional API endpoints.</p>
+</li>
+<li><p>Automatic code splitting: React Server Component can dynamically choose which client components to render, so that the client only downloads the necessary code.</p>
+</li>
+<li><p>No client-server waterfall: React Server Component can load data on the server and pass it as props to client components, thus avoiding the client-server waterfall problem.</p>
+</li>
+<li><p>Avoid abstraction tax: React Server Component can use native JavaScript syntax and features, such as <code>async</code> and <code>await</code>, without having to use specific libraries or frameworks to implement data fetching or rendering logic.</p>
+</li>
+</ul>
+<h1 id="Server-Component-and-Client-Component"><a href="#Server-Component-and-Client-Component" class="headerlink" title="Server Component and Client Component"></a>Server Component and Client Component</h1><p>Before understanding how RSC works, we must first understand two big concepts in RSC, server-side components (Server Component) and client-side components (Client Component).</p>
+<h2 id="Server-Component"><a href="#Server-Component" class="headerlink" title="Server Component"></a>Server Component</h2><p>As the name suggests, server components run only once per request on the server, so they have no state and cannot use features that only exist on the client. Specifically:</p>
+<ul>
+<li>❌ You cannot use state and side effects, because they (conceptually) run only once per request on the server. So <code>useState</code>(), <code>useReducer</code>(), <code>useEffect</code>() and <code>useLayoutEffect</code>() are not supported. You also cannot use custom hooks that depend on state or side effects.</li>
+<li>❌ You cannot use browser-specific APIs, such as DOM (unless you polyfill them on the server).</li>
+<li>✅ You can use <code>async</code>&#x2F;<code>await</code> to access server data sources, such as databases, internal (micro) services, file systems, etc.</li>
+<li>✅ You can render other server components, native elements (<code>div</code>, <code>span</code>, etc.) or client components.</li>
+</ul>
+<p>Developers can also create some custom hooks or libraries designed for the server. All rules for server components apply. For example, a use case for a server hook is to provide some helper functions for accessing server data sources.</p>
+<h2 id="Client-Component"><a href="#Client-Component" class="headerlink" title="Client Component"></a>Client Component</h2><p>Client Component is a standard React component. It obeys all the rules we learnt about React before. The new rules to consider are mainly what they can’t import server components.</p>
+<ul>
+<li>❌ Cannot not import server components or call server hooks&#x2F;libraries, because they only work on the server. However, server components can pass another server component as children to a client component.</li>
+<li>❌ Cannot not use server-only data sources.</li>
+<li>✅ You can use state and side effects, as well as custom React hooks.</li>
+<li>✅ You can use browser APIs.</li>
+</ul>
+<p>Here we need to emphasize the nesting of server components and client components. Although client components cannot directly import server components, they can use server components as children. For example, you can write code like <code>&lt;ClientTabBar&gt;&lt;ServerTabContent/&gt;&lt;/ClientTabBar&gt;</code>. From the perspective of the client component, its child component will be a rendered tree, such as the output of <code>ServerTabContent</code>. This means that server and client components can be nested and interleaved at any level. We will explain this design in later quizzes.</p>
+<h1 id="How-RSC-works"><a href="#How-RSC-works" class="headerlink" title="How RSC works?"></a>How RSC works?</h1><p>After understanding server components and client components, we can now start to learn how RSC works. RSC rendering is divided into two major phases: initial loading and view updating. There are also two environments for RSC: server and browser. Note that although server components only <em>run</em> on the server, the browser also needs to be aware of them for actual view creation or updating. Client components are similar.</p>
+<h2 id="Initial-loading"><a href="#Initial-loading" class="headerlink" title="Initial loading"></a>Initial loading</h2><h3 id="Server"><a href="#Server" class="headerlink" title="Server"></a>Server</h3><ul>
+<li>[Framework] The framework’s routing matches the requested URL with a server component, passing route parameters as props to the component. Then it calls React to render the component and its props.</li>
+<li>[React] React renders the root server component, and recursively renders any child components that are also server components.</li>
+<li>[React] Rendering stops at native components (div, span, etc.) and client components. Native components are streamed in a JSON description of the UI, and client components are streamed in a serialized props plus a reference to the component code.</li>
+<li>[Framework] The framework is responsible for streaming the rendered output to the client as React renders each UI unit.</li>
+</ul>
+<p>By default React returns a description of the rendered UI, which is a JSON-like data structure, rather than HTML. Using JSON data will allow new data to be more easily reconciled with existing client components. Of course, frameworks can choose to combine server components with “server-side rendering” (SSR) so that the initial render is also streamed as HTML, which will speed up the initial non-interactive display of the page.</p>
+<p>On the server, if any server component suspends, React will pause rendering that subtree and send client a placeholder value. When the component is able to continue (un<code>suspend</code>), React will re-render the component and stream the actual result of the component to the client. You can think of the data being streamed to the browser as JSON, but with slots for suspended components, where the values for those slots are provided as additional items in the response stream later.</p>
+<p>Let’s dive into the RSC protocol a little bit by looking at an example of rendering a UI description to help us understand this paragraph. Note this paragraph might not be precise and RSC implementation might change in the future.</p>
+<p>Suppose we want to render a div.</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span>&gt;</span></span><br><span class="line">  Hello World</span><br><span class="line">  <span class="tag">&lt;<span class="name">ClientComponent</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>After calling <code>React.createElement</code>, a data structure similar to the following is generated.</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">$$typeof</span>: <span class="title class_">Symbol</span>(react.<span class="property">element</span>),</span><br><span class="line">  <span class="comment">// element tag</span></span><br><span class="line">  <span class="attr">type</span>: <span class="string">&quot;div&quot;</span>,</span><br><span class="line">  <span class="attr">props</span>: &#123;</span><br><span class="line">    <span class="attr">children</span>: [</span><br><span class="line">      <span class="comment">// static text</span></span><br><span class="line">      <span class="string">&quot;Hello World&quot;</span>,</span><br><span class="line">      <span class="comment">// client compoennt</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="attr">$$typeof</span>: <span class="title class_">Symbol</span>(react.<span class="property">module</span>.<span class="property">reference</span>),</span><br><span class="line">        <span class="attr">type</span>: &#123;</span><br><span class="line">          <span class="attr">name</span>: <span class="string">&quot;ClientComponent&quot;</span>,</span><br><span class="line">          <span class="attr">filename</span>: <span class="string">&quot;./src/ClientComponent.js&quot;</span></span><br><span class="line">        &#125;,</span><br><span class="line">      &#125;,</span><br><span class="line">    ]</span><br><span class="line">  &#125;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This data structure will be streamed to browser, in format like this:</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Sever Component Ouptut</span></span><br><span class="line">[<span class="string">&quot;$&quot;</span>,<span class="string">&quot;div&quot;</span>,<span class="literal">null</span>,&#123;<span class="string">&quot;children&quot;</span>:[<span class="string">&quot;Hello World&quot;</span>, [<span class="string">&quot;$&quot;</span>,<span class="string">&quot;$L1&quot;</span>,<span class="literal">null</span>,&#123;&#125;]]&#125;]</span><br><span class="line"><span class="comment">// Client Component Reference</span></span><br><span class="line"><span class="number">1</span>:I&#123;<span class="string">&quot;id&quot;</span>:<span class="string">&quot;./src/ClientComponent.js&quot;</span>,<span class="string">&quot;chunks&quot;</span>:[<span class="string">&quot;client1&quot;</span>],<span class="string">&quot;name&quot;</span>:<span class="string">&quot;ClientComponent&quot;</span>,<span class="string">&quot;async&quot;</span>:<span class="literal">false</span>&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The first array represents the output of a Server Component, and you can see that its output is similar to React’s data structure, except that the structure is not an object but an array.<br>The array element <code>$</code> represents <code>createElement</code>, and the following element <code>&#123;children: xxx&#125;</code> represents props. In children, the first child is directly transmitted with a string. <code>L1</code> is a placeholder, and the <code>1</code> in <code>1:I</code> below corresponds to it, and <code>1:I</code>’s data will be filled into <code>L1</code>‘s position.</p>
+<p>You might be curious about what does the <code>I</code> mean. In <a target="_blank" rel="noopener" href="https://github.com/facebook/react/blob/main/packages/react-server-dom-relay/src/ReactFlightDOMRelayProtocol.js#L21-L36">react server component’s protocol</a>, <code>I</code> represents <code>ClientReferenceMetadata</code>, a data structure helping browser to find the correct script entry to the client component.<br><code>1:I</code>’s output is a reference to a client component, which contains the script name, chunk name and export name, for the browser runtime (such as webpack) to dynamically import client component code. This structure is the streaming structure mentioned above.</p>
+<p>In summary, a Server Component will be rendered into a JSON-like data that represents UI, while client components will be converted into a JSON data that expresses script references.</p>
+<h2 id="Browser"><a href="#Browser" class="headerlink" title="Browser"></a>Browser</h2><ul>
+<li>[Framework] On the client side, the framework receives the streaming React response and uses React to render it on the page</li>
+<li>[React] React deserializes the response and renders native elements and client components.</li>
+<li>[React] Once all client components and all server component outputs have been loaded, the final UI state will be displayed to the user. By then all Suspense boundaries have been revealed.</li>
+</ul>
+<p>Note that browser rendering is gradual. React does not need to wait for the entire stream to complete before displaying some content. Suspense allows developers to display meaningful loading states while loading client component code and server components are fetching remaining data.</p>
+<h2 id="View-Updating"><a href="#View-Updating" class="headerlink" title="View Updating"></a>View Updating</h2><p>Server components also support reloading to see the latest data. Note that developers do not fetch server components individually: one component by one request.<br>The idea is that given some starting server components and props, the entire subtree will be refetched at once. As with initial loading, this typically involves integration with routing and script bundling:</p>
+<h3 id="On-Browser"><a href="#On-Browser" class="headerlink" title="On Browser"></a>On Browser</h3><ul>
+<li>[App] When the application changes state or changes routes, it requests the server to refetch the new UI for the changed Server Component.</li>
+<li>[Framework] The framework coordinates sending the new route and props to the appropriate API endpoint, requesting the rendering result.</li>
+</ul>
+<h3 id="On-Server"><a href="#On-Server" class="headerlink" title="On Server"></a>On Server</h3><ul>
+<li>[Framework] The interface receives the request and matches it with the requested server component. And it calls React to render the component and props, and handles the streaming of the rendering result.</li>
+<li>[React] React renders the component to the destination, with different rendering strategies for components and initial loading.</li>
+<li>[Framework] The framework is responsible for gradually returning the streaming response data to the client.</li>
+</ul>
+<h3 id="On-Browser-1"><a href="#On-Browser-1" class="headerlink" title="On Browser"></a>On Browser</h3><ul>
+<li>[Framework] The framework receives the streaming response and triggers a rerender of the route with the new rendering output.</li>
+<li>[React] React reconciles the new rendering output with the existing components on the screen. Because the description of UI is data, not HTML, React can merge new props into existing components, preserving important UI state such as focus or input input, or triggering CSS transitions on top of existing content. This is a key reason why server components return UI output as data (“virtual DOM”) rather than HTML.</li>
+</ul>
+<h2 id="Summary-So-Far…"><a href="#Summary-So-Far…" class="headerlink" title="Summary So Far…"></a>Summary So Far…</h2><p>This section is very long, but we can summarize the working principle of RSC in one sentence.</p>
+<p>Client Component will be rendered into a script reference, Server Component will be streamed into a JSON-like UI, Server Component with <code>async</code>&#x2F;<code>await</code> will be replaced by a placeholder first, and then streamed to the browser after resolving.</p>
+<p>The table below has more details and principles analysis.</p>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Platform</th>
+<th>ServerComponent</th>
+<th>ClientComponent</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Initial Load</td>
+<td>Server</td>
+<td>Run, transformed into JSON UI</td>
+<td>Do not run, passed as script reference</td>
+</tr>
+<tr>
+<td>Initial Load</td>
+<td>Browser</td>
+<td>Do not run, mutating dom by JSON UI</td>
+<td>Run, resolving script reference and mutating dom</td>
+</tr>
+<tr>
+<td>View Update</td>
+<td>Browser</td>
+<td>Do not run, requesting server for new JSON UI</td>
+<td>Run, updating client state</td>
+</tr>
+<tr>
+<td>View Update</td>
+<td>Server</td>
+<td>Run, transformed into new JSON accroding to props and routing</td>
+<td>Do not run</td>
+</tr>
+<tr>
+<td>View Update</td>
+<td>Browser</td>
+<td>Do not run, updating dom by new JSON UI</td>
+<td>Run, reconciling client state and RSC to dom</td>
+</tr>
+</tbody></table>
+<h1 id="Three-Quizzes-Three-Features"><a href="#Three-Quizzes-Three-Features" class="headerlink" title="Three Quizzes, Three Features"></a>Three Quizzes, Three Features</h1><p>Now let’s see how the above rendering process is applied in the RSC quizzes?</p>
+<p>This article will combine these three questions to explain the three major features of RSC: rendering completeness, state consistency, and commutative client&#x2F;server component.</p>
+<h2 id="Rendering-Completeness"><a href="#Rendering-Completeness" class="headerlink" title="Rendering Completeness"></a>Rendering Completeness</h2><p>The first quiz:</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">Note</span>(<span class="params">&#123; note &#125;</span>) &#123;</span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    <span class="language-xml"><span class="tag">&lt;<span class="name">Toggle</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">      <span class="tag">&lt;<span class="name">Details</span> <span class="attr">note</span>=<span class="string">&#123;note&#125;</span> /&gt;</span></span></span><br><span class="line"><span class="language-xml">    <span class="tag">&lt;/<span class="name">Toggle</span>&gt;</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Let’s write some more components to provide context for this question. Our <code>Toggle</code> component and <code>Details</code> component looks like this:</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;use client&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> &#123; useState &#125; <span class="keyword">from</span> <span class="string">&quot;react&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">Toggle</span>(<span class="params">props</span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> [isOn, setIsOn] = <span class="title function_">useState</span>(<span class="literal">false</span>)</span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    <span class="language-xml"><span class="tag">&lt;<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">      <span class="tag">&lt;<span class="name">button</span> <span class="attr">onClick</span>=<span class="string">&#123;()</span> =&gt;</span> setIsOn(on =&gt; !on)&#125;&gt;Toggle<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">      <span class="tag">&lt;<span class="name">div</span>&gt;</span>&#123;isOn ? &quot;on&quot; : &quot;off&quot;&#125;<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">      <span class="tag">&lt;<span class="name">div</span>&gt;</span>&#123;isOn ? props.children : <span class="tag">&lt;<span class="name">p</span>&gt;</span>not showing children<span class="tag">&lt;/<span class="name">p</span>&gt;</span>&#125;<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span></span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">async</span> <span class="keyword">function</span> <span class="title function_">Details</span>(<span class="params">props</span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> details = <span class="keyword">await</span> <span class="title function_">getDetails</span>(props.<span class="property">note</span>);</span><br><span class="line">  <span class="keyword">return</span> <span class="language-xml"><span class="tag">&lt;<span class="name">div</span>&gt;</span>&#123;details&#125;<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">function</span> <span class="title function_">getDetails</span>(<span class="params">note: <span class="built_in">string</span></span>) &#123;</span><br><span class="line">  <span class="keyword">await</span> <span class="keyword">new</span> <span class="title class_">Promise</span>(<span class="function">(<span class="params">resolve</span>) =&gt;</span> <span class="built_in">setTimeout</span>(resolve, <span class="number">2000</span>));</span><br><span class="line">  <span class="keyword">return</span> <span class="string">`Details for <span class="subst">$&#123;note&#125;</span>`</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>In this example, <code>Note</code> and <code>Details</code> are server-side components. <code>Toggle</code> is a client-side component, but its children <code>Details</code> appears directly under the server-side component &#96;Note. So when rendering Note, it will roughly be rendered into</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">$$typeof</span>: <span class="title class_">Symbol</span>(react.<span class="property">element</span>),</span><br><span class="line">  <span class="attr">type</span>: &#123;</span><br><span class="line">    <span class="attr">$$typeof</span>: <span class="title class_">Symbol</span>(react.<span class="property">module</span>.<span class="property">reference</span>),</span><br><span class="line">    <span class="attr">name</span>: <span class="string">&quot;default&quot;</span>,</span><br><span class="line">    <span class="attr">filename</span>: <span class="string">&quot;./Toggle.js&quot;</span></span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="attr">props</span>: &#123; <span class="attr">children</span>: [</span><br><span class="line">   <span class="comment">// children, note the</span></span><br><span class="line">   &#123;</span><br><span class="line">      <span class="attr">$$typeof</span>: <span class="title class_">Symbol</span>(react.<span class="property">element</span>),</span><br><span class="line">      <span class="attr">type</span>: <span class="title class_">Details</span>,  <span class="comment">// Details is rendered!</span></span><br><span class="line">      <span class="attr">props</span>: &#123; <span class="attr">note</span>: note &#125;,</span><br><span class="line">   &#125;</span><br><span class="line">  ] &#125;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Notice that <code>Details</code> is always rendered on the server side and delivered to the client.</p>
+<p>When <code>Toggle</code> is rendered on the client side, <code>Details</code> is not used, but its rendering result is still sent to the client side.</p>
+<p>Even though <code>Details</code> is an asynchronous server component that uses <code>async</code>&#x2F;<code>await</code>, it can still be sent to the front-end after it finishes asynchronously due to the streaming process of React Server Component.</p>
+<p>And when the user changes state, the client can directly use the server’s pre-rendered results for dom operations because <code>Details</code> props are the same as those rendered by the server. Therefore, the answer to this question is that Details will appear immediately.</p>
+<p><strong>This question reveals the “completeness” of React Server Component: as long as the component appears under the render function of the server-side component, it will be rendered regardless of its usage in client side.</strong></p>
+<h2 id="State-Consistency"><a href="#State-Consistency" class="headerlink" title="State Consistency"></a>State Consistency</h2><blockquote>
+<p>Now assume that isOn is <code>true</code>. You edit the note and tell the router to “refresh” the route. This will re-fetch the RSC tree for this route, and your <code>Note</code> server component will receive a <code>note</code> attribute with the latest database content.</p>
+</blockquote>
+<p>The second question reveals the consistency of the RSC. When the <code>Toggle</code> component changes props on the client side, this change is synchronized between both the server-side component and the client-side component and remains consistent on both ends.<br><code>&lt;Details note=&#123;note&#125; /&gt;</code> When a <code>note</code> changes, React detects the change in the note and sends a request to the server for the new <code>Details</code> rendering data.</p>
+<p>Also, the state of the client component <code>Toggle</code> itself is not reset or lost in the browser.</p>
+<p><strong>Thus, the design of RSC ensures that the state of the application is consistent across both server and browser.</strong></p>
+<h2 id="3-Commutative-Client-x2F-Server-Component"><a href="#3-Commutative-Client-x2F-Server-Component" class="headerlink" title="3. Commutative Client&#x2F;Server Component"></a>3. Commutative Client&#x2F;Server Component</h2><p>For the third question, let’s expand the question code for context as well.</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">App</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    <span class="language-xml"><span class="tag">&lt;<span class="name">Layout</span></span></span></span><br><span class="line"><span class="tag"><span class="language-xml">      <span class="attr">left</span>=<span class="string">&#123;</span>&lt;<span class="attr">Sidebar</span> /&gt;</span>&#125;</span></span><br><span class="line"><span class="language-xml">      right=&#123;<span class="tag">&lt;<span class="name">Content</span> /&gt;</span>&#125;</span></span><br><span class="line"><span class="language-xml">    /&gt;</span></span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>Layout</code> component is a server component.</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Server Component</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">Layout</span>(<span class="params">props: &#123;</span></span><br><span class="line"><span class="params">  left: React.ReactNode</span></span><br><span class="line"><span class="params">  right: React.ReactNode</span></span><br><span class="line"><span class="params">&#125;</span>) &#123;</span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    <span class="language-xml"><span class="tag">&lt;<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">      <span class="tag">&lt;<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">div</span> <span class="attr">style</span>=<span class="string">&#123;&#123;</span> <span class="attr">width:</span> `$&#123;<span class="attr">width</span>&#125;<span class="attr">px</span>` &#125;&#125;&gt;</span>&#123;props.left&#125;<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">div</span> <span class="attr">style</span>=<span class="string">&#123;&#123;</span> <span class="attr">width:</span> `$&#123;<span class="attr">500</span> <span class="attr">-</span> <span class="attr">width</span>&#125;<span class="attr">px</span>` &#125;&#125;&gt;</span>&#123;props.right&#125;<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">      <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span></span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Let’s rewrite it to a client component that <code>useState</code>. In this example, the width is changed on the client side by changing the input slider. (The implementation detail is inconsequential here).</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;use client&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> &#123; useState &#125; <span class="keyword">from</span> <span class="string">&quot;react&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">Layout</span>(<span class="params">props: &#123;</span></span><br><span class="line"><span class="params">  left: React.ReactNode</span></span><br><span class="line"><span class="params">  right: React.ReactNode</span></span><br><span class="line"><span class="params">&#125;</span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> [width, setWidth] = <span class="title function_">useState</span>(<span class="number">200</span>)</span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    <span class="language-xml"><span class="tag">&lt;<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">      <span class="tag">&lt;<span class="name">input</span></span></span></span><br><span class="line"><span class="tag"><span class="language-xml">        <span class="attr">type</span>=<span class="string">&quot;range&quot;</span></span></span></span><br><span class="line"><span class="tag"><span class="language-xml">        <span class="attr">step</span>=<span class="string">&#123;1&#125;</span></span></span></span><br><span class="line"><span class="tag"><span class="language-xml">        <span class="attr">value</span>=<span class="string">&#123;width&#125;</span></span></span></span><br><span class="line"><span class="tag"><span class="language-xml">        <span class="attr">onChange</span>=<span class="string">&#123;(e)</span> =&gt;</span> setWidth(Number(e.target.value))&#125;</span></span><br><span class="line"><span class="language-xml">      /&gt;</span></span><br><span class="line"><span class="language-xml">      <span class="tag">&lt;<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">div</span> <span class="attr">style</span>=<span class="string">&#123;&#123;</span> <span class="attr">width:</span> `$&#123;<span class="attr">width</span>&#125;<span class="attr">px</span>` &#125;&#125;&gt;</span>&#123;props.left&#125;<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">div</span> <span class="attr">style</span>=<span class="string">&#123;&#123;</span> <span class="attr">width:</span> `$&#123;<span class="attr">500</span> <span class="attr">-</span> <span class="attr">width</span>&#125;<span class="attr">px</span>` &#125;&#125;&gt;</span>&#123;props.right&#125;<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">      <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span></span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Note, in this case we can change the <code>Layout</code> from server component to client component without the <code>App</code> component.<br>The only thing changed is how the <code>App</code> is rendered on server side.</p>
+<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"> &#123;</span><br><span class="line">   $$typeof: Symbol(react.element),</span><br><span class="line"><span class="deletion">-  type: Layout,</span></span><br><span class="line"><span class="addition">+  type: &#123;</span></span><br><span class="line"><span class="addition">+    $$typeof: Symbol(react.module.reference),</span></span><br><span class="line"><span class="addition">+    name: &quot;default&quot;,</span></span><br><span class="line"><span class="addition">+    filename: &quot;./Layout.js&quot;</span></span><br><span class="line"><span class="addition">+  &#125;,</span></span><br><span class="line">   props: &#123;</span><br><span class="line">    left: &#123;</span><br><span class="line">       $$typeof: Symbol(react.element),</span><br><span class="line">       type: Sidebar,</span><br><span class="line">    &#125;,</span><br><span class="line">    right: &#123;</span><br><span class="line">       $$typeof: Symbol(react.element),</span><br><span class="line">       type: Content,</span><br><span class="line">    &#125;</span><br><span class="line">   &#125;,</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>As you can see, during serialization, the Layout is transformed from a server-side component to a client-side component. The <code>type</code> field is change from a direct import of Layout component to a <code>module.reference</code>. Meanwhile its child components remain unchanged.</p>
+<p>Before we change <code>Layout</code> to client component, the process of rendering <code>Layout</code> happens completely on the server side, and its children are also rendered on the server side. The rendered results are sent to the browser to be transformed into DOM.</p>
+<p>After we change <code>Layout</code> to a client component, the process of rendering <code>Layout</code> happens in the browser, but the child components are still rendered on the server side. When the browser renders the server’s JSON UI output, <code>Layout</code> inserts the results of the server-side child components into the browser DOM.</p>
+<p>Since the props of the child components are not changed when user changes the layout width on client-side (because they have no props), so the rendering result on the server side does not need to be recaptured.</p>
+<p>Therefore, the answer to this question is “it can be converted to a client-side component and the child components will not be recaptured”.</p>
+<p><strong>We can rewrite server-side components as client-side components in RSC projects without rewriting component composition at use site. We can call this interchangeability as “commutative” server&#x2F;client components.</strong></p>
+<h1 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h1><p>The documentation and RFC for React Server Component is relatively obscure and does not give practical examples, leading many people to wonder what it really is.</p>
+<p>In this article, I tried to explain the design ideas and principles of React Server Component by explaining it with Dan’s quizzes.<br>I hope it can help you understand this new feature and become one of the few materials that can let you learn RSC without watching Youtube or following Twitter threads. I hope this will let you understand more about the principle of RSC and the three performance characteristics! Complete Rendering, Consistent State, and Commutative Server&#x2F;Client Components.</p>
+<p>It is not easy to create, if you think this article is helpful to you, please follow me on <a target="_blank" rel="noopener" href="https://medium.com/@hchan_nvim">Medium</a> or <a target="_blank" rel="noopener" href="https://github.com/sponsors/HerringtonDarkholme/">treat me a cup of coffee</a>.</p>
+<h1 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h1><ol>
+<li>React 18: React Server Components | Next.js. <a target="_blank" rel="noopener" href="https://nextjs.org/docs/advanced-features/react-18/server-components">https://nextjs.org/docs/advanced-features/react-18/server-components</a>.</li>
+<li>What you need to know about React Server Components. <a target="_blank" rel="noopener" href="https://blog.logrocket.com/what-you-need-to-know-about-react-server-components/">https://blog.logrocket.com/what-you-need-to-know-about-react-server-components/</a>.</li>
+<li>React Server Components. - It’s not server-side rendering. | by Nathan …. <a target="_blank" rel="noopener" href="https://blog.bitsrc.io/react-server-components-1ca621ac2519">https://blog.bitsrc.io/react-server-components-1ca621ac2519</a>.</li>
+<li>What are React Server Components? - FreeCodecamp. <a target="_blank" rel="noopener" href="https://www.freecodecamp.org/news/what-are-react-server-components/">https://www.freecodecamp.org/news/what-are-react-server-components/</a>.</li>
+<li>How React Server Compoents Wors. <a target="_blank" rel="noopener" href="https://www.plasmic.app/blog/how-react-server-components-work#the-high-level-picture">https://www.plasmic.app/blog/how-react-server-components-work#the-high-level-picture</a></li>
+<li>45% failed Dan’s Server Component Quiz <a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=AGAax7WzStc">https://www.youtube.com/watch?v=AGAax7WzStc</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/React/" rel="tag">React</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <span id="article-nav-newer" class="article-nav-link-wrap newer"></span>
+  
+  
+    <a href="/2023/04/30/typescript-magic/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          Into the Chamber of Secrets, Break through the limits of TypeScript
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

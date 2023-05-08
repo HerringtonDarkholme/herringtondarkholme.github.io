@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>A quick intro to Angular Ivy | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="Angular recently announced a new render engine called Ivy.Ivy is an amazing present from Angular team! It produces hello-world app in mere 3.2KB, on a par with minimal framework like preact. Unfortuna">
+<meta property="og:type" content="article">
+<meta property="og:title" content="A quick intro to Angular Ivy">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2018/02/19/angular-ivy/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="Angular recently announced a new render engine called Ivy.Ivy is an amazing present from Angular team! It produces hello-world app in mere 3.2KB, on a par with minimal framework like preact. Unfortuna">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2018-02-19T08:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.872Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="Angular">
+<meta name="twitter:card" content="summary"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-angular-ivy" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      A quick intro to Angular Ivy
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2018-02-19T08:00:00.000Z" itemprop="datePublished">February 19, 2018, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>Angular recently announced a new render engine called <a target="_blank" rel="noopener" href="https://github.com/angular/angular/issues/21706">Ivy</a>.<br>Ivy is an amazing present from Angular team! It produces hello-world app in mere <a target="_blank" rel="noopener" href="https://twitter.com/IgorMinar/status/961484134425088001">3.2KB</a>, on a par with minimal framework like preact. Unfortunately little documentation, if any, exists to explain how Ivy works.</p>
+<p>This blog post strives to fill this gap, by translating an amazing answer from <a target="_blank" rel="noopener" href="https://www.zhihu.com/question/266923267/answer/316279829">zhihu</a>, a superior Q&amp;A website to Quora. I hope this post can communicate Angular’s innovation to broader front-end world by breaking language barrier.</p>
+<blockquote>
+<p>TL;DR: Ivy is an extremely building-tool friendly, web-first render engine that paves Angular’s way to web components.</p>
+</blockquote>
+<p>Opinion is not mine. Words in parentheses are from the original author unless explicitly annotated as from translator. Translator notes are added for audience with no Angular background.</p>
+<h2 id="Orignal-post"><a href="#Orignal-post" class="headerlink" title="Orignal post:"></a>Orignal post:</h2><p>How to comment on the fact that Angular’s new Ivy render engine produces 3.2KB compiled JavaScript? <em>(traslator note: <code>how to comment</code> is a jargon on zhihu, meaning <code>what&#39;s your opinion</code>)</em></p>
+<p>Let’s first answer several frequent questions:</p>
+<ol>
+<li><p>3.2KB is the result after minification + gzip (a convention to compare framework size), which is the exact payload size we send to browser. (if we use more advanced compression like brotli, the size will be smaller on modern browsers).</p>
+</li>
+<li><p>Ivy renderer won’t be default in Angular v6. You need to manually enable it by switching on certain compiler option. It might be default in v7 if no further issues are found.</p>
+</li>
+<li><p>Code completion isn’t proportional to feature completion. 50% code completed doesn’t imply 50% feature completed. For now Ivy has seemingly decent code completion rate, but it still has a long way before ready for production. It can’t even complete a simple app for <a target="_blank" rel="noopener" href="https://github.com/krausest/js-framework-benchmark">benchmark</a>.</p>
+</li>
+<li><p>Compared with previous Angular’s compiled code, Ivy’s result is almost like hand-written. And actually you can write it by hand! (Though in practice you won’t.)</p>
+</li>
+<li><p><code>NgModule</code> is challenged, <strong>again</strong>.</p>
+</li>
+<li><p>Ivy won’t promise you a plunge in code weight. Your bundle will still be bulky if a lot of CSS is inlined in your components.</p>
+</li>
+</ol>
+<hr>
+<p>Since the question is to <em>comment on</em> 3.2KB compiled file, I will focus on payload size optimization, thus, answering the question <em>“What optimization has Ivy Renderer done?”.</em></p>
+<p>It can never be overstated that the extreme size isn’t achieved by the ADVANCED mode of Closure Compiler. <strong>Rollup</strong> can achieve the same level optimization (within less than 1KB difference). Therefore Ivy is arguably the true <strong>building-tool friendly</strong> renderer, not Closure-Compiler-only renderer.</p>
+<p>Disclaimer: all the below is based on current (Feb, 2018) implementation, published roadmap. If following version changes leads to the following content outdated or incorrect, please pardon our no updating.</p>
+<h2 id="A-Removing-dependence-on-platform-browser"><a href="#A-Removing-dependence-on-platform-browser" class="headerlink" title="A. Removing dependence on platform-browser"></a>A. Removing dependence on <code>platform-browser</code></h2><p>As a platform independent framework, can we run application without platform specific code? The answer is NO, of course. Ivy just <strong>inlines DOM Rendere to its core.</strong> If you only need run your application on browser (taking no account of WebWorker), you can run Angular without including platform specific code. For example, the <a target="_blank" rel="noopener" href="https://github.com/angular/angular/blob/92d7060cb086632d2188c8da37ff72838d1abeef/packages/core/src/render3/instructions.ts#L842-L845">code for binding text</a> is:</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">value !== <span class="variable constant_">NO_CHANGE</span> &amp;&amp;</span><br><span class="line">  ((renderer <span class="keyword">as</span> <span class="title class_">ProceduralRenderer3</span>).<span class="property">setValue</span> ?</span><br><span class="line">    (renderer <span class="keyword">as</span> <span class="title class_">ProceduralRenderer3</span>).<span class="title function_">setValue</span>(existingNode.<span class="property">native</span>, <span class="title function_">stringify</span>(value)) :</span><br><span class="line">    existingNode.<span class="property">native</span>.<span class="property">textContent</span> = <span class="title function_">stringify</span>(value));</span><br></pre></td></tr></table></figure>
+
+<p>Fallback code is obvious: if no <code>renderer</code> exists <em>(translator note: the condition is better explained as <code>renderer</code> isn’t a <code>ProceduralRenderer3</code>)</em>, Ivy will directly modify dom element’s <code>textContent</code>.</p>
+<p>Currently no Ivy code relies on <code>platform</code>, thus common problems arise:</p>
+<ul>
+<li><p>No support for <a target="_blank" rel="noopener" href="https://angular.io/api/platform-browser/EVENT_MANAGER_PLUGINS">Event Plugin</a>. e.g. syntactic sugar for keyboard event (like <code>keydown.enter</code>) and events from Hammer, which are all provided by platform-browser.</p>
+</li>
+<li><p>No <code>Sanitizer</code>. Though Angular isn’t string template by itself and is naturally immune to XSS, it still cannot survive abhorrent abuse of <code>innerHTML</code>. <code>Sanitizer</code>, again currently bestowed by platform-browser, comes to rescue by filtering user content. Without platform hardly can we achieve the same level security.</p>
+</li>
+<li><p>No support for Component Style; No View Encapsulation. They are all implemented by different <code>Renderer</code>s in platform-browser package. Only inline style is available for component styling (Another better way is independent CSS and dynamic class).</p>
+</li>
+</ul>
+<p>So the current Ivy renderer demoed in hello-world app isn’t a full featured Angular for some users.</p>
+<h2 id="B-No-NgFactory-file-anymore"><a href="#B-No-NgFactory-file-anymore" class="headerlink" title="B. No NgFactory file anymore"></a>B. No NgFactory file anymore</h2><p>Under the new Ivy mode, compiled template will be stored in the static fields in class, instead of generating new wrapper class (NgFactory). For example:</p>
+<p><code>Component</code> -&gt; <code>ngComponentDef</code></p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span>(&#123; <span class="comment">/*...*/</span> &#125;)</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MyComponent</span> &#123; &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// -&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MyComponent</span> &#123;</span><br><span class="line">  <span class="keyword">static</span> ngComponentDef = <span class="title function_">defineComponent</span>(&#123; <span class="comment">/*...*/</span> &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>Directive</code> -&gt; <code>ngDirectiveDef</code></p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Directive</span>(&#123; <span class="comment">/*...*/</span> &#125;)</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MyDirective</span> &#123; &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// -&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MyDirective</span> &#123;</span><br><span class="line">  <span class="keyword">static</span> ngDirectiveDef = <span class="title function_">defineDirective</span>(&#123; <span class="comment">/*...*/</span> &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>NgModule</code> -&gt; <code>ngInjectorDef</code></p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@NgModule</span>(&#123; <span class="comment">/*...*/</span> &#125;)</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MyModule</span> &#123; &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// -&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MyModule</span> &#123;</span><br><span class="line">  <span class="keyword">static</span> ngInjectorDef = <span class="title function_">defineInjector</span>(&#123; <span class="comment">/*...*/</span> &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><del>WAT? How can Your Majesty NgModule compiled to one single Injector?(</del></p>
+<p>Due to the colocation of compiled template and class, the new compilation can fully enjoy building tool’s normal optimization. (Tree-Shaking for the most part), waiving most special process in build-optimizer.</p>
+<p><strong>In fact, this improvment is more significant for building than for size optimization.</strong> The new style compiler enables single file compilation, one ts file to one js file. We no longer need to worry about mapping from source file to ngfactory.</p>
+<p>Further more, this unifies library consumption in JIT and AOT. Once the compilation is stabilized, all libraries can compile code before publication, rather than at end uses’ bundling phase. This can lead to faster building.</p>
+<h2 id="C-Greatly-simplify-bootstrap-code"><a href="#C-Greatly-simplify-bootstrap-code" class="headerlink" title="C. Greatly simplify bootstrap code"></a>C. Greatly simplify bootstrap code</h2><p>All Angular applications need to configure bootstrap component (actually it isn’t mandatory, but alternatives are more complex), and initialize one <code>NgModule[Factory]</code>. Something like:</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123; <span class="title class_">NgModule</span> &#125; <span class="keyword">from</span> <span class="string">&#x27;@angular/core&#x27;</span></span><br><span class="line"><span class="keyword">import</span> &#123; platformBrowser &#125; <span class="keyword">from</span> <span class="string">&#x27;@angular/platform-browser&#x27;</span></span><br><span class="line"><span class="keyword">import</span> &#123; <span class="title class_">AppComponent</span> &#125; <span class="keyword">from</span> <span class="string">&#x27;./app.component&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@NgModule</span>(&#123;</span><br><span class="line">  <span class="attr">bootstrap</span>: [<span class="title class_">AppComponent</span>]</span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">AppModule</span> &#123; &#125;</span><br><span class="line"></span><br><span class="line"><span class="title function_">platformBrowserDynamic</span>().<span class="title function_">bootstrapModule</span>(<span class="title class_">AppModule</span>)</span><br></pre></td></tr></table></figure>
+
+<p>New bootstrapping code is based on component:</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// not available yet</span></span><br><span class="line"><span class="keyword">import</span> &#123; renderComponent &#125; <span class="keyword">from</span> <span class="string">&#x27;@angular/core&#x27;</span></span><br><span class="line"><span class="keyword">import</span> &#123; <span class="title class_">AppComponent</span> &#125; <span class="keyword">from</span> <span class="string">&#x27;./app.component&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="title function_">renderComponent</span>(<span class="title class_">AppComponent</span>)</span><br></pre></td></tr></table></figure>
+
+<p><del>Hey, why we still need AppModule?</del></p>
+<p>Ivy is based on NgModule-less bootstrapping for now. Though not completed yet, compilers can make bootstrapping accept NgModule (if it still exists) to provide Injector. In other word, <code>renderComponent</code> can accept <a target="_blank" rel="noopener" href="https://github.com/angular/angular/blob/92d7060cb086632d2188c8da37ff72838d1abeef/packages/core/src/render3/component.ts#L37">an optional configuration argument</a>.</p>
+<p>By the way, this is also friendlier to bootstrapping multiple Angular instances in one page.</p>
+<h2 id="D-Redesigned-DevMode-configuration-and-checking"><a href="#D-Redesigned-DevMode-configuration-and-checking" class="headerlink" title="D. Redesigned DevMode configuration and checking"></a>D. Redesigned DevMode configuration and checking</h2><p>In the previous Angular, <code>DevMode</code> is disabled by function call dynamically.</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123; enableProdMode &#125; <span class="keyword">from</span> <span class="string">&#x27;@angular/core&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="title function_">enableProdMode</span>()</span><br><span class="line"></span><br><span class="line"><span class="title function_">platformFoo</span>().<span class="title function_">bootstrapBar</span>(baz)</span><br></pre></td></tr></table></figure>
+
+<p>In other word, whether DevMode is on is totally Angular’s <a target="_blank" rel="noopener" href="https://github.com/angular/angular/blob/5.2.4/packages/core/src/application_ref.ts#L64-L67">internal state</a>. Thus all debug related code is dynamically used and cannot be excluded in compile time. (Even closure compiler is ineffective).</p>
+<p>But in Ivy DevMode is purely compile time configuration, all debugging code will be executed after checking the global variable <code>ngDevMode</code>.  <a target="_blank" rel="noopener" href="https://github.com/angular/angular/blob/92d7060cb086632d2188c8da37ff72838d1abeef/packages/core/src/render3/instructions.ts#L231">For example</a>:</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ngDevMode &amp;&amp; <span class="title function_">assertEqual</span>((state <span class="keyword">as</span> <span class="title class_">LView</span>).<span class="property">node</span>, <span class="literal">null</span>, <span class="string">&#x27;lView.node&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>So building tool can replace the corresponding variable (e.g Webpack’s DefinePlugin), and corresponding debug code can be detected as dead code, and then optimizer (e.g UglifyJS) can remove it.</p>
+<h2 id="E-Feature-named-as-Feature"><a href="#E-Feature-named-as-Feature" class="headerlink" title="E. Feature named as Feature"></a>E. Feature named as Feature</h2><p>Ivy mode has added a new feature called Feature. Or, Ivy introduces a new concept called Feature. Simply put, Feature is a pre-processor for <code>DirectiveDef</code>, which can be thought as a “Decorator pattern” tailored for <code>DirectiveDef</code>. <em>(Translator note: More simply, you can provide a custom function to Angular, and Angular will apply it against <code>ComponentDef</code> metadata. So you can extend <code>ComponentDef</code>‘s <code>Feature</code> in your own function. <a target="_blank" rel="noopener" href="https://github.com/angular/angular/blob/92d7060cb086632d2188c8da37ff72838d1abeef/packages/core/src/render3/definition.ts#L58-L59">Source</a>)</em>.</p>
+<p>Let’s take an example in Ivy. <code>OnChanges</code> isn’t implemented by <code>Renderer</code> but a <a target="_blank" rel="noopener" href="https://github.com/angular/angular/blob/92d7060cb086632d2188c8da37ff72838d1abeef/packages/core/src/render3/definition.ts#L71-L122">predefined <code>Feature</code></a>. The Feature uses <code>defineProperty</code> to listen on the property decorated by <code>@Input</code>, and automatically stores <code>previousValue</code> in the instance to generate <code>SimpleChanges</code> for change detection, and finally triggers <code>OnChanges</code> by intercepting <code>OnInit</code> and <code>DoCheck</code> without Angular core’s help.</p>
+<p>This means <code>OnChanges</code>‘ code is also tree-shakable! If no component ever declares the lifecycle <code>ngOnChanges</code>, no <code>DirectiveDef</code> will import <code>NgOnChangesFeature</code>. So optimizer can reasonably eliminate dead code.</p>
+<p><del>WAT? How about the dirty check promise? From now on we have exception in Angular’s change detection?!</del></p>
+<p>So it is notable that <code>OnChanges</code> in Ivy is not a <a target="_blank" rel="noopener" href="https://github.com/angular/angular/blob/92d7060cb086632d2188c8da37ff72838d1abeef/packages/core/src/render3/definition.ts#L50-L56">real lifecycle</a> any more <em>(Translator note: it is not listed in the <code>ComponentDef</code>)</em>.<br>Put differently, users can extend lifecycle themselves, do as they please.</p>
+<p>But the direct aim of Feature concept is for the incoming <a target="_blank" rel="noopener" href="https://github.com/angular/angular/issues/10185">LifeCycle as Observables</a>. Users don’t need to declare methods (ngOnInt) in class, but rather use the lifecycle observables directly. Indeed. by intercepting <code>DirectiveDef</code>, users and third-party library authors can modify lifecycle hooks in runtime. We can even use decorators to declare lifecycles.</p>
+<p>In summary, <code>Feature</code> can be thought as a variant of <code>Higher Order Component</code> (compared with class factory): it modifies component type itself based on runtime requirement, instead of changing component’s internal state according to component logic.</p>
+<h2 id="F-New-Injectable-API"><a href="#F-New-Injectable-API" class="headerlink" title="F. New Injectable API"></a>F. New Injectable API</h2><p>Actually this isn’t related to the hello-world demo, nor related to even Ivy (since it can be used in non Ivy mode). However, the new Injectable API has a huge impact on Angular’s size.</p>
+<p>Besides the <code>XXXDef</code> properties listed above, we have another one called <code>ngInjectableDef</code>:</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Injectable</span>()</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MyService</span> &#123; &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// -&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MyService</span> &#123;</span><br><span class="line">  <span class="keyword">static</span> ngInjectableDef = <span class="title function_">defineInjectable</span>(&#123; <span class="comment">/*...*/</span> &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>In classical sense (if anyone ever cared), we can easily find <strong>dependency injection and dead code elimination are contradictory in priciple</strong>.</p>
+<ul>
+<li><p>DI’s nature is side effect: <code>Provider</code> <em>changes</em> execution context via configuration, and <code>Consumer</code> retrieves content <em>from context</em>.</p>
+</li>
+<li><p>DCE’s assumption is side-effect-free: <code>Consumer</code> should import <code>Provider</code> directly, and if <code>Consumer</code> doesn’t exist in application, <code>Provider</code> can be removed at all.</p>
+</li>
+</ul>
+<p>Apparently, all DI based code cannot be effectively DCE optimized.</p>
+<p>In current Angular pattern, we will configure <code>Provider</code> in <code>NgModule</code>:</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// lib.service.ts</span></span><br><span class="line"><span class="meta">@Injectable</span>()</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LibService</span> &#123; &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// lib.module.ts</span></span><br><span class="line"><span class="keyword">import</span> &#123; <span class="title class_">LibService</span> &#125; <span class="keyword">from</span> <span class="string">&#x27;./lib.service&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@NgModule</span>(&#123;</span><br><span class="line">  <span class="attr">providers</span>: [<span class="title class_">LibService</span>],</span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LibModule</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// app.component.ts</span></span><br><span class="line"><span class="keyword">import</span> &#123; <span class="title class_">LibService</span> &#125; <span class="keyword">from</span> <span class="string">&#x27;./lib.service&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@Component</span>(&#123; <span class="comment">/*...*/</span> &#125;)</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">AppComponent</span> &#123;</span><br><span class="line">  <span class="title function_">constructor</span>(<span class="params">libService: LibService</span>) &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// app.module.ts</span></span><br><span class="line"><span class="keyword">import</span> &#123; <span class="title class_">LibModule</span> &#125; <span class="keyword">from</span> <span class="string">&#x27;./lib.module&#x27;</span></span><br><span class="line"><span class="keyword">import</span> &#123; <span class="title class_">AppComponent</span> &#125; <span class="keyword">from</span> <span class="string">&#x27;./app.component&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@NgModule</span>(&#123;</span><br><span class="line">  <span class="attr">declarations</span>: [<span class="title class_">AppComponent</span>],</span><br><span class="line">  <span class="attr">imports</span>: [<span class="title class_">LibModule</span>],</span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">AppModule</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The dependence flow is: <em>(translator note: in the below items parentheses after is added by translator for Angular newcomer)</em></p>
+<ul>
+<li>Library Module imports Library Service <em>(for exposing interface and providing implementation)</em></li>
+<li>Application Component imports Library Service <em>(for consuming interface)</em></li>
+<li>Application Module imports  Application Component</li>
+<li>Application Module imports Library Module <em>(for configuring which implementation to inject)</em></li>
+</ul>
+<p>Even if service isn’t used in application component, service cannot be removed. This is because we introduce additional dependence during DI configuration. <em>(translator note: consider app component doesn’t import libService. It is desirable libService is excluded from final build. But we cannot eliminate it because libModule imports it, and libModule is further imported by application module)</em></p>
+<p>To solve this problem, Angular allows to invert the dependence of configuration. The new API is like:</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// lib.module.ts</span></span><br><span class="line"><span class="meta">@NgModule</span>(&#123; <span class="comment">/*...*/</span> &#125;)</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LibModule</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// lib.service.ts</span></span><br><span class="line"><span class="keyword">import</span> &#123; <span class="title class_">LibModule</span> &#125; <span class="keyword">from</span> <span class="string">&#x27;./lib.module&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@Injectable</span>(&#123; <span class="attr">scope</span>: <span class="title class_">LibModule</span> &#125;)</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LibService</span> &#123; &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// app.component.ts</span></span><br><span class="line"><span class="keyword">import</span> &#123; <span class="title class_">LibService</span> &#125; <span class="keyword">from</span> <span class="string">&#x27;./lib.service&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@Component</span>(&#123; <span class="comment">/*...*/</span> &#125;)</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">AppComponent</span> &#123;</span><br><span class="line">  <span class="title function_">constructor</span>(<span class="params">libService: LibService</span>) &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// app.module.ts</span></span><br><span class="line"><span class="keyword">import</span> &#123; <span class="title class_">LibModule</span> &#125; <span class="keyword">from</span> <span class="string">&#x27;./lib.module&#x27;</span></span><br><span class="line"><span class="keyword">import</span> &#123; <span class="title class_">AppComponent</span> &#125; <span class="keyword">from</span> <span class="string">&#x27;./app.component&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@NgModule</span>(&#123;</span><br><span class="line">  <span class="attr">declarations</span>: [<span class="title class_">AppComponent</span>],</span><br><span class="line">  <span class="attr">import</span>: [<span class="title class_">LibModule</span>],</span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">AppModule</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The new dependence flow is:</p>
+<ul>
+<li>Library Service imports Library Module</li>
+<li>Application Component imports Library Service</li>
+<li>Application Module imports  Application Component</li>
+<li>Application Module imports Library Module</li>
+</ul>
+<p>Thus, as long as application component is removed, library service is not depended at all and can be safely removed together.</p>
+<p><del>WAT? So why is libModule there? As a cosmetic?</del></p>
+<p>We can optionally choose providers like <code>useClass</code>, <code>useFactory</code> to set implementation to other values instead of current class.<br><em>(translator note: they are Angular’s alternative DI functions and are DCE ready)</em></p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Injectable</span>(&#123;</span><br><span class="line">  <span class="attr">scope</span>: <span class="title class_">SomeModule</span>,</span><br><span class="line">  <span class="attr">useValue</span>: &#123; <span class="attr">valueOfLife</span>: <span class="number">42</span> &#125;,</span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title class_">MyService</span> &#123;</span><br><span class="line">  <span class="keyword">abstract</span> <span class="attr">valueOfLife</span>: <span class="built_in">number</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Of course, the new Injectable API only handles one ideal situation where <strong>dependency declared</strong> is <strong>dependency used</strong>. Nevertheless this is the most common situation. If intermediate Injector nodes overrides <code>Provider</code>, side effect is still ineluctable and thus adds code size. (But the injected dependency is probably used when one does override)</p>
+<h2 id="G-New-template-compilation"><a href="#G-New-template-compilation" class="headerlink" title="G. New template compilation"></a>G. New template compilation</h2><p>Template compilation, at macro level, <strong>has only two types:</strong></p>
+<ul>
+<li>(structural) data</li>
+<li>(operational) instructions</li>
+</ul>
+<p>Take a simple example. If we compile template (or equivalent) to some <code>render</code> method and if:</p>
+<ul>
+<li>calling <code>render</code> <strong>doesn’t make view changed</strong>, but its return value is <strong>what to be rendered</strong>. This is the former type.</li>
+<li>calling <code>render</code> <strong>does update view</strong>, and thus <strong>no return value is needed</strong>. This is the latter type.</li>
+</ul>
+<p>The most early Angular, v2 version, compiles template to instructions. One can refer to <a target="_blank" rel="noopener" href="https://www.zhihu.com/question/53434390/answer/134956516">this zhihu answer</a> for compilation behavior. This style is very similar to <a target="_blank" rel="noopener" href="https://github.com/sveltejs/svelte">Svelte</a>: compile as much detail as possible, in order to reduce common runtime dependency (shared code).</p>
+<p>But the problem of this approach is obvious. With more and more template authored, compiled code size will easily exceed shared code (Off-topic: the 0kb-boasting framework Svelte also provides a <code>shared</code> compile option to use library).</p>
+<p>Later Angular v4 compiles template to data and introduces <em>View Engine</em> as common dependency. Its compilation is explained <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/32137489">here</a>. This style is very close to virtual dom, except that dom-like data is stored per type, not per instance.</p>
+<p>Ivy renderer in v6 re-chooses compiling to instruction approach. Different from v2, v6 employs a strategy to minimize compiled code size.</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">class</span> <span class="title class_">AppComponent</span>  &#123;</span><br><span class="line">  <span class="keyword">static</span> ngComponentDef = <span class="title function_">defineComponent</span>(&#123;</span><br><span class="line">    <span class="attr">type</span>: <span class="title class_">AppComponent</span>,</span><br><span class="line">    <span class="attr">tag</span>: <span class="string">&#x27;my-app&#x27;</span>,</span><br><span class="line">    <span class="attr">template</span>: <span class="keyword">function</span> <span class="title function_">AppComponent_Template</span>(<span class="params">comp: AppComponent, cm: <span class="built_in">boolean</span></span>) &#123;</span><br><span class="line">      <span class="keyword">if</span> (cm) &#123;</span><br><span class="line">        <span class="title function_">E</span>(<span class="number">0</span>, <span class="string">&#x27;div&#x27;</span>, [<span class="string">&#x27;class&#x27;</span>, <span class="string">&#x27;container&#x27;</span>])</span><br><span class="line">          <span class="title function_">E</span>(<span class="number">1</span>, <span class="string">&#x27;div&#x27;</span>, [<span class="string">&#x27;class&#x27;</span>, <span class="string">&#x27;jumbotron&#x27;</span>])</span><br><span class="line">            <span class="title function_">E</span>(<span class="number">2</span>, <span class="string">&#x27;div&#x27;</span>, [<span class="string">&#x27;class&#x27;</span>, <span class="string">&#x27;row&#x27;</span>])</span><br><span class="line">              <span class="title function_">E</span>(<span class="number">3</span>, <span class="string">&#x27;div&#x27;</span>, [<span class="string">&#x27;class&#x27;</span>, <span class="string">&#x27;col-md-6&#x27;</span>])</span><br><span class="line">                <span class="title function_">E</span>(<span class="number">4</span>, <span class="string">&#x27;h1&#x27;</span>)</span><br><span class="line">                  <span class="title function_">T</span>(<span class="number">5</span>, <span class="string">&#x27;Angular v6.x.x (Ivy Renderer)&#x27;</span>)</span><br><span class="line">                <span class="title function_">e</span>()</span><br><span class="line">              <span class="title function_">e</span>()</span><br><span class="line">              <span class="title function_">E</span>(<span class="number">6</span>, <span class="string">&#x27;div&#x27;</span>, [<span class="string">&#x27;class&#x27;</span>, <span class="string">&#x27;col-md-6&#x27;</span>])</span><br><span class="line">                <span class="title function_">E</span>(<span class="number">7</span>, <span class="string">&#x27;div&#x27;</span>, [<span class="string">&#x27;class&#x27;</span>, <span class="string">&#x27;col-sm-6 smallpad&#x27;</span>])</span><br><span class="line">                  <span class="title function_">E</span>(<span class="number">8</span>, <span class="string">&#x27;button&#x27;</span>, [<span class="string">&#x27;type&#x27;</span>, <span class="string">&#x27;button&#x27;</span>, <span class="string">&#x27;id&#x27;</span>, <span class="string">&#x27;run&#x27;</span>, <span class="string">&#x27;class&#x27;</span>, <span class="string">&#x27;btn btn-primary btn-block&#x27;</span>])</span><br><span class="line">                    <span class="title function_">L</span>(<span class="string">&#x27;click&#x27;</span>, <span class="function">() =&gt;</span> &#123;</span><br><span class="line">                      comp.<span class="title function_">run</span>()</span><br><span class="line">                      <span class="title function_">detectChanges</span>(comp)</span><br><span class="line">                    &#125;)</span><br><span class="line">                    <span class="title function_">T</span>(<span class="number">9</span>, <span class="string">&#x27;Create 1,000 rows&#x27;</span>)</span><br><span class="line">                  <span class="title function_">e</span>()</span><br><span class="line">                  <span class="comment">//...</span></span><br><span class="line">                <span class="title function_">e</span>()</span><br><span class="line">              <span class="title function_">e</span>()</span><br><span class="line">            <span class="title function_">e</span>()</span><br><span class="line">          <span class="title function_">e</span>()</span><br><span class="line">          <span class="title function_">E</span>(<span class="number">20</span>, <span class="string">&#x27;table&#x27;</span>, [<span class="string">&#x27;class&#x27;</span>, <span class="string">&#x27;table table-hover table-striped test-data&#x27;</span>])</span><br><span class="line">            <span class="title function_">E</span>(<span class="number">21</span>, <span class="string">&#x27;tbody&#x27;</span>)</span><br><span class="line">              <span class="title function_">C</span>(<span class="number">22</span>, [<span class="title class_">NgForOf</span>], trTemplate)</span><br><span class="line">            <span class="title function_">e</span>()</span><br><span class="line">          <span class="title function_">e</span>()</span><br><span class="line">          <span class="title function_">E</span>(<span class="number">24</span>, <span class="string">&#x27;span&#x27;</span>, [<span class="string">&#x27;aria-hidden&#x27;</span>, <span class="string">&#x27;true&#x27;</span>, <span class="string">&#x27;class&#x27;</span>, <span class="string">&#x27;preloadicon glyphicon glyphicon-remove&#x27;</span>])</span><br><span class="line">          <span class="title function_">e</span>()</span><br><span class="line">        <span class="title function_">e</span>()</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="title function_">p</span>(<span class="number">22</span>, <span class="string">&#x27;ngForOf&#x27;</span>, <span class="title function_">b</span>(comp.<span class="property">data</span>))</span><br><span class="line">      <span class="title function_">p</span>(<span class="number">22</span>, <span class="string">&#x27;ngForTrackBy&#x27;</span>, <span class="title function_">b</span>(comp.<span class="property">itemById</span>))</span><br><span class="line">      <span class="title function_">cR</span>(<span class="number">22</span>)</span><br><span class="line">        <span class="title function_">r</span>(<span class="number">23</span>, <span class="number">0</span>)</span><br><span class="line">      <span class="title function_">cr</span>()</span><br><span class="line"></span><br><span class="line">      <span class="keyword">function</span> <span class="title function_">trTemplate</span>(<span class="params">row: NgForOfContext&lt;Data&gt;, cm: <span class="built_in">boolean</span></span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (cm) &#123;</span><br><span class="line">          <span class="title function_">E</span>(<span class="number">0</span>, <span class="string">&#x27;tr&#x27;</span>)</span><br><span class="line">            <span class="title function_">E</span>(<span class="number">1</span>, <span class="string">&#x27;td&#x27;</span>, [<span class="string">&#x27;class&#x27;</span>, <span class="string">&#x27;col-md-1&#x27;</span>])</span><br><span class="line">              <span class="title function_">T</span>(<span class="number">2</span>)</span><br><span class="line">            <span class="title function_">e</span>()</span><br><span class="line">            <span class="title function_">E</span>(<span class="number">3</span>, <span class="string">&#x27;td&#x27;</span>, [<span class="string">&#x27;class&#x27;</span>, <span class="string">&#x27;col-md-4&#x27;</span>])</span><br><span class="line">              <span class="title function_">E</span>(<span class="number">4</span>, <span class="string">&#x27;a&#x27;</span>, [<span class="string">&#x27;href&#x27;</span>, <span class="string">&#x27;#&#x27;</span>])</span><br><span class="line">                <span class="title function_">L</span>(<span class="string">&#x27;click&#x27;</span>, <span class="function">(<span class="params">e: MouseEvent</span>) =&gt;</span> &#123;</span><br><span class="line">                  comp.<span class="title function_">select</span>(row.<span class="property">$implicit</span>, e)</span><br><span class="line">                  <span class="title function_">detectChanges</span>(comp)</span><br><span class="line">                &#125;)</span><br><span class="line">                <span class="title function_">T</span>(<span class="number">5</span>)</span><br><span class="line">              <span class="title function_">e</span>()</span><br><span class="line">            <span class="title function_">e</span>()</span><br><span class="line">            <span class="comment">//...</span></span><br><span class="line">          <span class="title function_">e</span>()</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="title function_">p</span>(<span class="number">0</span>, <span class="string">&#x27;class.danger&#x27;</span>, <span class="title function_">b</span>(row.<span class="property">$implicit</span>.<span class="property">id</span> === comp.<span class="property">selected</span>))</span><br><span class="line">        <span class="title function_">t</span>(<span class="number">2</span>, <span class="title function_">b</span>(row.<span class="property">$implicit</span>.<span class="property">id</span>))</span><br><span class="line">        <span class="title function_">t</span>(<span class="number">5</span>, <span class="title function_">b</span>(row.<span class="property">$implicit</span>.<span class="property">label</span>))</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">factory</span>: <span class="function">() =&gt;</span> <span class="keyword">new</span> <span class="title class_">AppComponent</span>()</span><br><span class="line">  &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><em>(The density of information is almost as high as HTML.)</em></p>
+<p>Compiling to instructions has another advantage over compiling to data: common dependency is still DCE friendly.<br>Used instructions will be directly depended, and non-used instructions will be removed by optimizer.<br>On the other hand compiling to data requires all operations used by template processor, and thus cannot be optimized statically.</p>
+<p>Therefore, Ivy’s new compilation strategy should be the one with minimal code size (not regarding of the cost to implement compiler).</p>
+<h2 id="Memory-and-Speed"><a href="#Memory-and-Speed" class="headerlink" title="Memory and Speed"></a>Memory and Speed</h2><ul>
+<li>New view layer employs compact binary frame design (and more bitwise operations).</li>
+<li>New view layer uses as many sequences (arrays) as possible rather than key-value pairs (objects) to store data.</li>
+<li>New view layer prefers adding expando properties on exposing types rather than new wrapping type.</li>
+<li>DI uses <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Bloom_filter">bloom filter</a> to speed up <code>Directive</code> searching</li>
+</ul>
+<p>(View layer is less friendly to pull request)</p>
+<h2 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h2><p>The new Ivy mode push “building-friendliness” to extreme, but you can also say it is not “non-building-friendly”. It won’t be useful for projects built with bare <code>&lt;script&gt;</code> tags.</p>
+<p>Ivy’s most crucial target is cooperation with <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/30717321">Angular Element</a>. By encapsulating Angular components to custom elements (web components), we can achieve standalone publication, independent importing and independent usage of Angular as widgets. (To some degree this strangulates Svelte?)</p>
+<p>The most important part of this strategy is code size. Even wihout common runtime library, Angular should work with minial size.<br>Components used as Angular Elements will not depended on external packages like forms and router, hence creating great value for size reduction.</p>
+<p>Whether should NgModule still exist? It certainly has value on organizing code. That said, Dart version didn’t ever has NgModule. It is sure that application structure can be well formed without NgModule (at least for Googler).<br>With decreasing usage of NgModule in real world API, it might be optional in future. But I’m sure v6 won’t change NgModule. (I personally favor NgModule, but oppose enforcing it in app).</p>
+<p>For applications plumbing many third party libraries, the main size problem might not come from Angular but rather from, for example, incorrect use of RxJS, importing <code>moment.js</code> inadvertently, or writing all styles in “comonent styles”. For specific size problem one needs to analyze it specifically. Don’t pray to Angular’s advanced optimizer.</p>
+<p>The worst part of Ivy is <code>OnChanges</code>. It is now implemented by <code>Object.defineProperty</code>! It is no longer right to say Angular is based <strong>solely</strong> on dirty check. All articles about change detection need updating! And every section needs separate explaination!</p>
+<p>Lifecycles might have big change in near future. But it will await Ivy being the default, no earlier than v7. In fact, Angular’s overall extensibility and runtime preprocessing has been greatly improved.</p>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/Angular/" rel="tag">Angular</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2023/01/23/optimize-ast-grep/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Optimize ast-grep to get 10X faster
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/10/12/vue-ts3/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          Deep dive into Vue2.5 Typing -- A tour of advanced typing feature
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

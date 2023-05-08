@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Compare TypeScript libraries for Vue -- a review | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="Vue has a lot of TypeScript  binding libraries. A lot of. They look similar, with subtle difference. How to choose one? Here I compare three libraries.  vue-typescript-component vuets av-ts  They are">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Compare TypeScript libraries for Vue -- a review">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2016/11/01/how-to-choose-vue-library/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="Vue has a lot of TypeScript  binding libraries. A lot of. They look similar, with subtle difference. How to choose one? Here I compare three libraries.  vue-typescript-component vuets av-ts  They are">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2016-11-01T07:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.874Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="TypeScript">
+<meta name="twitter:card" content="summary"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-how-to-choose-vue-library" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      Compare TypeScript libraries for Vue -- a review
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2016-11-01T07:00:00.000Z" itemprop="datePublished">November 1, 2016, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>Vue has a lot of TypeScript  binding libraries. A lot of.</p>
+<p>They look similar, with subtle difference. How to choose one?</p>
+<p>Here I compare three libraries.</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://libraries.io/npm/vue-typescript-component">vue-typescript-component</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/vuets/vuets">vuets</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/av-ts/">av-ts</a></li>
+</ul>
+<p>They are representative, and the analysis probably also applies to the <a target="_blank" rel="noopener" href="https://github.com/vuejs/vue-class-component">official library</a>.</p>
+<blockquote>
+<p>Disclaimer: I’m the author of av-ts. So this article is probably biased. But I tried my best to give an objective review.</p>
+</blockquote>
+<h3 id="0-Overview"><a href="#0-Overview" class="headerlink" title="0. Overview"></a>0. Overview</h3><p>Vue-typescript-component and av-ts are decorator based libraries. Vue-typescript-component is more like the popular typescript <a target="_blank" rel="noopener" href="https://github.com/itsFrank/vue-typescript">library</a>, but supports Vue2.0. av-ts is my own library, crated after I read many alternatives.<br>vuets is quite different. It resembles the original object literal style API from vue.js.<br>Before I start the review, I want to state a rule of thumb before.</p>
+<blockquote>
+<p>The more flexiblity a library boasts, the harder for a type checker to verify it.</p>
+</blockquote>
+<p>It is quite common in programming world. For example, JavaScript is very flexible and dynamic, but it is usually hard to determine whether a property access is legal. Java is a static language, <code>javac</code> can help you check many pernicious typos in code, but Java cannot easily do reflective programming.</p>
+<p>Vue has a very flexible and elegant API, but it comes <a href="http://herringtondarkholme.github.io/2016/08/21/vue-ts/">at the cost of type safety</a>. That’s why all these Vue TypeScript libraries exist. How to balance between expressiveness and type safety is the main concern of such a library.</p>
+<h3 id="1-Compatibility"><a href="#1-Compatibility" class="headerlink" title="1. Compatibility"></a>1. Compatibility</h3><p>All the three libraries, vue-typescript-component, vuets and av-ts, have good support for Vue2 and TS2. So there is not much to compare here. (vuets has vue1.0 support while the other two do not)</p>
+<h3 id="2-Extensibility"><a href="#2-Extensibility" class="headerlink" title="2. Extensibility"></a>2. Extensibility</h3><p>I think this is the best part of av-ts. av-ts provides a <code>Component.register</code> for custom decorator. For example, if you want to use vuex in your project but also want to preserve type safety, you can create your own decorator. This is exactly what I do in <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/kilimanjaro">kilimanjaro</a>, a typed vuex fork.<br>vue-ts-copmonent does not provide extensibility at all. vue-ts has the same extensibility as original vue because it uses object literal style (that is, the most extensible one among the three). However, vuets also support class component like syntax. Mixing two style is somewhat confusing.</p>
+<h3 id="3-Idiom"><a href="#3-Idiom" class="headerlink" title="3. Idiom"></a>3. Idiom</h3><p>av-ts and vue-ts-component are both idiomatic TypeScript code. class&#x2F;property&#x2F;component just feel like plain-old-typescript. vue-ts chooses object literal style API. While it looks the most similar to original vue, it is not as idiomatic as the other two in TypeScript land. Also, object literal style requires many manual typing annotation, which feels foreign to both JavaScript and TypeScript.</p>
+<h3 id="4-Conciseness"><a href="#4-Conciseness" class="headerlink" title="4.Conciseness"></a>4.Conciseness</h3><p>vue-ts is the most verbose as mentioned above. Object literal style API is almost impossible to have good type inference for contemporary compilers. You can read more about it <a href="http://herringtondarkholme.github.io/2016/08/21/vue-ts/">here</a>. Basically I don’t think vue-ts is an ideal approach.<br>av-ts and vue-ts-component are concise. Most methods&#x2F;properties require only annotating once. av-ts requires more decorators for special methods like render and lifecycle, while it has a more concise and type safe property syntax. So I think this is a tie.</p>
+<h3 id="5-Type-Safety"><a href="#5-Type-Safety" class="headerlink" title="5. Type Safety"></a>5. Type Safety</h3><p>av-ts and vue-ts-component can inject Vue’s native types by <code>extends Vue</code>. Neat. vuets users have to re-annotate all the method again, <a href="http://herringtondarkholme.github.io/2016/08/21/vue-ts/">alas</a>. av-ts has more type safety when defining special methods like <code>render</code>, <code>lifecycle</code> and <code>transition</code>. This is powerer by new decorators introduced. Again, these decorators are created by <code>Component.register</code> and the implementation is not hard-coded into one file.</p>
+<h3 id="6-Expressiveness"><a href="#6-Expressiveness" class="headerlink" title="6. Expressiveness"></a>6. Expressiveness</h3><p>vuets is as expressive as original vue, at the cost of more annotation. vue-ts-component can express most basic API in vue, but there is something it cannot. av-ts can use <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/av-ts#mixin">mixin</a> and can <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/av-ts#data">use props in data method</a>. I have thought over these scenarios before hand.</p>
+<h3 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h3><p>av-ts may not be the best component library for vue, but I believe it strikes the sweet point between conciseness, type safety and expressiveness. I’m happy to see more TS+Vue users try it out, and give me feedback so it can become better.</p>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/TypeScript/" rel="tag">TypeScript</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2016/11/05/how-to-write-copy-paste-friendly-code/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          How to write copy-paste friendly code -- An introductory parody
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/10/03/vue2-ts2/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          Vue2 + TypeScript2 -- an introductory guide
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

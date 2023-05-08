@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>The Real Angular2 quick start | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="Angular2 official page wants you to make some dirty hack to get the fastest  hellow world in Angular2. But it immediately requires to correct your first sin in the same 5-min quickstart page. Maybe it">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Real Angular2 quick start">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2015/10/25/angular2-quick-start/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="Angular2 official page wants you to make some dirty hack to get the fastest  hellow world in Angular2. But it immediately requires to correct your first sin in the same 5-min quickstart page. Maybe it">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2015-10-25T07:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.872Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="TypeScript">
+<meta name="twitter:card" content="summary"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-angular2-quick-start" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      The Real Angular2 quick start
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2015-10-25T07:00:00.000Z" itemprop="datePublished">October 25, 2015, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>Angular2 <a target="_blank" rel="noopener" href="https://angular.io/docs/ts/latest/quickstart.html">official page</a> wants you to make some dirty hack to get the fastest  <code>hellow world</code> in Angular2. But it immediately requires to correct your first sin in the same 5-min quickstart page. Maybe it is possible for a newcomert to set up Angular2 properly in 5 minutes, but reverting previous dirty hack and then setting the correct thing up are annoying. So here is the REAL Angular2 quickstart that does not piss you off.</p>
+<p><strong>DISCLAIMER</strong>: Knowledge about <a target="_blank" rel="noopener" href="https://www.npmjs.com/">npm</a>, <a target="_blank" rel="noopener" href="https://github.com/Microsoft/TypeScript/wiki/tsconfig.json">TypeScript</a> and <a target="_blank" rel="noopener" href="https://github.com/systemjs/systemjs/blob/master/docs/config-api.md">SystemJS</a> is recommended.<br>This quickstart deliberately skips explanation on the config and shell code for real real speed.</p>
+<h1 id="Step-1-Create-a-new-folder-for-our-application-project"><a href="#Step-1-Create-a-new-folder-for-our-application-project" class="headerlink" title="Step 1: Create a new folder for our application project."></a>Step 1: Create a new folder for our application project.</h1><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> angular2-quickstart</span><br><span class="line"><span class="built_in">cd</span> angular2-quickstart</span><br><span class="line"><span class="built_in">mkdir</span> -p src/app</span><br></pre></td></tr></table></figure>
+
+<h1 id="Step-2-Install-npm-packages"><a href="#Step-2-Install-npm-packages" class="headerlink" title="Step 2: Install npm packages"></a>Step 2: Install npm packages</h1><p>First step towards front end project as usual…</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">npm init -y</span><br><span class="line">npm i angular2@2.0.0-alpha.44 systemjs@0.19.2 --save --save-exact</span><br><span class="line">npm i typescript live-server --save-dev</span><br></pre></td></tr></table></figure>
+<p>Version number sucks, but it will be removed after Angular2’s public stable release.<br>We need to install angular2 and TypeScript as dependency, of course. SystemJS is used to load our app(alternatively one can use webpack or browserify).<br>Live-server gives us live-reloading in developement.</p>
+<h1 id="Step-4-Set-up-npm-script-tasks"><a href="#Step-4-Set-up-npm-script-tasks" class="headerlink" title="Step 4: Set up npm script tasks"></a>Step 4: Set up npm script tasks</h1><p>Let’s define some useful command.<br><strong>Find and replace</strong> the <code>script</code> section in <code>package.json</code></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">  <span class="attr">&quot;scripts&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;tsc&quot;</span><span class="punctuation">:</span> <span class="string">&quot;tsc -p src -w&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;start&quot;</span><span class="punctuation">:</span> <span class="string">&quot;live-server --open=src&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p><code>npm run tsc</code> compiles and watches file changes. <code>npm start</code> runs the live-reload server.</p>
+<h1 id="Step-5-Create-our-first-Angular2-component"><a href="#Step-5-Create-our-first-Angular2-component" class="headerlink" title="Step 5: Create our first Angular2 component"></a>Step 5: Create our first Angular2 component</h1><p><strong>Add a new file</strong> called <code>app.ts</code> in <code>src/app</code></p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123;<span class="title class_">Component</span>, bootstrap&#125; <span class="keyword">from</span> <span class="string">&#x27;angular2/angular2&#x27;</span>;</span><br><span class="line"><span class="meta">@Component</span>(&#123;</span><br><span class="line">    <span class="attr">selector</span>: <span class="string">&#x27;my-app&#x27;</span>,</span><br><span class="line">    <span class="attr">template</span>: <span class="string">&#x27;&lt;h1&gt;My First Angular 2 App&lt;/h1&gt;&#x27;</span></span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">AppComponent</span> &#123; &#125;</span><br><span class="line"><span class="title function_">bootstrap</span>(<span class="title class_">AppComponent</span>);</span><br></pre></td></tr></table></figure>
+
+<h1 id="Step-6-Create-our-entrance-html"><a href="#Step-6-Create-our-entrance-html" class="headerlink" title="Step 6: Create our entrance html"></a>Step 6: Create our entrance html</h1><p><strong>Create</strong> an index.html in <code>src</code> foler.</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>Angular 2 QuickStart<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;../node_modules/systemjs/dist/system.src.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;../node_modules/angular2/bundles/angular2.dev.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">      <span class="title class_">System</span>.<span class="title function_">config</span>(&#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">packages</span>: &#123;</span></span><br><span class="line"><span class="language-javascript">          <span class="string">&#x27;app&#x27;</span>: &#123;<span class="attr">defaultExtension</span>: <span class="string">&#x27;js&#x27;</span>&#125; <span class="comment">// defaultExtension makes require `app/app` works without `.js`</span></span></span><br><span class="line"><span class="language-javascript">          <span class="comment">// more packages config goes here</span></span></span><br><span class="line"><span class="language-javascript">          <span class="comment">// ...</span></span></span><br><span class="line"><span class="language-javascript">        &#125;</span></span><br><span class="line"><span class="language-javascript">      &#125;);</span></span><br><span class="line"><span class="language-javascript">      <span class="title class_">System</span>.<span class="keyword">import</span>(<span class="string">&#x27;app/app&#x27;</span>);</span></span><br><span class="line"><span class="language-javascript">    </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">my-app</span>&gt;</span>loading...<span class="tag">&lt;/<span class="name">my-app</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="Step-7-Compile-TypeScript"><a href="#Step-7-Compile-TypeScript" class="headerlink" title="Step 7: Compile TypeScript"></a>Step 7: Compile TypeScript</h1><p><strong>Create tsconfig.json</strong> in the <code>src</code> folder.</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;compilerOptions&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;target&quot;</span><span class="punctuation">:</span> <span class="string">&quot;ES5&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;module&quot;</span><span class="punctuation">:</span> <span class="string">&quot;commonjs&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;sourceMap&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;emitDecoratorMetadata&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;experimentalDecorators&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;removeComments&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;noImplicitAny&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>And then, in a <strong>new terminal window</strong>.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm run tsc</span><br></pre></td></tr></table></figure>
+
+<h1 id="Step-8-Run-the-app"><a href="#Step-8-Run-the-app" class="headerlink" title="Step 8: Run the app!"></a>Step 8: Run the app!</h1><p>And in <strong>yet another new terminal window</strong>.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm start</span><br></pre></td></tr></table></figure>
+
+<p>You should see <code>My First Angular2  App</code> in your browser.</p>
+<h1 id="Hooray"><a href="#Hooray" class="headerlink" title="Hooray!"></a>Hooray!</h1><p>Now you can make some changes to your source file. <code>tsc</code> compiles file on the fly and <code>live-server</code> automatically refreshes the browser!</p>
+<p>Hope you are not pissed off by this quickstart.</p>
+<p><em>P.S. Final structure</em></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">angular2-quickstart</span><br><span class="line">├── node_modules</span><br><span class="line">├── src</span><br><span class="line">│    ├── app</span><br><span class="line">|    │    └── app.ts</span><br><span class="line">│    ├── index.html</span><br><span class="line">│    └── tsconfig.json</span><br><span class="line">└── package.json</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/TypeScript/" rel="tag">TypeScript</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2015/11/17/js-tracker/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          JavaScript Error tracking in browsers
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/10/10/typescript-ctags/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          Updated Ctags for TypeScript
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

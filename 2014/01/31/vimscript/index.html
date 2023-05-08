@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Vimscript the terrible way | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="source: pixiv  Exercises: Drink a beer to console yourself about Vim’s coercion of strings to integers.                                               – Steve Losh, Learning Vimscript the hard way  Vi">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vimscript the terrible way">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2014/01/31/vimscript/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="source: pixiv  Exercises: Drink a beer to console yourself about Vim’s coercion of strings to integers.                                               – Steve Losh, Learning Vimscript the hard way  Vi">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://herringtondarkholme.github.io/images/Photo.jpg">
+<meta property="article:published_time" content="2014-01-31T08:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.879Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="Vim">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://herringtondarkholme.github.io/images/Photo.jpg"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-vimscript" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      Vimscript the terrible way
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-01-31T08:00:00.000Z" itemprop="datePublished">January 31, 2014, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/Photo.jpg" class="">
+<p>source: <a target="_blank" rel="noopener" href="http://www.pixiv.net/member_illust.php?mode=medium&illust_id=41290048">pixiv</a></p>
+<blockquote>
+<p>Exercises: Drink a beer to console yourself about Vim’s coercion of strings to integers.<br>                                               – Steve Losh, Learning Vimscript the hard way</p>
+</blockquote>
+<p>Vim is a superb and classy text-editor, but VimScript, well, is far from a usable scripting language.</p>
+<p>Vimscript is extremely powerful, but has grown organically over the years into a twisty maze ready to ensnare the unwary who enter it.<br>Options and commands are often terse and hard to read</p>
+<p>On the surface, VimL looks like an agglomeration of Lua, Perl and primitive Vim configuration language. A litany of reserved words and special operators, along with Regex line-noises, gives rise to yet another write-only language. VimL supports both function call and primitive command, which seasons VimL with one more layer of complexity and inconsistency.</p>
+<p>This is culpable, but is not the most irremediable obfuscation of VimL. The tittle should belong to event system. Vim executes one and only one handler for an event once a time. To bind multiple handlers to one event, users have to write their own <a target="_blank" rel="noopener" href="http://vim.wikia.com/wiki/Overload_a_key_with_multiple_handlers">custom function</a>.</p>
+<p>It seems very easy for anyone, but at field, handling Vim plugin conflicts is a Herculean task. Vim comes out with many plugins loaded, and users’ .vimrc are liable to frequent editing. Maintaining a list of event handlers requires a user to face with plugins’ source code(verbose namespace, illegible syntax, Byzantine structure, or line noises fraught with all the aforementioned three). And this will be users’ chronic concern since Vim’s configuration are constantly changing. What’s more, VimL’s events are not sufficient. Until recent that  Vim 7.3 adds InsertPre event, there is no event for pressing arbitrary key. Users have to write recursive function to capture <a target="_blank" rel="noopener" href="http://vim.wikia.com/wiki/Capture_all_keys">all keys</a></p>
+<p>Lastly, there is little VimL material users can find. Vim’s help doc is the only comprehensive and up-to-date document, but it is awkwardly organized. Vim community also favors Python over VimL, indicating that VImL will have <a target="_blank" rel="noopener" href="http://www.vim.org/sponsor/vote_results.php">less chance</a> to get enhancement. Over the internet, few complaints and swearings about VimL are heard. It shall be interpreted as few VimL developers instead of few VimL defects.</p>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/Vim/" rel="tag">Vim</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2014/02/02/python-request/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Request is a good lib
+        
+      </div>
+    </a>
+  
+  
+    <span id="article-nav-older" class="article-nav-link-wrap older"></span>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

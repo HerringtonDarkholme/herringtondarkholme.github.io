@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Optimize ast-grep to get 10X faster | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="In this post I will discuss how to optimize the Rust CLI tool ast-grep to become 10 times faster. Rust itself usually runs fast enough, but it is not a silver bullet to all performance issues. In this">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Optimize ast-grep to get 10X faster">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2023/01/23/optimize-ast-grep/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="In this post I will discuss how to optimize the Rust CLI tool ast-grep to become 10 times faster. Rust itself usually runs fast enough, but it is not a silver bullet to all performance issues. In this">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://user-images.githubusercontent.com/2883231/215253646-21b5f1dd-a810-4ddb-9bbe-4938b4cc15f9.png">
+<meta property="og:image" content="https://user-images.githubusercontent.com/2883231/215318711-634a8b99-3e02-4187-9073-ea5be25d098f.png">
+<meta property="og:image" content="https://user-images.githubusercontent.com/2883231/215318794-7e3cf452-5016-4541-9c9d-1e266c1ee324.png">
+<meta property="og:image" content="https://user-images.githubusercontent.com/2883231/215318867-b670b5fe-c678-4c31-985f-36e4f620baeb.png">
+<meta property="article:published_time" content="2023-01-23T08:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.875Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="Rust">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://user-images.githubusercontent.com/2883231/215253646-21b5f1dd-a810-4ddb-9bbe-4938b4cc15f9.png"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-optimize-ast-grep" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      Optimize ast-grep to get 10X faster
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2023-01-23T08:00:00.000Z" itemprop="datePublished">January 23, 2023, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>In this post I will discuss how to optimize the Rust CLI tool <a target="_blank" rel="noopener" href="https://ast-grep.github.io/">ast-grep</a> to become 10 times faster.</p>
+<p>Rust itself usually runs fast enough, but it is not a silver bullet to all performance issues.</p>
+<p>In this case, I did not pay enough attention to runtime details or opted for naive implementation for a quick prototype. And these inadvertent mistakes and deliberate slacking off became ast-grep’s bottleneck.</p>
+<h1 id="Context"><a href="#Context" class="headerlink" title="Context"></a>Context</h1><p><a target="_blank" rel="noopener" href="https://ast-grep.github.io/">ast-grep</a> is my hobby project to help you search and rewrite code using <a target="_blank" rel="noopener" href="https://www.wikiwand.com/en/Abstract_syntax_tree">abstract syntax tree</a>.</p>
+<p>Conceptually, ast-grep takes a piece of pattern code (think it like a regular expression but for AST), matches the pattern against your codebase and gives a list of matched AST nodes back to you. See the <a target="_blank" rel="noopener" href="https://ast-grep.github.io/playground">playground</a> for a live demo.</p>
+<p>I designed ast-grpe’s architecture with performance in mind. Here are a few performance related highlights:</p>
+<ul>
+<li>it is written in Rust, a native language compiled to machine code.</li>
+<li>it uses the venerable C library <a target="_blank" rel="noopener" href="https://tree-sitter.github.io/">tree-sitter</a> to parse code, which is the same library powering <a target="_blank" rel="noopener" href="https://github.com/features/code-search">GitHub’s codesearch</a>.</li>
+<li>its command line interface is built upon <a target="_blank" rel="noopener" href="https://docs.rs/ignore/latest/ignore/">ignore</a>, the same crates used by the blazing fast <a target="_blank" rel="noopener" href="https://github.com/BurntSushi/ripgrep">ripgrep</a>.</li>
+</ul>
+<p>Okay, enough self-promotion <em>BS</em>. If it is designed to be fast, how comes this blog? Let’s dive into the performance bottleneck I found in my bad code.</p>
+<blockquote>
+<p>Spoiler. It’s my bad to write slow Rust.</p>
+</blockquote>
+<h1 id="Profiling"><a href="#Profiling" class="headerlink" title="Profiling"></a>Profiling</h1><p>The first thing to optimize a program is to profile it. I am lazy this time and just uses the <a target="_blank" rel="noopener" href="https://github.com/flamegraph-rs/flamegraph">flamegraph</a> tool.</p>
+<p>Installing it is simple.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cargo install flamegraph</span><br></pre></td></tr></table></figure>
+
+<p>Then run it against ast-grep! No other setup is needed, compared to other profiling tools!</p>
+<p>This time I’m using an ast-grep port of <a target="_blank" rel="noopener" href="https://github.com/ast-grep/eslint">es-lint</a> against <a target="_blank" rel="noopener" href="https://github.com/microsoft/TypeScript/">TypeScript</a>‘s <code>src</code> folder.</p>
+<p>This is the profiling command I used.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo flamegraph -- sg scan -c eslint/sgconfig.yml TypeScript/src --json &gt; /dev/null</span><br></pre></td></tr></table></figure>
+
+<p>The flamegraph looks like this.</p>
+<img width="1155" alt="Before Optimzation" src="https://user-images.githubusercontent.com/2883231/215253646-21b5f1dd-a810-4ddb-9bbe-4938b4cc15f9.png">
+
+<p>Optimizing the program is a matter of finding the hotspots in the flamegraph and fix them.</p>
+<p>For a more intuitive feeling about performance, I used the old command <code>time</code> to measure the wall time to run the command. The result is not good.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">time sg scan -c eslint/sgconfig.yml TypeScript/src</span><br><span class="line">17.63s user, 0.46s system, 167% cpu, 10.823 total</span><br></pre></td></tr></table></figure>
+
+<p>The time before <code>user</code> is the actual CPU time spent on my program. The time before <code>total</code> represents the wall time. The ratio between them is the CPU utilization. In this case, it is 167%. It means my program is not fully utilizing the CPU.</p>
+<p>It only runs six rules against the codebase and it costs about 10 whole seconds!</p>
+<p>In contrast, running one ast-grep pattern agasint the TypeScript source only costs 0.5 second and the CPU utilization is decent.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">time sg run -p <span class="string">&#x27;$A &amp;&amp; $A()&#x27;</span> TypeScript/src --json &gt; /dev/null</span><br><span class="line"></span><br><span class="line">1.96s user, 0.11s system, 329% cpu, 0.628 total</span><br></pre></td></tr></table></figure>
+
+<h1 id="Expensive-Regex-Cloning"><a href="#Expensive-Regex-Cloning" class="headerlink" title="Expensive Regex Cloning"></a>Expensive Regex Cloning</h1><p>The first thing I noticed is that the <code>regex::Regex</code> type is cloned a lot. I do know it is expensive to compile a regex, but I did not expect cloning one will be the bottleneck.<br>Much to my limited understanding, <code>drop</code>ping Regex is also expensive!</p>
+<p>Fortunately the fix is simple: I can use a reference to the regex instead of cloning it.</p>
+<p>This optimzation alone shaves about 50% of execution time.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">time sg scan -c eslint/sgconfig.yml TypeScript/src --json &gt; /dev/null</span><br><span class="line">13.89s user, 0.74s system, 274% cpu 5.320 total</span><br></pre></td></tr></table></figure>
+
+<p>The new flamegraph looks like this.</p>
+<img width="1509" alt="Avoid Regex Cloning" src="https://user-images.githubusercontent.com/2883231/215318711-634a8b99-3e02-4187-9073-ea5be25d098f.png">
+
+
+<h1 id="Matching-Rule-can-be-Avoided"><a href="#Matching-Rule-can-be-Avoided" class="headerlink" title="Matching Rule can be Avoided"></a>Matching Rule can be Avoided</h1><p>The second thing I noticed is that the <code>match_node</code> function is called a lot. It is the function that matches a pattern against an AST node.<br>ast-grep can match an AST node by rules, and those rules can be composed together into more complex rules.<br>For example, the rule <code>any: [rule1, rule2]</code> is a composite rule that consists of two sub-rules and the composite rule matches a node when either one of the sub-rules matches the node.<br>This can be expensive since multiple rules must be tried for every node to see if they actually make a match.</p>
+<p>I have already forsee it so every rule in ast-grep has an optimzation called <code>potential_kinds</code>. AST node in tree-sitter has its own type encoded in a unsigned number called <code>kind</code>.<br>If a rule can only match nodes with specific kinds, then we can avoid calling <code>match_node</code> for nodes if its kind is not in the <code>potential_kinds</code> set.<br>I used a BitSet to encode the set of potential kinds. Naturally the <code>potential_kinds</code> of composite rules can be constructed by merging the <code>potential_kinds</code> of its sub-rules, according to their logic nature.<br>For example, <code>any</code>‘s potential_kinds is the union of its sub-rules’ potential_kinds, and <code>all</code>‘s potential_kinds is the intersection of its sub-rules’ potential_kinds.</p>
+<p>Using this optimization, I can avoid calling <code>match_node</code> for nodes that can never match a rule. This optimization shaves another 40% of execution time!</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sg scan -c eslint/sgconfig.yml TypeScript/src --json &gt; /dev/null</span><br><span class="line">11.57s user, 0.48s system, 330% cpu, 3.644 total</span><br></pre></td></tr></table></figure>
+
+<p>The new flamegraph.</p>
+<img width="1503" alt="potential_kinds trick" src="https://user-images.githubusercontent.com/2883231/215318794-7e3cf452-5016-4541-9c9d-1e266c1ee324.png">
+
+<h1 id="Duplicate-Tree-Traversal"><a href="#Duplicate-Tree-Traversal" class="headerlink" title="Duplicate Tree Traversal"></a>Duplicate Tree Traversal</h1><p>Finally, the function call <code>ts_tree_cursor_child_iterator_next</code> caught my eyes. It meant that a lot of time was spent on traversing the AST tree.</p>
+<p>Well, I dumbly iterating through all the six rules and matching the whole AST tree for each rule. This is a lot of duplicated work!</p>
+<p>So I used a data structure to combine these rules, according to their <code>potential_kinds</code>. When I’m traversing the AST tree, I will first retrieve the rules with potential_kinds containing the kind of the current node. Then I will only run these rules against the node. And nodes without any <code>potential_kinds</code> hit will be naturally skipped during the traversal.</p>
+<p>This is a huge optimization! The ending result is less than 1 second! And the CPU utilization is pretty good.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sg scan -c eslint/sgconfig.yml TypeScript/src --json &gt; /dev/null</span><br><span class="line">2.82s user, 0.12s system, 301% cpu, 0.975 total</span><br></pre></td></tr></table></figure>
+
+<h1 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h1><p>The final flamegraph looks like this. I’m too lazy to optimize more. I’m happy with the sub-second result for now.</p>
+<img width="1513" alt="Merging rules" src="https://user-images.githubusercontent.com/2883231/215318867-b670b5fe-c678-4c31-985f-36e4f620baeb.png">
+
+<p>Optimizing ast-grep is a fun journey. I learned a lot about Rust and performance tuning. I hope you enjoyed this post as well.</p>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/Rust/" rel="tag">Rust</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2023/04/30/typescript-magic/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Into the Chamber of Secrets, Break through the limits of TypeScript
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/02/19/angular-ivy/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          A quick intro to Angular Ivy
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="あくまでも紳士です">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:url" content="https://herringtondarkholme.github.io/page/3/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="あくまでも紳士です">
+<meta property="og:locale" content="en_US">
+<meta property="article:author" content="Herrington Darkholme">
+<meta name="twitter:card" content="summary"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      
+  
+    <article id="post-typescript-rant" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2015/01/17/typescript-rant/">Rant on TypeScript type guard</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2015-01-17T08:00:00.000Z" itemprop="datePublished">January 17, 2015, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/hisuitei.jpg" class="">
+<p>source: <a target="_blank" rel="noopener" href="http://hisuitei.com/">Ad: hisuitei</a></p>
+<p>Recently TypeScript team has released TypeScript 1.4, adding a new feature called <code>Union Type</code> which is intended for better incorporation into native JavaScript.<br>Type guard, as a natural dyad of union type, also comes into TypeScript world. But sadly, Microsoft choose a bizzare way to introduce type guard as they said in the <a target="_blank" rel="noopener" href="https://github.com/Microsoft/TypeScript/wiki/What%27s-new-in-TypeScript%3F#typescript-14">manual</a></p>
+<blockquote>
+<p>TypeScript now understands these conditions and will change type inference accordingly when used in an if block.</p>
+</blockquote>
+<p>It <em>accepts and only accepts</em> conditional statement like <code>if (typeof x === &#39;string&#39;)</code> as type guard.<br>TypeScript now creates new type like <code>number | string</code> meaning a type of either number or string.<br>Users can further refine the type by comparing the value <code>typeof</code> gives, like the example below:</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">createCustomer</span>(<span class="params">name: &#123; firstName: <span class="built_in">string</span>; lastName: <span class="built_in">string</span> &#125; | <span class="built_in">string</span></span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">typeof</span> name === <span class="string">&quot;string&quot;</span>) &#123;</span><br><span class="line">        <span class="comment">// Because of the typeof check in the if, we know name has type string</span></span><br><span class="line">        <span class="keyword">return</span> &#123; <span class="attr">fullName</span>: name &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// Since it&#x27;s not a string, we know name has</span></span><br><span class="line">        <span class="comment">// type &#123; firstName: string; lastName: string &#125;</span></span><br><span class="line">        <span class="keyword">return</span> &#123; <span class="attr">fullName</span>: name.<span class="property">firstName</span> + <span class="string">&quot; &quot;</span> + name.<span class="property">lastName</span> &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Both customers have type &#123; fullName: string &#125;</span></span><br><span class="line"><span class="keyword">var</span> customer = <span class="title function_">createCustomer</span>(<span class="string">&quot;John Smith&quot;</span>);</span><br><span class="line"><span class="keyword">var</span> customer2 = <span class="title function_">createCustomer</span>(&#123; <span class="attr">firstName</span>: <span class="string">&quot;Samuel&quot;</span>, <span class="attr">lastName</span>: <span class="string">&quot;Jones&quot;</span> &#125;);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>I would rather say this is a bad idea because:</p>
+<ol>
+<li>it intermixes type level constucts with value level constructs.</li>
+<li>for complex and flexible language like javascript, microsoft’s approach is unable to handle various expressions regarding types.</li>
+</ol>
+<p>Value level contructs are expression or statements dealing with values, e.g. assignment, comparison. <code>typeof</code> and <code>instanceof</code> in JavaScript are value level constructs because they generate boolean value, and their values can be passed to other variable or compared with other variable. Value type constucts do imply types, say, creating a new object of specific type, but they do not explicitly manipulate the types of expressions. There is no type casting JavaScript can do. On the other hand, type level constructs deals with types, for example, type annotation and generics.</p>
+<p>Doubling <code>typeof</code> as type guard blurs the demarcation between type level and value level, and naturally reduces program’s readability(somewhat subjective claim though). A variable can, without distinct syntax, change its type in a conditional block. <code>if</code> branching is ubiquitous typescript programs, from hello-world toys to cathedral-like projects. It’s quite hard to find the “type switch” for union type among other irrelevant <code>if</code>s. Also, one has to pay attention to call correct method of a same variable in different branches. So TypeScript’s type guard introduces a new <code>type scope</code> different from both lexical scope and function scope. It also cripples the compiler because now compiler has to check whether the condition in a <code>if</code> parentheses is type guard.</p>
+<p>What’s worse? Type guard is a value level constructs so it can interact with all other language constucts. But microsoft does not intend to support that. None of the following code compiles in TypeScript 1.4.1, but they ought to run correctly in plain javascript, if they can be compiled.</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">testNot</span>(<span class="params">x: <span class="built_in">string</span>|<span class="built_in">number</span>|<span class="built_in">Function</span></span>) &#123;</span><br><span class="line">  <span class="keyword">var</span> isNonNum = <span class="keyword">typeof</span> x !== <span class="string">&#x27;number&#x27;</span></span><br><span class="line">  <span class="keyword">if</span> (isNonNum) <span class="keyword">return</span> x.<span class="property">length</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">testReturn</span>(<span class="params">x: <span class="built_in">string</span>|<span class="built_in">number</span></span>) &#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> x === <span class="string">&#x27;number&#x27;</span>) <span class="keyword">return</span>;</span><br><span class="line">  <span class="keyword">return</span> x.<span class="property">length</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">testReturn</span>(<span class="params">x: <span class="built_in">string</span>|<span class="built_in">number</span></span>) &#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> x === <span class="string">&#x27;number&#x27;</span>) <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">Error</span>(<span class="string">&#x27;error type&#x27;</span>)</span><br><span class="line">  <span class="keyword">return</span> x.<span class="property">length</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">testFor</span>(<span class="params">xs: (<span class="built_in">string</span>|<span class="built_in">number</span>)[]</span>) &#123;</span><br><span class="line"> <span class="keyword">for</span>(<span class="keyword">var</span> i = <span class="number">0</span>, x = xs[i]; <span class="keyword">typeof</span> x === <span class="string">&#x27;string&#x27;</span>; i++) &#123;</span><br><span class="line">   <span class="variable language_">console</span>.<span class="title function_">log</span>(x.<span class="property">length</span>)</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">testWhile</span>(<span class="params">xs: [](<span class="built_in">string</span>|<span class="built_in">number</span>)</span>) &#123;</span><br><span class="line">  <span class="keyword">var</span> i = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">while</span> (<span class="keyword">typeof</span> xs[i] === <span class="string">&#x27;string&#x27;</span>) &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(xs[i].<span class="property">length</span>)</span><br><span class="line">    i++</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">testFilter</span>(<span class="params">xs: (<span class="built_in">string</span>|<span class="built_in">number</span>)[]</span>) &#123;</span><br><span class="line">  xs.<span class="title function_">filter</span>(<span class="function">(<span class="params">x</span>) =&gt;</span> <span class="keyword">typeof</span> x === <span class="string">&#x27;string&#x27;</span>).<span class="title function_">map</span>(<span class="function">(<span class="params">x</span>) =&gt;</span> x.<span class="property">length</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Indeed, TypeScript is not the first to mix type level and value level. Language constructs like <code>Pattern Match</code> also do that(and usually introduce bugs related to type inference, see scala bug track). But at least Pattern Match is a specialized syntax that does not interact much with other syntax. But Type guard is, well, too ubiquitous to be good.</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-yagami" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/12/28/yagami/">大雅雅于俗</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-12-28T08:00:00.000Z" itemprop="datePublished">December 28, 2014, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <blockquote>
+<p>问君何能尔，心远地自偏。</p>
+</blockquote>
+<img src="/images/yagami.jpg" class="">
+
+
+
+<p>  我跟你讲，八神老师的LL本才是横跨氪金手游和同人薄本两界的旗舰之作。</p>
+<p>  不要看每本本子只有薄薄三十几页，但每一页都体现了老师对氪金手游业的大见识：一切氪金的本质，与“恶女榨金”无二。老师的本子虽薄，却为ACG产业，乃至现代文化消费形式，描绘了一张鸟瞰图。</p>
+<p>如若看官仅仅以无鸟事为鸟找事的心态去看LL本， 看到的不过是人物单方面榨取主人公体液的画面。进入了贤者状态的上级读者，才能看到老师在本子中表达的良苦用心。八神老师的整个作品都是个隐喻，从注射器到温度计，无一不暗示了氪金手游的运营手段。它们都有一个简单明了的目的：尽一切奇技淫巧，榨出玩家钱包里最后一滴金。</p>
+<p>本子中的主人公被描写为一个被动的体液机器，这和免费增值(Freemium)的商业模式中将消费者定位成消费机器的思路实际是异曲同工的。偶像不断用各色工具刺激玩家产生快感，玩家在这个过程中形成了氪金与成就的关联概念，在老师本子中，就是以受虐与快感关联的受虐情节所体现出来的。</p>
+<p>运营在情节和宣传中构造出的“偶像”、“奋斗”等概念，实际上是对玩家消费欲望的一个“改装”(distortion)，让消费欲能被玩家自身和玩家所在的社会环境所接受。在本子中刺激腺体的桥段，影射了游戏对玩家消费欲的刺激（生理层次上，对腹侧被盖区的刺激）。然而八神老师的文笔隽永之处就在于，他的笔触白虚伪的改装一一清除，入目三分地刻画了氪金手游的榨金本色。这一点在老师SC60的作品《 soldier money game》中展现无余。</p>
+<p>称LL薄本为俗萌之物，恰恰是没有理解八神秋一老师的用心之处。视角从薄本本身放开，提升到一个“元薄本”(meta-usuihon)的高度，才能品读出LL本中的精妙之处。八神老师的作品看似大俗，但作品的旨味却是大雅。在大俗的故事中反思了现代人的消费行为，才是艺术家在当代社会中的应有作为。</p>
+<p>作为人民艺术家，如果一味追求艺术形式上的“雅”，只会和观众拉开远非“一步之遥”的距离。所谓小雅雅于形，中雅雅于意，大雅雅于俗，八神老师的作品，不可不谓大俗大雅、雅俗共赏之作。</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-typelevel-html" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/11/01/typelevel-html/">typelevel-html</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-11-02T01:26:14.000Z" itemprop="datePublished">November 1, 2014, 6:26 PM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>Type level programming is a technique that exploits type system to represents information and logic, to the extent of language’s limit.</p>
+<p>Since values are encoded by variable’s type, type level drives compiler to validate logic or even determine program’s output.<br>All validation and computation are conducted statically at compiling phase, so the greatest benefit of type-level programming is its safety and reliability.</p>
+<p>As a rule of thumb, the more dynamic code is, the more flexible it can computes. Type level programming require all logic encoded into the source code. It is to hard to cram all logic into type system, as handling whimsical input from external source is either impossible or reduce source code to unwieldy state machine. So the niche of type level programming is usually encoding, pickling or parsing.</p>
+<p>But there is field where code is statically written: GUI. HTML template is hard coded in source. Type level can be used as linting and validation in html edition, especially in authoring web components. A piece of HTML fragment can be encoded in ordinary object, with type denoting its structure. Once the structure of HTMl is fixed, the output of JavaScript and css can be determined as well.<br>This is more helpful when one wants to make component. A tab-container must have tab-pane as child, and a tab-pane must live within a tab-container. Current approach of constraining HTML structure is encoding requirements in JavaScript and checking it in runtime. For example, angular uses <code>require: &#39;^parentDirective&#39;</code> to express the constraints and enable directive communication. If the component is programmatically constructed, using type annotation is a natural way to express the constraints. (As in Angular 2.0, <code>query&lt;ChildDirective&gt;</code>). We can go further in a language with full-bloomed type system.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">trait Tag</span><br><span class="line">class Concat[A &lt;: Tag, B &lt;: Tag](a: A, b: B) extends Tag</span><br><span class="line">trait NestTag[A &lt;: Tag] extends Tag &#123;</span><br><span class="line">  type Child = A</span><br><span class="line">&#125;</span><br><span class="line">trait Inline extends Tag</span><br><span class="line">trait Block extends Tag</span><br><span class="line">case class div[T &lt;: Tag](t :T = null) extends NestTag[T] with Block</span><br><span class="line">case class p[T &lt;: Tag](t :T = null) extends NestTag[T] with Block</span><br><span class="line">case class a[T &lt;: Inline](t :T = null) extends NestTag[T] with Inline</span><br><span class="line"></span><br><span class="line">implicit class PlusTag[A &lt;: Tag](a: A) &#123;</span><br><span class="line">  def +[B &lt;: Tag](b: B) = new Concat(a, b)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class Contains[A &lt;: Tag, C[_ &lt;: Tag] &lt;: NestTag[_], T[_ &lt;: Tag] &lt;: NestTag[_]]</span><br><span class="line"></span><br><span class="line">case class jQ[A &lt;: Tag, C[_ &lt;: Tag] &lt;: NestTag[_]](c: C[A]) &#123;</span><br><span class="line">  def has[T[_ &lt;: Tag] &lt;: NestTag[_]](implicit ev: Contains[A, C, T]) = true</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">implicit def htmlEq[A &lt;: Tag, C[_ &lt;: Tag] &lt;: NestTag[_], T[_ &lt;: Tag] &lt;: NestTag[_]](implicit ev: C[A] =:= T[A]) =</span><br><span class="line">  new Contains[A, C, T]</span><br><span class="line">implicit def recurEq[A &lt;: Tag, B[_ &lt;: Tag] &lt;: NestTag[_], C[_ &lt;: Tag] &lt;: NestTag[_], T[_ &lt;: Tag] &lt;: NestTag[_]]</span><br><span class="line">  (implicit ev: Contains[A, B, T]) = new Contains[B[A], C, T]</span><br><span class="line"></span><br><span class="line">val ele = div(</span><br><span class="line">  p(</span><br><span class="line">    a()</span><br><span class="line">  )</span><br><span class="line">)</span><br><span class="line">val r = jQ(ele).has[p]</span><br><span class="line">println(r)</span><br></pre></td></tr></table></figure>
+
+<p>The code above is just a demo. All html elements has type that denotes its structure. And one can tell whether a tag is in a html elemnt by calling <code>jQ(ele).has[Tag]</code>. (Note: ele is value level variable and Tag is a type level constructor.) And inline element cannot contains block element, because inline element’s child must be a subtype of <code>inline</code>.</p>
+<p>Programmatical markup has several benefits:</p>
+<ol>
+<li>no switching between script and template</li>
+<li>static type checking</li>
+<li>component dependency requirements</li>
+<li>component communication</li>
+<li>subtyping, inheritance… Classical OOP features</li>
+<li>relatively clean layout (though not as concise as Jade&#x2F;Slim)</li>
+</ol>
+<p>The biggest problem is, well, type level templates is strongly constrained by host language. Dynamic languages simply cannot have it. Users of classical static typed language without type inference cannot afford the verbosity of deeply nested type. And languages capable of type level have different approaches and implementation towards Type Level Programming.</p>
+<p>After all, type level is too crazy…, at least for daily business logic.</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-scala-operator" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/09/30/scala-operator/">Scala Generalized Type constraints</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-10-01T03:23:16.000Z" itemprop="datePublished">September 30, 2014, 8:23 PM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>Generalized Type Constraints, also known as <code>&lt;:&lt;</code>, <code>&lt;%&lt;</code>(deprecated though) and <code>=:=</code>, also known as type relation operator, or call <a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/2603003/operator-in-scala/">whatever</a> you want, are not operators but identifiers. It’s quite confusing for new comers to distinguish them from operators, well…, identifiers which are not that esoteric.</p>
+<p>This is just plain Scala feature that non-alphanum symbols can act as legal identifiers, just like <code>+</code> method.<br>More specifically, they are type-constructors. But before we inspect their implementations, let’s first consider their usage.</p>
+<h1 id="Usage"><a href="#Usage" class="headerlink" title="Usage"></a>Usage</h1><p>You want to implement a generic container for every type, however, you also want to add a special method that only applies to <code>Special</code> type. (notice: this is different from the annotation <code>@specialized</code> which deals with JVM’s primitive type. Here <code>Special</code> is just a plain old scala type)</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Container</span>[<span class="type">A</span>](<span class="params">value: <span class="type">A</span></span>) </span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">diff</span></span>[<span class="type">A</span> &lt;: <span class="type">Int</span>](b: <span class="type">Int</span>) = value - b</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// BOOM</span></span><br><span class="line"><span class="comment">// error: value - is not a member of type parameter A</span></span><br><span class="line"><span class="comment">//    def diff[A &lt;: Int](b: A) = value - b</span></span><br></pre></td></tr></table></figure>
+
+<p>Why? The type bound <code>A &lt;: Int</code> does not work. <code>A</code> has been defined at the class declaration, in the class body Scala compiler requries every type bound is consistent with A’s definition. Here, <code>A</code> has no bound so it is bounded by <code>Any</code>, not <code>Int</code>.</p>
+<p>Instead of setting type bound, methods may ask for some kinds of specific <em>ad-hoc</em> “evidence” for a type.</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">scala&gt; <span class="class"><span class="keyword">class</span> <span class="title">Container</span>[<span class="type">A</span>](<span class="params">value: <span class="type">A</span></span>) </span>&#123;</span><br><span class="line">  <span class="comment">// other generic methods for A</span></span><br><span class="line">  <span class="comment">/* blah blah */</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// specialized method for Int</span></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">addIt</span></span>(<span class="keyword">implicit</span> evidence: <span class="type">A</span> =:= <span class="type">Int</span>) = <span class="number">123</span> + value</span><br><span class="line">&#125;</span><br><span class="line">defined <span class="class"><span class="keyword">class</span> <span class="title">Container</span></span></span><br><span class="line"></span><br><span class="line">scala&gt; (<span class="keyword">new</span> <span class="type">Container</span>(<span class="number">123</span>)).addIt</span><br><span class="line">res11: <span class="type">Int</span> = <span class="number">246</span></span><br><span class="line"></span><br><span class="line">scala&gt; (<span class="keyword">new</span> <span class="type">Container</span>(<span class="string">&quot;123&quot;</span>)).addIt</span><br><span class="line">&lt;console&gt;:<span class="number">10</span>: error: could not find <span class="keyword">implicit</span> value <span class="keyword">for</span> parameter evidence: =:=[java.lang.<span class="type">String</span>,<span class="type">Int</span>]</span><br></pre></td></tr></table></figure>
+
+<p>Cool, <code>evidence</code> is an implicit provided by scala predef. And <code>A =:= Int</code> is just a type like <code>Map[Int, String]</code>, but is infixed due to scala’s syntactic sugar.</p>
+<p>Scala does not impose type constraints until the specific method is called, so <code>addIt</code> does not violate <code>A</code>‘s definition. Still, given the implicit <code>evidence</code>, compiler can still infer that value in <code>addIt</code> is an sub-instance of <code>Int</code>.</p>
+<p>As stated before, type constraints are <em>ad-hoc</em>. So it can achieve type inference more specific than type bound. (Fairly, this is the power of implicit).</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">def foo[A, B &lt;: A](a: A, b: B) = (a,b)</span><br><span class="line"></span><br><span class="line">scala&gt; foo(1, List(1,2,3))</span><br><span class="line">res1: (Any, List[Int]) = (1,List(1, 2, 3))</span><br></pre></td></tr></table></figure>
+<p>1 is clearly <code>Int</code> but why does compiler infer it as <code>Any</code>? The <code>B &lt;: A</code> bound requires the first argument type is a super type of the second. <code>A</code> is inferred as the most general type between <code>Int</code> and <code>List[Int]</code>, <code>Any</code>.</p>
+<p><code>&lt;:&lt;</code> comes to help.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">def bar[A,B](a: A, b: B)(implicit ev: B &lt;:&lt; A) = (a,b)</span><br><span class="line"></span><br><span class="line">scala&gt; bar(1,List(1,2,3))</span><br><span class="line">&lt;console&gt;:9: error: Cannot prove that List[Int] &lt;:&lt; Int.</span><br></pre></td></tr></table></figure>
+
+<p>Because generalized type constraints does not interfere with inference, <code>A</code> is <code>Int</code> here. Only then does the compiler find evidence for <code>&lt;:&lt;[Int, List[Int]]</code> and then fails.<br>(Actually, implicit can feedback type information back to inference, see <a target="_blank" rel="noopener" href="http://apocalisp.wordpress.com/2010/07/17/type-level-programming-in-scala-part-6d-hlist%C2%A0zipunzip/">typelevel programming’s</a> <code>HList</code> and scala collection library’s <code>CanBuildFrom</code>)</p>
+<p>Also implicit conversion does not impact <code>&lt;:&lt;</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">scala&gt; def foo[B, A&lt;:B] (a:A,b:B) = print(&quot;OK&quot;)</span><br><span class="line"></span><br><span class="line">scala&gt; class A; class B;</span><br><span class="line"></span><br><span class="line">scala&gt; implicit def a2b(a:A) = new B</span><br><span class="line"></span><br><span class="line">scala&gt; foo(new A, new B)  // implicit conversion!</span><br><span class="line">OK</span><br><span class="line"></span><br><span class="line">scala&gt; def bar[A,B](a:A,b:B)(implicit ev: A&lt;:&lt;B) = print(&quot;OK&quot;)</span><br><span class="line"></span><br><span class="line">scala&gt; bar(new A, new B)  // does not work</span><br><span class="line">&lt;console&gt;:17: error: Cannot prove that A &lt;:&lt; B.</span><br></pre></td></tr></table></figure>
+
+
+<h1 id="Implementation"><a href="#Implementation" class="headerlink" title="Implementation"></a>Implementation</h1><p>Actually <code>=:=</code> is just a type constructor in scala.<br>It is somewhat like <code>Map[A, B]</code>, that is,<br><code>=:=</code> is defined like</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">class =:=[A, B]</span><br></pre></td></tr></table></figure>
+
+<p>so in the implictly’s bracket, <code>Int =:= Int</code> is just a type<br><code>A =:= B</code> is the infix form of type parameterization for<br>non-alphanumeric identifier. It is equivalent to <code>=:=[A, B]</code></p>
+<p>so one can define implicts for <code>=:=</code>, so that compiler can find</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">implicit def EqualTypeEvidence[A]: =:=[A, A] = new =:=[A, A]</span><br></pre></td></tr></table></figure>
+
+<p>So, when <code>implictly[A =:= B]</code> is compiled,<br>compiler tries to find the correct implicit evidence.</p>
+<p>If and only If A and B are the same, say Int, the compiler can find<br><code>=:=[Int, Int]</code>, by the result of <code>implicit function EqualTypeEvidence[Int]</code></p>
+<p>More compelling is &lt;:&lt;, the conformance evidence,<br>it leverages variance annotation in scala</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">class &lt;:&lt;[-A, +B]</span><br><span class="line">implict def Conformance[A]: &lt;:&lt;[A, A] = new &lt;:&lt;[A, A]</span><br></pre></td></tr></table></figure>
+
+<p>Consider, when <code>String &lt;:&lt; java.io.Serializable</code> is needed,<br>compiler tries to find an instance of <code>&lt;:&lt;[String, j.i.Serializable]</code><br>It can only find instance of the type <code>&lt;:&lt;[String, String]</code><br>(or another alternative <code>&lt;:&lt;[Serializable, Serializable]</code>)<br>But given the variance annotation of &lt;:&lt;,<br>since String is the very type String<br>and String is a subtype of Serializable and B is in a covariant position<br>, or, in another direction<br>snice Serializable is a supertype of String and A is in a contravariant position<br>and Serializable is the very type Serializable</p>
+<p><code>&lt;:&lt;[String, String]</code> is a subtype of <code>&lt;:&lt;[String, Serializable]</code><br>So compiler finds the correct implicit instance as the evidence that<br>String is a subtype of Serializable. By the principle of subtype subsititution.<br>(Liskov)</p>
+<p>Similarly we can define</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Conversion evidence</span><br><span class="line"></span><br><span class="line">class &lt;%&lt;[A &lt;% B, B]</span><br><span class="line">implicit def Conversion[A, B] = new &lt;%&lt;[A, B]</span><br><span class="line"></span><br><span class="line">Contra-conformance</span><br><span class="line">class &gt;:&gt;[+A, -B]</span><br><span class="line">implicit def Contra[A] = new &gt;:&gt;[A, A]</span><br></pre></td></tr></table></figure>
+
+<p>Magic, Right?<br>The actual implementations uses singleton pattern so it is more efficient. For this illustration post, sloppy implementation is just fine :).</p>
+<p>Reference:<br><a target="_blank" rel="noopener" href="http://hongjiang.info/scala-type-contraints-and-specialized-methods/">http://hongjiang.info/scala-type-contraints-and-specialized-methods/</a><br><a target="_blank" rel="noopener" href="http://apocalisp.wordpress.com/2010/07/17/type-level-programming-in-scala-part-6d-hlist%C2%A0zipunzip/">http://apocalisp.wordpress.com/2010/07/17/type-level-programming-in-scala-part-6d-hlist%C2%A0zipunzip/</a></p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-play-scala" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/08/18/play-scala/">play framework with scalate and activerecord</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-08-19T05:04:58.000Z" itemprop="datePublished">August 18, 2014, 10:04 PM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <blockquote>
+<p>WRYYYYYYYYYYYYYYYY</p>
+<p>– <cite>Dio Brando on Scala crazy dependencies</cite></p>
+</blockquote>
+<p>Scala works like CSS selectors in that every successor overrides its predecessor.</p>
+<p>You will have to work as a detective to figure out the correct recipe to manage a huge casserole of hodgepodge.</p>
+<p>To achieve a working <em>Play</em> configuration with <code>scalate</code> and <code>activerecord</code> needs:</p>
+<p>In <code>build.sbt</code>:</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">scalaVersion :=  <span class="string">&quot;2.10.3&quot;</span></span><br><span class="line"></span><br><span class="line">libraryDenpendencies ++= <span class="type">Seq</span>(</span><br><span class="line">  jdbc,</span><br><span class="line">  <span class="string">&quot;org.scalatra.scalate&quot;</span> %% <span class="string">&quot;scalate-core&quot;</span> % <span class="string">&quot;1.7.0&quot;</span>,</span><br><span class="line">  <span class="string">&quot;com.github.aselab&quot;</span> %% <span class="string">&quot;scala-activerecord&quot;</span> % <span class="string">&quot;0.2.3&quot;</span>,</span><br><span class="line">  <span class="string">&quot;com.github.aselab&quot;</span> %% <span class="string">&quot;scala-activerecord-play2&quot;</span> % <span class="string">&quot;0.2.3&quot;</span>,</span><br><span class="line">  <span class="string">&quot;com.h2database&quot;</span> % <span class="string">&quot;h2&quot;</span> % <span class="string">&quot;1.3.170&quot;</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>Several notes:</p>
+<ol>
+<li>Currently <code>scala-activerecord</code> only supports 2.10.3</li>
+<li><code>scalate</code> must be <code>1.7.0</code>+ for better support on scala 2.10 but the current stable version is <code>1.6.0</code></li>
+</ol>
+<p>Then in the root path of play project, create a new file located at <code>app/lib/ScalateIntegration.scala</code></p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">package</span> controllers</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> play.api._</span><br><span class="line"><span class="keyword">import</span> http.&#123;<span class="type">Writeable</span>, <span class="type">ContentTypeOf</span>, <span class="type">ContentTypes</span>&#125;</span><br><span class="line"><span class="keyword">import</span> mvc.<span class="type">Codec</span></span><br><span class="line"><span class="keyword">import</span> play.api.<span class="type">Play</span>.current</span><br><span class="line"><span class="keyword">import</span> org.fusesource.scalate.layout.<span class="type">DefaultLayoutStrategy</span></span><br><span class="line"><span class="keyword">import</span> collection.<span class="type">JavaConversions</span>._</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">object</span> <span class="title">Scalate</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">import</span> org.fusesource.scalate._</span><br><span class="line">  <span class="keyword">import</span> org.fusesource.scalate.util._</span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> format = <span class="type">Play</span>.configuration.getString(<span class="string">&quot;scalate.format&quot;</span>) <span class="keyword">match</span> &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="type">Some</span>(configuredFormat) =&gt; configuredFormat</span><br><span class="line">    <span class="keyword">case</span> _ =&gt; <span class="string">&quot;scaml&quot;</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">lazy</span> <span class="keyword">val</span> scalateEngine = &#123;</span><br><span class="line">    <span class="keyword">val</span> engine = <span class="keyword">new</span> <span class="type">TemplateEngine</span></span><br><span class="line">    engine.resourceLoader = <span class="keyword">new</span> <span class="type">FileResourceLoader</span>(<span class="type">Some</span>(<span class="type">Play</span>.getFile(<span class="string">&quot;app/views&quot;</span>)))</span><br><span class="line">    engine.layoutStrategy = <span class="keyword">new</span> <span class="type">DefaultLayoutStrategy</span>(engine, <span class="string">&quot;app/views/layouts/default.&quot;</span> + format)</span><br><span class="line">    engine.classpath = <span class="string">&quot;tmp/classes&quot;</span></span><br><span class="line">    engine.workingDirectory = <span class="type">Play</span>.getFile(<span class="string">&quot;tmp&quot;</span>)</span><br><span class="line">    engine.combinedClassPath = <span class="literal">true</span></span><br><span class="line">    engine.classLoader = <span class="type">Play</span>.classloader</span><br><span class="line">    engine</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">apply</span></span>(template: <span class="type">String</span>) = <span class="type">Template</span>(template)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">case</span> <span class="class"><span class="keyword">class</span> <span class="title">Template</span>(<span class="params">name: <span class="type">String</span></span>) </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">render</span></span>(args: java.util.<span class="type">Map</span>[<span class="type">String</span>, <span class="type">Any</span>]) = &#123;</span><br><span class="line">      <span class="type">ScalateContent</span>&#123;</span><br><span class="line">        scalateEngine.layout(name, args.map &#123;</span><br><span class="line">          <span class="keyword">case</span> (k, v) =&gt; k -&gt; v</span><br><span class="line">        &#125; toMap)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">case</span> <span class="class"><span class="keyword">class</span> <span class="title">ScalateContent</span>(<span class="params">val cont: <span class="type">String</span></span>)</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">implicit</span> <span class="function"><span class="keyword">def</span> <span class="title">writeableOf_ScalateContent</span></span>(<span class="keyword">implicit</span> codec: <span class="type">Codec</span>): <span class="type">Writeable</span>[<span class="type">ScalateContent</span>] = &#123;</span><br><span class="line">    <span class="type">Writeable</span>[<span class="type">ScalateContent</span>]((scalate:<span class="type">ScalateContent</span>) =&gt; codec.encode(scalate.cont))</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">implicit</span> <span class="function"><span class="keyword">def</span> <span class="title">contentTypeOf_ScalateContent</span></span>(<span class="keyword">implicit</span> codec: <span class="type">Codec</span>): <span class="type">ContentTypeOf</span>[<span class="type">ScalateContent</span>] = &#123;</span><br><span class="line">    <span class="type">ContentTypeOf</span>[<span class="type">ScalateContent</span>](<span class="type">Some</span>(<span class="type">ContentTypes</span>.<span class="type">HTML</span>))</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>Again only works on scalate 1.6.</p>
+<p>Finally, according to <code>activerecord</code>‘s doc.<br>To load the plugin, in <code>conf/play.plugin</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">9999:com.github.aselab.activerecord.ActiveRecordPlugin</span><br></pre></td></tr></table></figure>
+
+<p>To configure database, in <code>conf/application.conf</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"># Database configuration</span><br><span class="line"># ~~~~~</span><br><span class="line">#</span><br><span class="line"></span><br><span class="line"># Scala ActiveRecord configurations</span><br><span class="line">db.activerecord.driver=org.h2.Driver</span><br><span class="line">db.activerecord.url=&quot;jdbc:h2:mem:play&quot;</span><br><span class="line">db.activerecord.user=&quot;sa&quot;</span><br><span class="line">db.activerecord.password=&quot;&quot;</span><br><span class="line"></span><br><span class="line"># Schema definition class</span><br><span class="line">activerecord.schema=models.Tables</span><br></pre></td></tr></table></figure>
+
+<p>And in <code>app/models/person.scala</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">package models</span><br><span class="line"></span><br><span class="line">import com.github.aselab.activerecord._</span><br><span class="line">import com.github.aselab.activerecord.dsl._</span><br><span class="line"></span><br><span class="line">case class Person(@Required name: String) extends ActiveRecord</span><br><span class="line">object Person extends ActiveRecordCompanion[Person] with PlayFormSupport[Person]</span><br></pre></td></tr></table></figure>
+
+<p>In <code>app/models/tabels.scala</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">package models</span><br><span class="line"></span><br><span class="line">import com.github.aselab.activerecord._</span><br><span class="line">import com.github.aselab.activerecord.dsl._</span><br><span class="line"></span><br><span class="line">object Tables extends ActiveRecordTables with PlaySupport &#123;</span><br><span class="line">  val models = table[Person]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>And finally you can try this in console</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">activator console</span><br><span class="line"></span><br><span class="line">import models._</span><br><span class="line">import play.core.StaticApplication</span><br><span class="line"></span><br><span class="line">new StaticApplication(new java.io.File(&quot;.&quot;))</span><br><span class="line"></span><br><span class="line">Person(&quot;f@ck&quot;).save</span><br><span class="line">Person.findBy(&quot;name&quot;, &quot;f@ck&quot;)</span><br></pre></td></tr></table></figure>
+
+<p>WTF have I done? I just typed mechanically what I have ferreted on Google and StackOverflow.<br>WTF is <code>play.core.StaticApplication</code> that is just one confusing <a target="_blank" rel="noopener" href="https://www.playframework.com/documentation/2.2.x/api/scala/index.html#play.core.StaticApplication">page</a> on the doc?<br>Speciously tantializing is the magical code under which lurk complicated dependencies.</p>
+<p>Reference: <a target="_blank" rel="noopener" href="http://www.javacodegeeks.com/2012/04/play-framework-2-quicktip-scala-console.html">PlayframeWork Quick Tip</a></p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-hm" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/08/17/hm/">Hindley Milner reference crafting Algorithm W from scratch</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-08-18T03:36:12.000Z" itemprop="datePublished">August 17, 2014, 8:36 PM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>Hindley-Milner!<br>なるほど！わからん！</p>
+<p>First Step:<br><a target="_blank" rel="noopener" href="http://akgupta.ca/blog/2013/05/14/so-you-still-dont-understand-hindley-milner/">So you still dont understand hindley milner</a></p>
+<p>Excellent explanation.</p>
+<p>Second Step:<br><a target="_blank" rel="noopener" href="http://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system">Wiki</a></p>
+<p>Third Step:<br><a target="_blank" rel="noopener" href="http://grabmueller.de/martin/www/pub/AlgorithmW.pdf">Haskell Implementation</a><br><a target="_blank" rel="noopener" href="http://www.scala-lang.org/docu/files/ScalaByExample.pdf">Scala Implementation</a></p>
+<p>Actually I still don’t understand it…</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-scaloid" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/07/07/scaloid/">How to set up a scaloid project from scratch</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-07-07T08:14:13.000Z" itemprop="datePublished">July 7, 2014, 1:14 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>TL;DR; It’s hard to set up android development environment without the aid of IDE. And it’s harder for scaloid.</p>
+<ol>
+<li><p>Download standalone SDK</p>
+</li>
+<li><p>Download Android SDK tools&#x2F; SDK platform tools&#x2F; SDK build tools<br>  NB&gt; f@ck GFW, I got around that bastard by modifying <code>/etc/hosts</code>.</p>
+</li>
+<li><p>Install sbt, reference for GFW: <a target="_blank" rel="noopener" href="http://freewind.me/blog/20140509/2619.html">here</a></p>
+</li>
+<li><p><code>android create project --target &lt;target-id&gt; --name scaloidApp --path &lt;path&gt;/scaloidApp --activity MainActivity --package com.example.scaloidapp</code></p>
+</li>
+<li><p>Create a directory named project within your project and add the file project&#x2F;plugins.sbt, in it, add the following line:<br> addSbtPlugin(“com.hanhuy.sbt” % “android-sdk-plugin” % “1.2.20”)</p>
+</li>
+<li><p>Create project&#x2F;build.properties and add the following line:</p>
+</li>
+</ol>
+<p>  sbt.version&#x3D;0.12.4 # newer versions may be used instead</p>
+<ol start="7">
+<li>Create <code>build.sbt</code> in root directory(<a target="_blank" rel="noopener" href="https://gist.github.com/pfn/5872691">example</a>). Remember to import <code>android.Keys._</code></li>
+</ol>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> android.<span class="type">Keys</span>._</span><br><span class="line"></span><br><span class="line">android.<span class="type">Plugin</span>.androidBuild</span><br><span class="line"></span><br><span class="line">name := <span class="string">&quot;scaloidApp&quot;</span></span><br><span class="line"></span><br><span class="line">scalaVersion := <span class="string">&quot;2.11.0&quot;</span></span><br><span class="line"></span><br><span class="line">platformTarget in <span class="type">Android</span> := <span class="string">&quot;android-20&quot;</span></span><br><span class="line"></span><br><span class="line">libraryDependencies += <span class="string">&quot;org.scaloid&quot;</span> %% <span class="string">&quot;scaloid&quot;</span> % <span class="string">&quot;3.4-10&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>UPDATE: <code>scaloid-android-plugin</code> fixed the building &#x3D;.&#x3D;</p>
+</blockquote>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-html" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/05/17/html/">magic HTML.js</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-05-17T07:00:00.000Z" itemprop="datePublished">May 17, 2014, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/html.jpg" class="">
+<p>source: <a target="_blank" rel="noopener" href="http://www.pixiv.net/member_illust.php?mode=medium&illust_id=43531055">pixiv</a></p>
+<p>HTML.js is a library full of syntactic sugar. It changes html elements dynamically so that the methods reflect their children node. For example, code like HTML.body.header.hgroup.h1 utilizes chain methods to mirror the structure of dom.</p>
+<p>ES5 <code>Object.defineProperty</code> and <code>mutationObserver</code> conjure up the magic. HTML.js provides an eponymous HTML api object initialized by an internal <code>node</code> method, which add all <em>tag</em> methods to its argument object. All <em>tag</em> methods are defined by <code>Object.defineProperty</code> with <code>get</code> option. So tag methods behave like getter methods: every time user access these attributes, tag methods return <em>HTMLifyed</em> elements that are ready to be chained (HTMLifyed elements are normal HTMLElements that have been extended by the internal node method mentioned above).</p>
+<p>Enable tag methods responsive to dom manipulation, HTML opts for mutationObserver to keep an eye on the root element. Once elements have been changed, mutationObserver detects the change and notifies HTML to refresh methods of the corresponding elements.</p>
+<p>However, syntactic sweetheart fails to belie some design deficits and practical problems in this library. <code>Getter</code> methods abstain legacy browsers that still occupy about 10% market share. MutationObserver itself is not that horribly slow, but registering a watchdog on <html> is almost certainly a performance killer for massive dom manipulations.</p>
+<p>But the most notorious code smell comes from yet another place, a pure design decision that functions returning either element or array. It is certainly one of the most sloppy practice in dynamic language. In static typed language those function can only have return type <code>Any</code>. Surely this is not informative and bothers user to take the risk of casting results. Indeed, the author mentioned this on the <a target="_blank" rel="noopener" href="http://nbubna.github.io/HTML/">homepage</a> and tried defend this api design by the excuse of conditional context where users can avoid quandary. But a good library shall be as much care-free as possible. Providing api that returns one single element is probably better than  leaving the users to guarantee element’s uniqueness. Ad-hoc polymorphism is determined by function arguments, not return type.</p>
+<p>HTML’s api reminds me of the keyword <code>null</code>.  Admittedly it is theoretically feasible to entrust programmers with the role of checking uniqueness&#x2F;existence. But why ぬるぽ is still one of the most prominent haunting apparition in our code?</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-yuki" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/05/11/yuki/">至少、像那老坛酸菜牛肉面一样</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-05-11T07:00:00.000Z" itemprop="datePublished">May 11, 2014, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/mfbn.png" class="">
+<p>source: unknown</p>
+<p>   「東山覇権」盛行下的碧池这个词，几乎是个定番的萌点了。双马尾金发碧眼归国麻将日侨的威压统治了円光排行榜数载，<br>使得麻将军团的地位牢不可破。动画中一有搔首弄姿的镜头，屏幕前众宅男便心领神会。而年度nico某排行榜里，当壮大的BGM配着罗格翻开冠军ako酱的名字时，就能感到这王者风范：就像全屏大赤字弹幕一样霸气。</p>
+<p>而在同人薄本界，霸主地位也高高在上遥不可及。《清纯奔放的木静酱》是一部不错的全彩短篇，可惜故事不成气候，难以动摇王座。然而，却有一部作品是円光界独树一帜的经典，震慑了女王新子瞳的王者地位——就是传说中感动2ch全J民的C79本《せめて、あの雪のように》。</p>
+<p>这部作品是作者藤丸涉足同人界十周年的作品。虽说藤丸比较低调，并非是脍炙人口的名流。但画风却相当不错，线条俊秀，一本全彩本也相当实用，是个值得称道的绅士。</p>
+<p>然而，这部十周年的作品，却并不是以其实用性著称，这正是她不同凡响之处。让这部作品不仅对作者而言纪念作品，更是援交作品界的一座里程碑式的存在。除此之外，同名小说以及MAD亦有爱好者制作，而作品的经典台词和分镜，更是渗入到了匿名基坛。可见《雪》是多么地震撼。</p>
+<p>艺术手法上，《雪》是一部大量使用“留白”的作品，甚至可以说完全呈递了一张30页白纸给读者。与其浓墨重彩混体液描绘JK和大叔的床单故事，作品仅仅是让女主角雪和客人拉手让男主目击。余下的，就只是轻轻勾勒男女主间淡淡的青涩。这是一部“没有工口场景的工口作品”，没有一笔一墨淫猥，把故事和故事配套的动作戏码完全在读者脑内展开。也正是如此，原本是看中作者画风的看客，是硬生生把体液从下半身挤到了泪腺里流出来。</p>
+<p>如果在这里做人物分析的话绝对属于多余，甚至是对作品的不敬。这部作品是经典，女主是经典的碧池妖精白无垢天使，男主是经典的迟钝缩卵。一个没有意外展开的故事，但确实是经典的故事，也正是一次、又一次碾碎读者心理防线的故事。前几页是Sucubus的开朗笑颜，下几页就是女主的无奈和夙愿。这笔触下的人物味道，不是死甜的糖也不是突兀的苦味，而是银勺轻舀咖啡，在口中化开甜味苦味醇香几个层次，在后味中品咖啡豆是如何烘焙烧制的——作品留白了女主雪的背景，却又提供了她的苦恼，让读者自然地在脑内补完。</p>
+<p>因而刻画女主白山雪尤其经典，女主的每句台词都是经典<br>   —— 好羡慕月村同学，真好啊，我也想谈恋爱<br>   —— 花丘君对我没兴趣，所以喜欢，真的喜欢<br>   —— 各种人，各种想法，我都懂，被教会了 (英译本中为 I was made to know真是被动语态在翻译暧昧语言的合适用法)<br>   —— 像我这样的二手货，清仓甩卖也没人要啦<br>这似曾相识的句子，简直是掩藏在人类集体无意识中的原型，被挖掘出来压缩在几十页中冲击读者的精神。这，就是经典，恒久不变，历久弥新。</p>
+<p>和众多薄本一样，《雪》足够给看客带来充分贤者时间。而不同的是，《雪》并不局限在短暂肤浅的生理不应期，而是对人性深层的震撼和拷问。在各处对援交的<a target="_blank" rel="noopener" href="http://www.zhihu.com/question/19993998/answer/19423246">舌战</a>)，总是能看到在遥遥道德高点上用“干净”“肮脏”的概念，反对援交。在没有论证前就用着“试想蔚然成风后社会还能干净吗”的论调强占高点。然而《雪》这部作品却展现了另一面：少女在成长和生活中的无奈和困苦，迫使少女的早熟和世故。对援交的鄙夷在宏观上或许是大义凛然的，但在微观上却显得无情无义。或许不该忘记，在臆想中或污染社会的援交，恰恰是现实里由龌龊的社会所制造的。</p>
+<p>当然，这部作品无法脱离校园恋爱剧的范畴，金钱交易和校园纯爱的反差也是看点之一，合乎心智(尤其异性人际方面)水平(滞留)在中学时代的宅男。而最后女主去向不明，成为男主的回忆，倒也是提供了不少可以意淫之处。这样的结局倒是影射了漫画的特色：任何角色，只能成为看客精神世界里的影子。《雪》确实挖了一道沟渠让读者能意淫出一道爱河了。</p>
+<p>《せめて、あの雪のように》是一本让人心酸的本子。其影响已经超过作品本身，演化成了”像我这样的二手货，也不会要XXX”的成句，真是又给这个漫画添加了别样的风味。然而转念一想，可能更增加了一份实用。每每看到年轻情侣亲密时，总是会有难免见不得理还乱的忧愁；又或者看到大叔拉着百褶裙的手在草地上散步时，百感交集。然而重温这个经典的镜头和台词，却瞬间心头感到：这酸爽！<br>啊，这酸爽！至少、像那老坛酸菜牛肉面一样</p>
+<p>作者简介：藤丸 漫画家，原画家， 曾用名F.blue，曾与ひらめ、綾瀬三人组团出本，不过其中一人在C75的时候撂了挑子（迷上了和洛奇很像的一种网游）。藤丸也就在那个时候改了名，自 己一个人单练。藤丸的作品不多，原创气息浓厚，双手磨砺的很充分，仅有的几部同人都有很高的还原度，分镜规矩，笔法公整，平凡的剧情，简直就是一个传统的 漫画家</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-scala" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/04/15/scala/">Scala Symbol Soup Salvage</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-04-15T07:00:00.000Z" itemprop="datePublished">April 15, 2014, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/yandere.jpg" class="">
+<p>source: <a target="_blank" rel="noopener" href="https://yande.re/post/show/284731/hatsune_miku-headphones-pantsu-shimapan-suemizu_yu">yande.re</a></p>
+<p>By no several pages could one explain or exhausted the absurd bizarre creepy daunting esoteric flabbergasting type system in Scala.<br>Here are some aspects that Learn Scala by example does not cover.</p>
+<h2 id="Digest"><a href="#Digest" class="headerlink" title="Digest:"></a>Digest:</h2><p><a target="_blank" rel="noopener" href="http://twitter.github.io/scala_school/advanced-types.html">http://twitter.github.io/scala_school/advanced-types.html</a></p>
+<h2 id="Context-Bound-and-Implicitly"><a href="#Context-Bound-and-Implicitly" class="headerlink" title="Context Bound and Implicitly:"></a>Context Bound and Implicitly:</h2><p><code>def sort[A : Ordered] =&gt; def sort[A](implicit x: Ordred[A])</code><br><code>def implicitly[T](implicit e: T) = e</code><br><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/3855595/what-is-the-scala-identifier-implicitly">http://stackoverflow.com/questions/3855595/what-is-the-scala-identifier-implicitly</a></p>
+<h2 id="Type-Bound"><a href="#Type-Bound" class="headerlink" title="Type Bound:"></a>Type Bound:</h2><p><code>=:= &lt;:&lt; &lt;%&lt;</code><br><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/3427345/what-do-and-mean-in-scala-2-8-and-where-are-they-documented">http://stackoverflow.com/questions/3427345/what-do-and-mean-in-scala-2-8-and-where-are-they-documented</a></p>
+<h2 id="Existential-Type"><a href="#Existential-Type" class="headerlink" title="Existential Type:"></a>Existential Type:</h2><p><code>def foo(x: Array[_]) =&gt; def foo(x: Array[T] forSome &#123;type T&#125;)</code><br><a target="_blank" rel="noopener" href="http://www.drmaciver.com/2008/03/existential-types-in-scala/">http://www.drmaciver.com/2008/03/existential-types-in-scala/</a></p>
+<h2 id="Self-Type"><a href="#Self-Type" class="headerlink" title="Self Type"></a>Self Type</h2><p><code>class BarUsingFooable &#123;self: Fooable =&gt; ....&#125; // yet-to-be Fooable, make this binded to self</code><br><a target="_blank" rel="noopener" href="https://coderwall.com/p/t_rapw">https://coderwall.com/p/t_rapw</a></p>
+<h2 id="Structural-Type"><a href="#Structural-Type" class="headerlink" title="Structural Type"></a>Structural Type</h2><p><code>def Quack(duck: &#123;def quack: Unit&#125;)// inline anonymous class like ducktyping</code><br><a target="_blank" rel="noopener" href="http://java.dzone.com/articles/duck-typing-scala-structural">http://java.dzone.com/articles/duck-typing-scala-structural</a></p>
+<h2 id="Abstract-Type-member"><a href="#Abstract-Type-member" class="headerlink" title="Abstract Type member"></a>Abstract Type member</h2><p><code>trait Job &#123;type A; def get: A&#125;</code><br><a target="_blank" rel="noopener" href="http://docs.scala-lang.org/tutorials/tour/abstract-types.html">http://docs.scala-lang.org/tutorials/tour/abstract-types.html</a></p>
+<h2 id="Type-Level-Programming"><a href="#Type-Level-Programming" class="headerlink" title="Type Level Programming:"></a>Type Level Programming:</h2><p><a target="_blank" rel="noopener" href="http://apocalisp.wordpress.com/2010/06/08/type-level-programming-in-scala/">http://apocalisp.wordpress.com/2010/06/08/type-level-programming-in-scala/</a></p>
+<h2 id="Miscellaneous"><a href="#Miscellaneous" class="headerlink" title="Miscellaneous:"></a>Miscellaneous:</h2><p><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/1025181/hidden-features-of-scala">http://stackoverflow.com/questions/1025181/hidden-features-of-scala</a></p>
+<h2 id="Last-but-not-least"><a href="#Last-but-not-least" class="headerlink" title="Last but not least:"></a>Last but not least:</h2><p><a target="_blank" rel="noopener" href="http://symbolhound.com/">Site significantly serving Scala symbol soup salvage saves spiritually severed souls</a></p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+
+
+  <nav id="page-nav" class="page-nav">
+    
+    <a class="extend prev" rel="prev" href="/page/2/">« Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/4/">Next »</a>
+  </nav>
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

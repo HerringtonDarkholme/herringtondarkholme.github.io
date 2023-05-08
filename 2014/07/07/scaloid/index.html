@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>How to set up a scaloid project from scratch | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="TL;DR; It’s hard to set up android development environment without the aid of IDE. And it’s harder for scaloid.  Download standalone SDK  Download Android SDK tools&#x2F; SDK platform tools&#x2F; SDK">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to set up a scaloid project from scratch">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2014/07/07/scaloid/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="TL;DR; It’s hard to set up android development environment without the aid of IDE. And it’s harder for scaloid.  Download standalone SDK  Download Android SDK tools&#x2F; SDK platform tools&#x2F; SDK">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2014-07-07T08:14:13.000Z">
+<meta property="article:modified_time" content="2023-05-01T23:53:03.877Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="Scala">
+<meta name="twitter:card" content="summary"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-scaloid" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      How to set up a scaloid project from scratch
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-07-07T08:14:13.000Z" itemprop="datePublished">July 7, 2014, 1:14 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>TL;DR; It’s hard to set up android development environment without the aid of IDE. And it’s harder for scaloid.</p>
+<ol>
+<li><p>Download standalone SDK</p>
+</li>
+<li><p>Download Android SDK tools&#x2F; SDK platform tools&#x2F; SDK build tools<br>  NB&gt; f@ck GFW, I got around that bastard by modifying <code>/etc/hosts</code>.</p>
+</li>
+<li><p>Install sbt, reference for GFW: <a target="_blank" rel="noopener" href="http://freewind.me/blog/20140509/2619.html">here</a></p>
+</li>
+<li><p><code>android create project --target &lt;target-id&gt; --name scaloidApp --path &lt;path&gt;/scaloidApp --activity MainActivity --package com.example.scaloidapp</code></p>
+</li>
+<li><p>Create a directory named project within your project and add the file project&#x2F;plugins.sbt, in it, add the following line:<br> addSbtPlugin(“com.hanhuy.sbt” % “android-sdk-plugin” % “1.2.20”)</p>
+</li>
+<li><p>Create project&#x2F;build.properties and add the following line:</p>
+</li>
+</ol>
+<p>  sbt.version&#x3D;0.12.4 # newer versions may be used instead</p>
+<ol start="7">
+<li>Create <code>build.sbt</code> in root directory(<a target="_blank" rel="noopener" href="https://gist.github.com/pfn/5872691">example</a>). Remember to import <code>android.Keys._</code></li>
+</ol>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> android.<span class="type">Keys</span>._</span><br><span class="line"></span><br><span class="line">android.<span class="type">Plugin</span>.androidBuild</span><br><span class="line"></span><br><span class="line">name := <span class="string">&quot;scaloidApp&quot;</span></span><br><span class="line"></span><br><span class="line">scalaVersion := <span class="string">&quot;2.11.0&quot;</span></span><br><span class="line"></span><br><span class="line">platformTarget in <span class="type">Android</span> := <span class="string">&quot;android-20&quot;</span></span><br><span class="line"></span><br><span class="line">libraryDependencies += <span class="string">&quot;org.scaloid&quot;</span> %% <span class="string">&quot;scaloid&quot;</span> % <span class="string">&quot;3.4-10&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>UPDATE: <code>scaloid-android-plugin</code> fixed the building &#x3D;.&#x3D;</p>
+</blockquote>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/Scala/" rel="tag">Scala</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2014/08/17/hm/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Hindley Milner reference crafting Algorithm W from scratch
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/05/17/html/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          magic HTML.js
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>
