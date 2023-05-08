@@ -1,4 +1,4 @@
-title: Into the Chamber of Secret, Break through the limits of TypeScript
+title: Into the Chamber of Secrets, Break through the limits of TypeScript
 date: 2023-04-30 22:26:14
 tags: TypeScript
 ---
@@ -294,12 +294,10 @@ Usual type level programming will not trigger this limitation, so we will not de
 One caveat is that all tricks in the article are probably the byproduct of a specific compiler implementation and are not officially supported by the TypeScript team. And they may even be broken in the future!
 Actually, most of these dark magics are manipulating type instantiation to make time-space trade-offs. We are nudging compiler to forget intermediate type caches ([Obliviate!](https://harrypotter.fandom.com/wiki/Memory_Charm#cite_note-COS16-1)), prompting it to compute more types ([Imperio!](https://harrypotter.fandom.com/wiki/Imperius_Curse)) and forcing it to work longer for a compilation ([Incarcerous!](https://harrypotter.fandom.com/wiki/Incarcerous_Spell)). All the grueling rituals for the holy grail of turing completeness!
 
-However, they are still very useful in some cases and help us break the limitations of TypeScript! The snake is in the chamber of secret, so use these lost spells wisely, my great mage!
+However, they are still very useful in some cases and help us break the limitations of TypeScript! The snake is in the chamber of secrets, so use these lost spells wisely, my great mage!
 
 
 If you find this article useful, I would be more than happy if you can [treat me some coffee](https://github.com/sponsors/HerringtonDarkholme/).
-
-{%img /images/chamber.png%}
 
 -----
 
