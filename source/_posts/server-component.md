@@ -1,5 +1,5 @@
 title: Grok React Server Component by Quizzes
-date: 2023-05-70 22:26:14
+date: 2023-05-07 22:26:14
 tags: React
 ---
 
