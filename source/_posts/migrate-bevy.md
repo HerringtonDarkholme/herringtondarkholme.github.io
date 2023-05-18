@@ -14,7 +14,7 @@ In this article, we will show you how to make migration easier by using some com
 ----
 
 We will use the utility AI library [big-brain](https://github.com/zkat/big-brain), the second most starred Bevy project on GitHub, as an example to illustrate bumping Bevy version from 0.9 to 0.10.
-Upgrading consists of four big steps: **make a clean git branch**, **updating the dependencies**, **running fix commands**, and **manually fixing the remaining errors**. And here is a list of commands used in the migration.
+Upgrading consists of four big steps: **make a clean git branch**, **updating the dependencies**, **running fix commands**, and **fixing failing tests**. And here is a list of commands used in the migration.
 
 * `git`: Manage code history, keep code snapshot, and help you revert changes if needed.
 * `cargo check`: Quickly check code for errors and warnings without building it.
@@ -35,7 +35,7 @@ cargo install ast-grep
 brew install ast-grep
 ```
 
-1. Clone
+### Clone
 
 The first step is to clone your repository to your local machine. You can use the following command to clone the big-brain project:
 
@@ -45,7 +45,7 @@ git clone git@github.com:HerringtonDarkholme/big-brain.git
 
 Note that the big-brain project is not the official repository of the game, but a fork that has not updated its dependencies yet. We use this fork for illustration purposes only.
 
-2. Check out a new branch
+### Check out a new branch
 
 Next, you need to create a new branch for the migration. This will allow you to keep track of your changes and revert them if something goes wrong. You can use the following command to create and switch to a new branch called `upgrade-bevy`:
 
@@ -59,7 +59,7 @@ git checkout -b upgrade-bevy
 
 Now it's time for us to kick off the real migration! First big step is to update dependencies. It can be a little bit tricker than you think because of transitive dependencies.
 
-3. Update dependencies
+### Update dependencies
 
 Let's change the dependency file `Cargo.toml`. Luckily big-brain has clean dependencies.
 
@@ -85,7 +85,7 @@ index c495381..9e99a3b 100644
  [features]
 ```
 
-4. Update lock-file
+### Update lock-file
 
 After you have updated your dependencies, you need to build a new lock-file that reflects the changes. You can do this by running the following command:
 ```bash
@@ -94,7 +94,7 @@ cargo check
 
 This will check your code for errors and generate a new Cargo.lock file that contains the exact versions of your dependencies.
 
-5. Check Cargo.lock, return to step 3 if necessary
+### Check Cargo.lock, return to step 3 if necessary
 
 You should inspect your Cargo.lock file to make sure that all your dependencies are compatible and use the same version of Bevy. Bevy is [more a bazaar than a cathedral](https://www.wikiwand.com/en/The_Cathedral_and_the_Bazaar). You may install third-party plugins and extensions from the ecosystem besides the core library. This means that some of these crates may not be updated or compatible with the latest version of Bevy or may have different dependencies themselves, causing errors or unexpected behavior in your code.
 If you find any inconsistencies, you can go back to step 3 and modify your dependencies accordingly. Repeat this process until your Cargo.lock file is clean and consistent.
@@ -107,14 +107,16 @@ Fortunately, Bevy is the only dependency in big-brain. So we are good to go now!
 
 # (Semi-)Automate Migration
 
-6. `cargo check` and `ast-grep --rewrite`
+## `cargo check` and `ast-grep --rewrite`
 
 We will use compiler to spot breaking changes and use AST rewrite tool to repeatedly fix these issues.
 This is a semi-automated process because we need to manually check the results and fix the remaining errors.
 
-## `CoreSet`
+The mantra here is to use automation that maximize your productivity. Write codemod that is straightforward to you and fix remaining issues by hand.
 
-The first error is quite easy.
+1. `CoreSet`
+
+The first error is quite easy. The compiler outputs the following error.
 
 ```shell
 error[E0432]: unresolved import `CoreStage`
@@ -125,9 +127,9 @@ error[E0432]: unresolved import `CoreStage`
 ```
 From [migration guide](https://bevyengine.org/learn/migration-guides/0.9-0.10/):
 
-> The CoreStage, StartupStage, RenderStage, and AssetStage enums have been replaced with CoreSet, StartupSet, RenderSet and AssetSet. The same scheduling guarantees have been preserved.
+> The `CoreStage` (... more omitted) enums have been replaced with `CoreSet` (... more omitted). The same scheduling guarantees have been preserved.
 
-[Using ast-grep is trivial here](https://ast-grep.github.io/guide/introduction.html#introduction).
+So we just need to change the import name. [Using ast-grep is trivial here](https://ast-grep.github.io/guide/introduction.html#introduction).
 We need to provide a pattern, `-p`, for it to search as well as a rewrite string, `-r` to replace the old API with the new one. The command should be quite self-explanatory.
 
 ```
@@ -148,7 +150,7 @@ We suggest to add `-i` flag for `--interactive` editing. ast-grep will display t
 ```
 
 
-## `StageLabel`
+2. `StageLabel`
 
 Our next error is also easy-peasy.
 
@@ -168,11 +170,9 @@ The command:
 sg -p 'StageLabel' -r SystemSet -i
 ```
 
-## `SystemStage`
+3. `SystemStage`
 
-The next error is much harder.
-
-First, the error complains two breaking changes.
+The next error is much harder. First, the error complains two breaking changes.
 
 ```
 error[E0599]: no method named `add_stage_after` found for mutable reference `&mut bevy::prelude::App` in the current scope
@@ -210,9 +210,9 @@ This pattern deserves some explanation.
 
 `$STAGE` and `$OWN_STAGE` are [meta-variables](https://ast-grep.github.io/guide/pattern-syntax.html#meta-variable).
 
-meta-variable is a wildcard expression that can match any single AST node. So we effectively find all `add_stage_after` call. We can also use meta-variables in the rewrite string and ast-grep will replace them with captured AST nodes. ast-grep's meta-variables are very similar to regular expression's dot `.`, except it is not textual.
+meta-variable is a wildcard expression that can match any single AST node. So we effectively find all `add_stage_after` call. We can also use meta-variables in the rewrite string and ast-grep will replace them with the captured AST nodes. ast-grep's meta-variables are very similar to regular expression's dot `.`, except they are not textual.
 
-However, I found some `add_stage_after` are not replaced. Nah, ast-grep is quite dumb that it cannot handle the optional comma after the last argument. So I used another query with a trailing comma.
+However, I found some `add_stage_after`s are not replaced. Nah, ast-grep is [quite dumb](https://github.com/ast-grep/ast-grep/issues/374) that it cannot handle the optional comma after the last argument. So I used another query with a trailing comma.
 
 ```shell
 sg \
@@ -236,7 +236,7 @@ Cool! Now it replaced all `add_stage_after` calls!
 +        app.configure_set(BigBrainStage::Cleanup.after(Last));
 ```
 
-## `Stage`
+4. `Stage`
 
 Our next error is about [`add_system_to_stage`](https://bevyengine.org/learn/migration-guides/0.9-0.10/#stages). The migration guide told us:
 
@@ -268,7 +268,7 @@ Example diff:
 
 
 
-## `system_sets`
+5. `system_sets`
 
 The next error corresponds to the system_sets in [migration guide](https://bevyengine.org/learn/migration-guides/0.9-0.10/#system-sets-bevy-0-9).
 
@@ -298,7 +298,7 @@ sg \
 
 This should fix `system_sets`!
 
-## Last error
+6. Last error
 
 Our last error is about `in_base_set`'s type.
 
@@ -326,6 +326,9 @@ Okay, `BigBrainStage::Thinkers` is not a base set in Bevy, so we should change i
 
 **Hoooray! Finally the program compiles! ~ship it~ Now let's test it.**
 
+
+> Key take away: Automation saves your time! But you don't have to automate everything.
+
 ------
 
 ## cargo fmt
@@ -337,6 +340,8 @@ cargo fmt
 ```
 
 A good practice is to run this command every time after a code rewrite.
+
+> Key take away: Format code rewrite as much as you want.
 
 ----
 
