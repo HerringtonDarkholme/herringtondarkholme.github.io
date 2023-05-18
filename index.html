@@ -76,7 +76,7 @@
 <p>Bevy is a fast and flexible game engine written in Rust. It aims to provide a modern and modular architecture, notably <a target="_blank" rel="noopener" href="https://www.wikiwand.com/en/Entity_component_system">Entity Component System(ECS)</a>, that allows developers to craft rich and interactive experiences.<br>However, the shiny new engine is also an evolving project that periodically introduces breaking changes in its API.<br>Bevy’s migration guide is comprehensive, but daunting. It is sometimes overwhelmingly long because it covers many topics and scenarios.</p>
 <p>In this article, we will show you how to make migration easier by using some command line tools such as <a target="_blank" rel="noopener" href="https://git-scm.com/"><code>git</code></a>, <a target="_blank" rel="noopener" href="https://doc.rust-lang.org/cargo/"><code>cargo</code></a> and <a target="_blank" rel="noopener" href="https://ast-grep.github.io/"><code>ast-grep</code></a>. These tools can help you track the changes, search for specific patterns in your code, and automate API migration. Hope you can migrate your Bevy projects with less hassle and more confidence by following our tips.</p>
 <hr>
-<p>We will use the utility AI library <a target="_blank" rel="noopener" href="https://github.com/zkat/big-brain">big-brain</a>, the second most starred Bevy project on GitHub, as an example to illustrate bumping Bevy version from 0.9 to 0.10.<br>Upgrading consists of four big steps: <strong>make a clean git branch</strong>, <strong>updating the dependencies</strong>, <strong>running fix commands</strong>, and <strong>manually fixing the remaining errors</strong>. And here is a list of commands used in the migration.</p>
+<p>We will use the utility AI library <a target="_blank" rel="noopener" href="https://github.com/zkat/big-brain">big-brain</a>, the second most starred Bevy project on GitHub, as an example to illustrate bumping Bevy version from 0.9 to 0.10.<br>Upgrading consists of four big steps: <strong>make a clean git branch</strong>, <strong>updating the dependencies</strong>, <strong>running fix commands</strong>, and <strong>fixing failing tests</strong>. And here is a list of commands used in the migration.</p>
 <ul>
 <li><code>git</code>: Manage code history, keep code snapshot, and help you revert changes if needed.</li>
 <li><code>cargo check</code>: Quickly check code for errors and warnings without building it.</li>
@@ -88,64 +88,53 @@
 <p>Compared to the other two tools, ast-grep is lesser-known. In short it can do search and replace based on <a target="_blank" rel="noopener" href="https://www.wikiwand.com/en/Abstract_syntax_tree">abstract syntax trees</a>. You can install it via <a target="_blank" rel="noopener" href="https://crates.io/crates/ast-grep"><code>cargo</code></a> or <a target="_blank" rel="noopener" href="https://formulae.brew.sh/formula/ast-grep"><code>brew</code></a>.</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">install the binary `sg`/`ast-grep`</span></span><br><span class="line">cargo install ast-grep</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">or use brew</span></span><br><span class="line">brew install ast-grep</span><br></pre></td></tr></table></figure>
 
-<ol>
-<li>Clone</li>
-</ol>
-<p>The first step is to clone your repository to your local machine. You can use the following command to clone the big-brain project:</p>
+<h3 id="Clone"><a href="#Clone" class="headerlink" title="Clone"></a>Clone</h3><p>The first step is to clone your repository to your local machine. You can use the following command to clone the big-brain project:</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> git@github.com:HerringtonDarkholme/big-brain.git</span><br></pre></td></tr></table></figure>
 
 <p>Note that the big-brain project is not the official repository of the game, but a fork that has not updated its dependencies yet. We use this fork for illustration purposes only.</p>
-<ol start="2">
-<li>Check out a new branch</li>
-</ol>
-<p>Next, you need to create a new branch for the migration. This will allow you to keep track of your changes and revert them if something goes wrong. You can use the following command to create and switch to a new branch called <code>upgrade-bevy</code>:</p>
+<h3 id="Check-out-a-new-branch"><a href="#Check-out-a-new-branch" class="headerlink" title="Check out a new branch"></a>Check out a new branch</h3><p>Next, you need to create a new branch for the migration. This will allow you to keep track of your changes and revert them if something goes wrong. You can use the following command to create and switch to a new branch called <code>upgrade-bevy</code>:</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git checkout -b upgrade-bevy</span><br></pre></td></tr></table></figure>
 
 <blockquote>
 <p>Key take away: make sure you have a clean git history and create a new branch for upgrading.</p>
 </blockquote>
 <h1 id="Update-Dependency"><a href="#Update-Dependency" class="headerlink" title="Update Dependency"></a>Update Dependency</h1><p>Now it’s time for us to kick off the real migration! First big step is to update dependencies. It can be a little bit tricker than you think because of transitive dependencies.</p>
-<ol start="3">
-<li>Update dependencies</li>
-</ol>
-<p>Let’s change the dependency file <code>Cargo.toml</code>. Luckily big-brain has clean dependencies.</p>
+<h3 id="Update-dependencies"><a href="#Update-dependencies" class="headerlink" title="Update dependencies"></a>Update dependencies</h3><p>Let’s change the dependency file <code>Cargo.toml</code>. Luckily big-brain has clean dependencies.</p>
 <p>Here is the diff:</p>
 <figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">diff --git a/Cargo.toml b/Cargo.toml</span></span><br><span class="line"><span class="comment">index c495381..9e99a3b 100644</span></span><br><span class="line"><span class="comment">--- a/Cargo.toml</span></span><br><span class="line"><span class="comment">+++ b/Cargo.toml</span></span><br><span class="line"><span class="meta">@@ -14,11 +14,11 @@</span> homepage = &quot;https://github.com/zkat/big-brain&quot;</span><br><span class="line"> [workspace]</span><br><span class="line"></span><br><span class="line"> [dependencies]</span><br><span class="line"><span class="deletion">-bevy = &#123; version = &quot;0.9.0&quot;, default-features = false &#125;</span></span><br><span class="line"><span class="addition">+bevy = &#123; version = &quot;0.10.0&quot;, default-features = false &#125;</span></span><br><span class="line"> big-brain-derive = &#123; version = &quot;=0.16.0&quot;, path = &quot;./derive&quot; &#125;</span><br><span class="line"></span><br><span class="line"> [dev-dependencies]</span><br><span class="line"><span class="deletion">-bevy = &#123; version = &quot;0.9.0&quot;, default-features = true &#125;</span></span><br><span class="line"><span class="addition">+bevy = &#123; version = &quot;0.10.0&quot;, default-features = true &#125;</span></span><br><span class="line"> rand = &#123; version = &quot;0.8.5&quot;, features = [&quot;small_rng&quot;] &#125;</span><br><span class="line"></span><br><span class="line"> [features]</span><br></pre></td></tr></table></figure>
 
-<ol start="4">
-<li>Update lock-file</li>
-</ol>
-<p>After you have updated your dependencies, you need to build a new lock-file that reflects the changes. You can do this by running the following command:</p>
+<h3 id="Update-lock-file"><a href="#Update-lock-file" class="headerlink" title="Update lock-file"></a>Update lock-file</h3><p>After you have updated your dependencies, you need to build a new lock-file that reflects the changes. You can do this by running the following command:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cargo check</span><br></pre></td></tr></table></figure>
 
 <p>This will check your code for errors and generate a new Cargo.lock file that contains the exact versions of your dependencies.</p>
-<ol start="5">
-<li>Check Cargo.lock, return to step 3 if necessary</li>
-</ol>
-<p>You should inspect your Cargo.lock file to make sure that all your dependencies are compatible and use the same version of Bevy. Bevy is <a target="_blank" rel="noopener" href="https://www.wikiwand.com/en/The_Cathedral_and_the_Bazaar">more a bazaar than a cathedral</a>. You may install third-party plugins and extensions from the ecosystem besides the core library. This means that some of these crates may not be updated or compatible with the latest version of Bevy or may have different dependencies themselves, causing errors or unexpected behavior in your code.<br>If you find any inconsistencies, you can go back to step 3 and modify your dependencies accordingly. Repeat this process until your Cargo.lock file is clean and consistent.</p>
+<h3 id="Check-Cargo-lock-return-to-step-3-if-necessary"><a href="#Check-Cargo-lock-return-to-step-3-if-necessary" class="headerlink" title="Check Cargo.lock, return to step 3 if necessary"></a>Check Cargo.lock, return to step 3 if necessary</h3><p>You should inspect your Cargo.lock file to make sure that all your dependencies are compatible and use the same version of Bevy. Bevy is <a target="_blank" rel="noopener" href="https://www.wikiwand.com/en/The_Cathedral_and_the_Bazaar">more a bazaar than a cathedral</a>. You may install third-party plugins and extensions from the ecosystem besides the core library. This means that some of these crates may not be updated or compatible with the latest version of Bevy or may have different dependencies themselves, causing errors or unexpected behavior in your code.<br>If you find any inconsistencies, you can go back to step 3 and modify your dependencies accordingly. Repeat this process until your Cargo.lock file is clean and consistent.</p>
 <p>A tip here is to search <code>bevy 0.9</code> in the lock file. <code>Cargo.lock</code> will list library with different version numbers.</p>
 <p>Fortunately, Bevy is the only dependency in big-brain. So we are good to go now!</p>
 <blockquote>
 <p>Key take away: take advantage of Cargo.lock to find transitive dependencies that need updating.</p>
 </blockquote>
-<h1 id="Semi-Automate-Migration"><a href="#Semi-Automate-Migration" class="headerlink" title="(Semi-)Automate Migration"></a>(Semi-)Automate Migration</h1><ol start="6">
-<li><code>cargo check</code> and <code>ast-grep --rewrite</code></li>
+<h1 id="Semi-Automate-Migration"><a href="#Semi-Automate-Migration" class="headerlink" title="(Semi-)Automate Migration"></a>(Semi-)Automate Migration</h1><h2 id="cargo-check-and-ast-grep-rewrite"><a href="#cargo-check-and-ast-grep-rewrite" class="headerlink" title="cargo check and ast-grep --rewrite"></a><code>cargo check</code> and <code>ast-grep --rewrite</code></h2><p>We will use compiler to spot breaking changes and use AST rewrite tool to repeatedly fix these issues.<br>This is a semi-automated process because we need to manually check the results and fix the remaining errors.</p>
+<p>The mantra here is to use automation that maximize your productivity. Write codemod that is straightforward to you and fix remaining issues by hand.</p>
+<ol>
+<li><code>CoreSet</code></li>
 </ol>
-<p>We will use compiler to spot breaking changes and use AST rewrite tool to repeatedly fix these issues.<br>This is a semi-automated process because we need to manually check the results and fix the remaining errors.</p>
-<h2 id="CoreSet"><a href="#CoreSet" class="headerlink" title="CoreSet"></a><code>CoreSet</code></h2><p>The first error is quite easy.</p>
+<p>The first error is quite easy. The compiler outputs the following error.</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">error[E0432]: unresolved import `CoreStage`</span><br><span class="line"><span class="meta prompt_">   --&gt; </span><span class="language-bash">src/lib.rs:226:13</span></span><br><span class="line">    |</span><br><span class="line">226 |         use CoreStage::*;</span><br><span class="line">    |             ^^^^^^^^^ use of undeclared type `CoreStage`</span><br></pre></td></tr></table></figure>
 <p>From <a target="_blank" rel="noopener" href="https://bevyengine.org/learn/migration-guides/0.9-0.10/">migration guide</a>:</p>
 <blockquote>
-<p>The CoreStage, StartupStage, RenderStage, and AssetStage enums have been replaced with CoreSet, StartupSet, RenderSet and AssetSet. The same scheduling guarantees have been preserved.</p>
+<p>The <code>CoreStage</code> (… more omitted) enums have been replaced with <code>CoreSet</code> (… more omitted). The same scheduling guarantees have been preserved.</p>
 </blockquote>
-<p><a target="_blank" rel="noopener" href="https://ast-grep.github.io/guide/introduction.html#introduction">Using ast-grep is trivial here</a>.<br>We need to provide a pattern, <code>-p</code>, for it to search as well as a rewrite string, <code>-r</code> to replace the old API with the new one. The command should be quite self-explanatory.</p>
+<p>So we just need to change the import name. <a target="_blank" rel="noopener" href="https://ast-grep.github.io/guide/introduction.html#introduction">Using ast-grep is trivial here</a>.<br>We need to provide a pattern, <code>-p</code>, for it to search as well as a rewrite string, <code>-r</code> to replace the old API with the new one. The command should be quite self-explanatory.</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sg -p &#x27;CoreStage&#x27; -r CoreSet -i</span><br></pre></td></tr></table></figure>
 
 <p>We suggest to add <code>-i</code> flag for <code>--interactive</code> editing. ast-grep will display the changed code diff and ask your decision to accept or not.</p>
 <figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--- a/src/lib.rs</span></span><br><span class="line"><span class="comment">+++ b/src/lib.rs</span></span><br><span class="line"><span class="meta">@@ -223,7 +223,7 @@</span> pub struct BigBrainPlugin;</span><br><span class="line"></span><br><span class="line"> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line">     fn build(&amp;self, app: &amp;mut App) &#123;</span><br><span class="line"><span class="deletion">-        use CoreStage::*;</span></span><br><span class="line"><span class="addition">+        use CoreSet::*;</span></span><br></pre></td></tr></table></figure>
 
 
-<h2 id="StageLabel"><a href="#StageLabel" class="headerlink" title="StageLabel"></a><code>StageLabel</code></h2><p>Our next error is also easy-peasy.</p>
+<ol start="2">
+<li><code>StageLabel</code></li>
+</ol>
+<p>Our next error is also easy-peasy.</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">error: cannot find derive macro `StageLabel` in this scope</span><br><span class="line">   --&gt; src/lib.rs:269:45</span><br><span class="line">    |</span><br><span class="line">269 | #[derive(Clone, Debug, Hash, Eq, PartialEq, StageLabel, Reflect)]</span><br><span class="line">    |</span><br></pre></td></tr></table></figure>
 
 <p>The <a target="_blank" rel="noopener" href="https://bevyengine.org/learn/migration-guides/0.9-0.10/#label-types">doc</a>:</p>
@@ -155,8 +144,10 @@
 <p>The command:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sg -p <span class="string">&#x27;StageLabel&#x27;</span> -r SystemSet -i</span><br></pre></td></tr></table></figure>
 
-<h2 id="SystemStage"><a href="#SystemStage" class="headerlink" title="SystemStage"></a><code>SystemStage</code></h2><p>The next error is much harder.</p>
-<p>First, the error complains two breaking changes.</p>
+<ol start="3">
+<li><code>SystemStage</code></li>
+</ol>
+<p>The next error is much harder. First, the error complains two breaking changes.</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">error[E0599]: no method named `add_stage_after` found for mutable reference `&amp;mut bevy::prelude::App` in the current scope</span><br><span class="line">   --&gt; src/lib.rs:228:13</span><br><span class="line">    |                                                            ↓↓↓↓↓↓↓↓↓↓↓ use of undeclared type `SystemStage`</span><br><span class="line">228 |         app.add_stage_after(First, BigBrainStage::Scorers, SystemStage::parallel());</span><br><span class="line">    |             ^^^^^^^^^^^^^^^ help: there is a method with a similar name: `add_state`</span><br></pre></td></tr></table></figure>
 
 <p>Let’s see what <a target="_blank" rel="noopener" href="https://bevyengine.org/learn/migration-guides/0.9-0.10/#stages">migration guide</a> said. This time we will give the code example.</p>
@@ -168,14 +159,17 @@
 
 <p>This pattern deserves some explanation.</p>
 <p><code>$STAGE</code> and <code>$OWN_STAGE</code> are <a target="_blank" rel="noopener" href="https://ast-grep.github.io/guide/pattern-syntax.html#meta-variable">meta-variables</a>.</p>
-<p>meta-variable is a wildcard expression that can match any single AST node. So we effectively find all <code>add_stage_after</code> call. We can also use meta-variables in the rewrite string and ast-grep will replace them with captured AST nodes. ast-grep’s meta-variables are very similar to regular expression’s dot <code>.</code>, except it is not textual.</p>
-<p>However, I found some <code>add_stage_after</code> are not replaced. Nah, ast-grep is quite dumb that it cannot handle the optional comma after the last argument. So I used another query with a trailing comma.</p>
+<p>meta-variable is a wildcard expression that can match any single AST node. So we effectively find all <code>add_stage_after</code> call. We can also use meta-variables in the rewrite string and ast-grep will replace them with the captured AST nodes. ast-grep’s meta-variables are very similar to regular expression’s dot <code>.</code>, except they are not textual.</p>
+<p>However, I found some <code>add_stage_after</code>s are not replaced. Nah, ast-grep is <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/issues/374">quite dumb</a> that it cannot handle the optional comma after the last argument. So I used another query with a trailing comma.</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sg \</span><br><span class="line">  -p &#x27;app.add_stage_after($STAGE, $OWN_STAGE, SystemStage::parallel(),)&#x27; \</span><br><span class="line">  -r &#x27;app.configure_set($OWN_STAGE.after($STAGE))&#x27; -i</span><br></pre></td></tr></table></figure>
 
 <p>Cool! Now it replaced all <code>add_stage_after</code> calls!</p>
 <figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--- a/src/lib.rs</span></span><br><span class="line"><span class="comment">+++ b/src/lib.rs</span></span><br><span class="line"><span class="meta">@@ -225,7 +225,7 @@</span> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line"><span class="deletion">-        app.add_stage_after(First, BigBrainStage::Scorers, SystemStage::parallel());</span></span><br><span class="line"><span class="addition">+        app.configure_set(BigBrainStage::Scorers.after(First));</span></span><br><span class="line"><span class="meta">@@ -245,7 +245,7 @@</span> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line"><span class="deletion">-        app.add_stage_after(PreUpdate, BigBrainStage::Actions, SystemStage::parallel());</span></span><br><span class="line"><span class="addition">+        app.configure_set(BigBrainStage::Actions.after(PreUpdate));</span></span><br><span class="line"><span class="meta">@@ -253,7 +253,7 @@</span> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line"><span class="deletion">-        app.add_stage_after(Last, BigBrainStage::Cleanup, SystemStage::parallel());</span></span><br><span class="line"><span class="addition">+        app.configure_set(BigBrainStage::Cleanup.after(Last));</span></span><br></pre></td></tr></table></figure>
 
-<h2 id="Stage"><a href="#Stage" class="headerlink" title="Stage"></a><code>Stage</code></h2><p>Our next error is about <a target="_blank" rel="noopener" href="https://bevyengine.org/learn/migration-guides/0.9-0.10/#stages"><code>add_system_to_stage</code></a>. The migration guide told us:</p>
+<ol start="4">
+<li><code>Stage</code></li>
+</ol>
+<p>Our next error is about <a target="_blank" rel="noopener" href="https://bevyengine.org/learn/migration-guides/0.9-0.10/#stages"><code>add_system_to_stage</code></a>. The migration guide told us:</p>
 <figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Before:</span></span><br><span class="line">app.<span class="title function_ invoke__">add_system_to_stage</span>(CoreStage::PostUpdate, my_system)</span><br><span class="line"><span class="comment">// After:</span></span><br><span class="line">app.<span class="title function_ invoke__">add_system</span>(my_system.<span class="title function_ invoke__">in_base_set</span>(CoreSet::PostUpdate))</span><br></pre></td></tr></table></figure>
 
 <p>Let’s also write a pattern for it.</p>
@@ -186,7 +180,10 @@
 
 
 
-<h2 id="system-sets"><a href="#system-sets" class="headerlink" title="system_sets"></a><code>system_sets</code></h2><p>The next error corresponds to the system_sets in <a target="_blank" rel="noopener" href="https://bevyengine.org/learn/migration-guides/0.9-0.10/#system-sets-bevy-0-9">migration guide</a>.</p>
+<ol start="5">
+<li><code>system_sets</code></li>
+</ol>
+<p>The next error corresponds to the system_sets in <a target="_blank" rel="noopener" href="https://bevyengine.org/learn/migration-guides/0.9-0.10/#system-sets-bevy-0-9">migration guide</a>.</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">// Before:</span><br><span class="line">app.add_system_set(</span><br><span class="line">  SystemSet::new()</span><br><span class="line">    .with_system(a)</span><br><span class="line">    .with_system(b)</span><br><span class="line">    .with_run_criteria(my_run_criteria)</span><br><span class="line">);</span><br><span class="line">// After:</span><br><span class="line">app.add_systems((a, b).run_if(my_run_condition));</span><br></pre></td></tr></table></figure>
 
 <p>We need to change <code>SystemSet::new().with_system(a).with_system(b)</code> to <code>(a, b)</code>.<br>Alas, I don’t know how to write a pattern to fix that. Maybe ast-grep is not strong enough to support this. I just change <code>with_system</code> manually.<br><em>It is still faster than me scratching my head about how to automate everything.</em></p>
@@ -194,18 +191,27 @@
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sg \</span><br><span class="line">  -p <span class="string">&#x27;$APP.add_system_set_to_stage($STAGE, $SYS,)&#x27;</span> \</span><br><span class="line">  -r <span class="string">&#x27;$APP.add_systems($SYS.in_set($STAGE))&#x27;</span> -i</span><br></pre></td></tr></table></figure>
 
 <p>This should fix <code>system_sets</code>!</p>
-<h2 id="Last-error"><a href="#Last-error" class="headerlink" title="Last error"></a>Last error</h2><p>Our last error is about <code>in_base_set</code>‘s type.</p>
+<ol start="6">
+<li>Last error</li>
+</ol>
+<p>Our last error is about <code>in_base_set</code>‘s type.</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">error[E0277]: the trait bound `BigBrainStage: BaseSystemSet` is not satisfied</span><br><span class="line"><span class="meta prompt_">   --&gt; </span><span class="language-bash">src/lib.rs:238:60</span></span><br><span class="line">    |</span><br><span class="line">238 |         app.add_system(thinker::thinker_system.in_base_set(BigBrainStage::Thinkers));</span><br><span class="line">    |                                                ----------- ^^^^^^^^^^^^^^^^^^^^^^^ the trait `BaseSystemSet` is not implemented for `BigBrainStage`</span><br><span class="line">    |                                                |</span><br><span class="line">    |                                                required by a bound introduced by this call</span><br><span class="line">    |</span><br><span class="line">    = help: the following other types implement trait `BaseSystemSet`:</span><br><span class="line">              StartupSet</span><br><span class="line">              bevy::prelude::CoreSet</span><br><span class="line">note: required by a bound in `bevy::prelude::IntoSystemConfig::in_base_set`</span><br></pre></td></tr></table></figure>
 
 <p>Okay, <code>BigBrainStage::Thinkers</code> is not a base set in Bevy, so we should change it to <code>in_set</code>.</p>
 <figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="deletion">-        .add_system(one_off_action_system.in_base_set(BigBrainStage::Actions))</span></span><br><span class="line"><span class="addition">+        .add_system(one_off_action_system.in_set(BigBrainStage::Actions))</span></span><br></pre></td></tr></table></figure>
 
 <p><strong>Hoooray! Finally the program compiles! <del>ship it</del> Now let’s test it.</strong></p>
+<blockquote>
+<p>Key take away: Automation saves your time! But you don’t have to automate everything.</p>
+</blockquote>
 <hr>
 <h2 id="cargo-fmt"><a href="#cargo-fmt" class="headerlink" title="cargo fmt"></a>cargo fmt</h2><p>Congrats! You have automated code refactoring! But ast-grep’s rewrite can be messy and hard to read. Most code-rewriting tool does not support pretty-print, sadly.<br>A simple solution is to run <code>cargo fmt</code> and make the repository neat and tidy.</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cargo fmt</span><br></pre></td></tr></table></figure>
 
 <p>A good practice is to run this command every time after a code rewrite.</p>
+<blockquote>
+<p>Key take away: Format code rewrite as much as you want.</p>
+</blockquote>
 <hr>
 <h1 id="Test-Our-Refactor"><a href="#Test-Our-Refactor" class="headerlink" title="Test Our Refactor"></a>Test Our Refactor</h1><h2 id="cargo-test"><a href="#cargo-test" class="headerlink" title="cargo test"></a><code>cargo test</code></h2><p>Let’s use Rust’s standard test command to verify our changes: <code>cargo test</code>.</p>
 <p>Oops. we have one test error, not too bad!</p>
