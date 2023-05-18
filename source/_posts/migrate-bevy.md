@@ -14,7 +14,7 @@ In this article, we will show you how to make migration easier by using some com
 ----
 
 We will use the utility AI library [big-brain](https://github.com/zkat/big-brain), the second most starred Bevy project on GitHub, as an example to illustrate bumping Bevy version from 0.9 to 0.10.
-Upgrading consists of four big steps: **make a clean **, **updating the dependencies**, **running fix commands**, and **manually fixing the remaining errors**. And here is a list of commands used in the migration.
+Upgrading consists of four big steps: **make a clean git branch**, **updating the dependencies**, **running fix commands**, and **manually fixing the remaining errors**. And here is a list of commands used in the migration.
 
 * `git`: Manage code history, keep code snapshot, and help you revert changes if needed.
 * `cargo check`: Quickly check code for errors and warnings without building it.
