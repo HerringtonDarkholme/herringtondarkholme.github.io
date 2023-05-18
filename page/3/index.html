@@ -49,6 +49,64 @@
     <div id="content">
       
   
+    <article id="post-scala-sam" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2015/01/24/scala-sam/">Explaining Scala SAM type</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2015-01-25T00:21:47.000Z" itemprop="datePublished">January 24, 2015, 4:21 PM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/42665600.jpg" class="">
+<p><a target="_blank" rel="noopener" href="http://www.pixiv.net/member_illust.php?mode=medium&illust_id=42665600">source</a></p>
+<p>For better syntax and user friendliness (and a lot more), Java 8 introduces <a target="_blank" rel="noopener" href="http://cr.openjdk.java.net/~briangoetz/lambda/lambda-state-3.html">SAM</a> type, Single Abstract Method type, starting to embrace the functional programming world.</p>
+<p>Previous to 1.8, Java already has somewhat a (bulky and leaky) type of closure: annonyous inner classes. For example, to start a working thread in Java usually requires following trivial but bloated statements, without a lexical <code>this</code>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// from android developer guide</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onClick</span><span class="params">(View v)</span> &#123;</span><br><span class="line">  <span class="keyword">new</span> <span class="title class_">Thread</span>(<span class="keyword">new</span> <span class="title class_">Runnable</span>() &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">      <span class="type">Bitmap</span> <span class="variable">b</span> <span class="operator">=</span> loadImageFromNetwork(<span class="string">&quot;http://www.example.org/image.gif&quot;</span>);</span><br><span class="line">      mImageView.setImage(b);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;).start()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Two classes, one method. The introduction of SAM type greatly reduces the syntactical overhead of Java.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onClick</span><span class="params">(View v)</span> &#123;</span><br><span class="line">  <span class="keyword">new</span> <span class="title class_">Thread</span>(#&#123; -&gt;</span><br><span class="line">    mImage.setImage(loadImageFromNetwork(<span class="string">&quot;/image.gif&quot;</span>));</span><br><span class="line">  &#125;).start();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>I’m not explaining Java8’s new features here, as a Scala user has already relished the conciseness and expressiveness of functional programming.</p>
+<p>So, why would scala user cares about SAM type in Java? I would say that interoperation with Java and performance are the main concerns here.</p>
+<p>Java8 introduces <code>Function</code> type, which is widely used in library like <code>stream</code>. Sadly, <code>Function</code> is not that of scala. Scala compiler just frowns at you using scala native function with Stream.</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.<span class="type">Arrays</span></span><br><span class="line"><span class="type">Arrays</span>.asList(<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>).stream.map((i: <span class="type">Int</span>) =&gt; i * <span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// &lt;console&gt;: error: type mismatch;</span></span><br><span class="line"><span class="comment">//  found   : Int =&gt; Int</span></span><br><span class="line"><span class="comment">//  required: java.util.function.Function[_ &gt;: Int, _]</span></span><br></pre></td></tr></table></figure>
+
+<p>Side notes: because function parameter is in a contravariant position,  <code>Function[_ &gt;: Int, _]</code> has a lower bound Int rather than a upper bound.<br>That is, the function passed as argument must accept types that are super types of <code>Int</code>.</p>
+<p>One can manually provide implicit conversion here to transform scala function types to java function types. However, <a target="_blank" rel="noopener" href="http://www.tikalk.com/incubator/simulating-sam-closures-scala/">implementing</a> such implicit conversion is of no fun. The implementation is either not generic enough, or requires mechanical code duplication(another alternative is advanced macro generation). Compiler support is more ideal, not only because it generates more efficient byte code, but also because this precludes incompatibility across different implementations.</p>
+<p><strong>SAM type is enabled by <code>-Xexperimental</code> flag in scala 2.11.x flags. Specifically, in scala 2.11.5, SAM type is better <a target="_blank" rel="noopener" href="https://github.com/scala/scala/pull/4101">supported</a>.</strong><br>SAM gets eta-expansion(one can use a method from another class as SAM), overloading(overloaded function&#x2F;method can also accept functions as SAM) and existential type support in scala 2.11.5.</p>
+<p>Basic usage os SAM is quite simple, if a <code>trait/abstract class</code> with <em>exactly one</em> <code>abstract method</code>, then a <code>Function</code> of the <em>same parameter and return type</em> of the abstract method can be converted into the <code>trait/abstract class</code>.</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">trait</span> <span class="title">Flyable</span> </span>&#123;</span><br><span class="line">  <span class="comment">// exactly one abstracg method</span></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">fly</span></span>(miles: <span class="type">Int</span>): <span class="type">Unit</span></span><br><span class="line">  <span class="comment">// optional concrete object</span></span><br><span class="line">  <span class="keyword">val</span> name = <span class="string">&quot;Unidentified Flyable Object&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// to reference SAM type itself</span></span><br><span class="line"><span class="comment">// create a named self-referencing lambda expression</span></span><br><span class="line"><span class="keyword">val</span> ufo: <span class="type">Flyable</span> = (m: <span class="type">Int</span>) =&gt; println(<span class="string">s&quot;<span class="subst">$&#123;ufo.name&#125;</span> flies <span class="subst">$m</span> miles!&quot;</span>)</span><br><span class="line">ufo.fly(<span class="number">123</span>)</span><br><span class="line"><span class="comment">// Unidentified Flyable Object flies 123 miles!</span></span><br></pre></td></tr></table></figure>
+<p>Easy Peasy. So for the <code>stream</code> example, if compiler has the <code>-Xexperimental</code> flag, scala will automatically change the function to java’s function, which grant scala user a seamless experience with the library.</p>
+<p>Usually, you don’t need SAM in scala, as scala already has first class generic function type, eta-expansion and a lot more. SAM reduces the readability as implicit conversion does. One can always use type alias to give function a more understandable name, instead of using SAM. SAM type cannot be pattern matched, <a target="_blank" rel="noopener" href="https://issues.scala-lang.org/browse/SI-8429">at least for now</a>.</p>
+<p>However, interoperating with Java requires SAM. And self-referencing SAM gives you additional flexibity in designing API. SAM also generates more efficient byte code since SAM has a native byte code counterpart. Using annonymous class for event handler or callback can be more pleasant in Scala just as in Java.</p>
+<p>Anyway, adding a feature is <a target="_blank" rel="noopener" href="https://github.com/scala/scala/pull/4101">easy</a>, but adding a feature that couples with edge case is hard. Scala already has bunches of features(variance, higher kinded, type level, continuation), whether SAM will gain its popularity is still an open question.</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
     <article id="post-typescript-rant" class="article article-type-post" itemprop="blogPost" itemscope>
   <div class="article-inner">
     
@@ -532,54 +590,6 @@
 <p>当然，这部作品无法脱离校园恋爱剧的范畴，金钱交易和校园纯爱的反差也是看点之一，合乎心智(尤其异性人际方面)水平(滞留)在中学时代的宅男。而最后女主去向不明，成为男主的回忆，倒也是提供了不少可以意淫之处。这样的结局倒是影射了漫画的特色：任何角色，只能成为看客精神世界里的影子。《雪》确实挖了一道沟渠让读者能意淫出一道爱河了。</p>
 <p>《せめて、あの雪のように》是一本让人心酸的本子。其影响已经超过作品本身，演化成了”像我这样的二手货，也不会要XXX”的成句，真是又给这个漫画添加了别样的风味。然而转念一想，可能更增加了一份实用。每每看到年轻情侣亲密时，总是会有难免见不得理还乱的忧愁；又或者看到大叔拉着百褶裙的手在草地上散步时，百感交集。然而重温这个经典的镜头和台词，却瞬间心头感到：这酸爽！<br>啊，这酸爽！至少、像那老坛酸菜牛肉面一样</p>
 <p>作者简介：藤丸 漫画家，原画家， 曾用名F.blue，曾与ひらめ、綾瀬三人组团出本，不过其中一人在C75的时候撂了挑子（迷上了和洛奇很像的一种网游）。藤丸也就在那个时候改了名，自 己一个人单练。藤丸的作品不多，原创气息浓厚，双手磨砺的很充分，仅有的几部同人都有很高的还原度，分镜规矩，笔法公整，平凡的剧情，简直就是一个传统的 漫画家</p>
-
-      
-    </div>
-    
-    
-    
-  </div>
-</article>
-
-
-
-  
-    <article id="post-scala" class="article article-type-post" itemprop="blogPost" itemscope>
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h2 class="article-title" itemprop="name">
-      <a href="/2014/04/15/scala/">Scala Symbol Soup Salvage</a>
-      
-    </h2>
-  
-
-
-        <div class="article-meta">
-          <time class="article-date" datetime="2014-04-15T07:00:00.000Z" itemprop="datePublished">April 15, 2014, 12:00 AM</time>
-
-          
-        </div>
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-      
-        <img src="/images/yandere.jpg" class="">
-<p>source: <a target="_blank" rel="noopener" href="https://yande.re/post/show/284731/hatsune_miku-headphones-pantsu-shimapan-suemizu_yu">yande.re</a></p>
-<p>By no several pages could one explain or exhausted the absurd bizarre creepy daunting esoteric flabbergasting type system in Scala.<br>Here are some aspects that Learn Scala by example does not cover.</p>
-<h2 id="Digest"><a href="#Digest" class="headerlink" title="Digest:"></a>Digest:</h2><p><a target="_blank" rel="noopener" href="http://twitter.github.io/scala_school/advanced-types.html">http://twitter.github.io/scala_school/advanced-types.html</a></p>
-<h2 id="Context-Bound-and-Implicitly"><a href="#Context-Bound-and-Implicitly" class="headerlink" title="Context Bound and Implicitly:"></a>Context Bound and Implicitly:</h2><p><code>def sort[A : Ordered] =&gt; def sort[A](implicit x: Ordred[A])</code><br><code>def implicitly[T](implicit e: T) = e</code><br><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/3855595/what-is-the-scala-identifier-implicitly">http://stackoverflow.com/questions/3855595/what-is-the-scala-identifier-implicitly</a></p>
-<h2 id="Type-Bound"><a href="#Type-Bound" class="headerlink" title="Type Bound:"></a>Type Bound:</h2><p><code>=:= &lt;:&lt; &lt;%&lt;</code><br><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/3427345/what-do-and-mean-in-scala-2-8-and-where-are-they-documented">http://stackoverflow.com/questions/3427345/what-do-and-mean-in-scala-2-8-and-where-are-they-documented</a></p>
-<h2 id="Existential-Type"><a href="#Existential-Type" class="headerlink" title="Existential Type:"></a>Existential Type:</h2><p><code>def foo(x: Array[_]) =&gt; def foo(x: Array[T] forSome &#123;type T&#125;)</code><br><a target="_blank" rel="noopener" href="http://www.drmaciver.com/2008/03/existential-types-in-scala/">http://www.drmaciver.com/2008/03/existential-types-in-scala/</a></p>
-<h2 id="Self-Type"><a href="#Self-Type" class="headerlink" title="Self Type"></a>Self Type</h2><p><code>class BarUsingFooable &#123;self: Fooable =&gt; ....&#125; // yet-to-be Fooable, make this binded to self</code><br><a target="_blank" rel="noopener" href="https://coderwall.com/p/t_rapw">https://coderwall.com/p/t_rapw</a></p>
-<h2 id="Structural-Type"><a href="#Structural-Type" class="headerlink" title="Structural Type"></a>Structural Type</h2><p><code>def Quack(duck: &#123;def quack: Unit&#125;)// inline anonymous class like ducktyping</code><br><a target="_blank" rel="noopener" href="http://java.dzone.com/articles/duck-typing-scala-structural">http://java.dzone.com/articles/duck-typing-scala-structural</a></p>
-<h2 id="Abstract-Type-member"><a href="#Abstract-Type-member" class="headerlink" title="Abstract Type member"></a>Abstract Type member</h2><p><code>trait Job &#123;type A; def get: A&#125;</code><br><a target="_blank" rel="noopener" href="http://docs.scala-lang.org/tutorials/tour/abstract-types.html">http://docs.scala-lang.org/tutorials/tour/abstract-types.html</a></p>
-<h2 id="Type-Level-Programming"><a href="#Type-Level-Programming" class="headerlink" title="Type Level Programming:"></a>Type Level Programming:</h2><p><a target="_blank" rel="noopener" href="http://apocalisp.wordpress.com/2010/06/08/type-level-programming-in-scala/">http://apocalisp.wordpress.com/2010/06/08/type-level-programming-in-scala/</a></p>
-<h2 id="Miscellaneous"><a href="#Miscellaneous" class="headerlink" title="Miscellaneous:"></a>Miscellaneous:</h2><p><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/1025181/hidden-features-of-scala">http://stackoverflow.com/questions/1025181/hidden-features-of-scala</a></p>
-<h2 id="Last-but-not-least"><a href="#Last-but-not-least" class="headerlink" title="Last but not least:"></a>Last but not least:</h2><p><a target="_blank" rel="noopener" href="http://symbolhound.com/">Site significantly serving Scala symbol soup salvage saves spiritually severed souls</a></p>
 
       
     </div>

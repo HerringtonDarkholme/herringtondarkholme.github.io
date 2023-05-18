@@ -49,6 +49,54 @@
     <div id="content">
       
   
+    <article id="post-scala" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/04/15/scala/">Scala Symbol Soup Salvage</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-04-15T07:00:00.000Z" itemprop="datePublished">April 15, 2014, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/yandere.jpg" class="">
+<p>source: <a target="_blank" rel="noopener" href="https://yande.re/post/show/284731/hatsune_miku-headphones-pantsu-shimapan-suemizu_yu">yande.re</a></p>
+<p>By no several pages could one explain or exhausted the absurd bizarre creepy daunting esoteric flabbergasting type system in Scala.<br>Here are some aspects that Learn Scala by example does not cover.</p>
+<h2 id="Digest"><a href="#Digest" class="headerlink" title="Digest:"></a>Digest:</h2><p><a target="_blank" rel="noopener" href="http://twitter.github.io/scala_school/advanced-types.html">http://twitter.github.io/scala_school/advanced-types.html</a></p>
+<h2 id="Context-Bound-and-Implicitly"><a href="#Context-Bound-and-Implicitly" class="headerlink" title="Context Bound and Implicitly:"></a>Context Bound and Implicitly:</h2><p><code>def sort[A : Ordered] =&gt; def sort[A](implicit x: Ordred[A])</code><br><code>def implicitly[T](implicit e: T) = e</code><br><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/3855595/what-is-the-scala-identifier-implicitly">http://stackoverflow.com/questions/3855595/what-is-the-scala-identifier-implicitly</a></p>
+<h2 id="Type-Bound"><a href="#Type-Bound" class="headerlink" title="Type Bound:"></a>Type Bound:</h2><p><code>=:= &lt;:&lt; &lt;%&lt;</code><br><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/3427345/what-do-and-mean-in-scala-2-8-and-where-are-they-documented">http://stackoverflow.com/questions/3427345/what-do-and-mean-in-scala-2-8-and-where-are-they-documented</a></p>
+<h2 id="Existential-Type"><a href="#Existential-Type" class="headerlink" title="Existential Type:"></a>Existential Type:</h2><p><code>def foo(x: Array[_]) =&gt; def foo(x: Array[T] forSome &#123;type T&#125;)</code><br><a target="_blank" rel="noopener" href="http://www.drmaciver.com/2008/03/existential-types-in-scala/">http://www.drmaciver.com/2008/03/existential-types-in-scala/</a></p>
+<h2 id="Self-Type"><a href="#Self-Type" class="headerlink" title="Self Type"></a>Self Type</h2><p><code>class BarUsingFooable &#123;self: Fooable =&gt; ....&#125; // yet-to-be Fooable, make this binded to self</code><br><a target="_blank" rel="noopener" href="https://coderwall.com/p/t_rapw">https://coderwall.com/p/t_rapw</a></p>
+<h2 id="Structural-Type"><a href="#Structural-Type" class="headerlink" title="Structural Type"></a>Structural Type</h2><p><code>def Quack(duck: &#123;def quack: Unit&#125;)// inline anonymous class like ducktyping</code><br><a target="_blank" rel="noopener" href="http://java.dzone.com/articles/duck-typing-scala-structural">http://java.dzone.com/articles/duck-typing-scala-structural</a></p>
+<h2 id="Abstract-Type-member"><a href="#Abstract-Type-member" class="headerlink" title="Abstract Type member"></a>Abstract Type member</h2><p><code>trait Job &#123;type A; def get: A&#125;</code><br><a target="_blank" rel="noopener" href="http://docs.scala-lang.org/tutorials/tour/abstract-types.html">http://docs.scala-lang.org/tutorials/tour/abstract-types.html</a></p>
+<h2 id="Type-Level-Programming"><a href="#Type-Level-Programming" class="headerlink" title="Type Level Programming:"></a>Type Level Programming:</h2><p><a target="_blank" rel="noopener" href="http://apocalisp.wordpress.com/2010/06/08/type-level-programming-in-scala/">http://apocalisp.wordpress.com/2010/06/08/type-level-programming-in-scala/</a></p>
+<h2 id="Miscellaneous"><a href="#Miscellaneous" class="headerlink" title="Miscellaneous:"></a>Miscellaneous:</h2><p><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/1025181/hidden-features-of-scala">http://stackoverflow.com/questions/1025181/hidden-features-of-scala</a></p>
+<h2 id="Last-but-not-least"><a href="#Last-but-not-least" class="headerlink" title="Last but not least:"></a>Last but not least:</h2><p><a target="_blank" rel="noopener" href="http://symbolhound.com/">Site significantly serving Scala symbol soup salvage saves spiritually severed souls</a></p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
     <article id="post-descriptor" class="article article-type-post" itemprop="blogPost" itemscope>
   <div class="article-inner">
     
