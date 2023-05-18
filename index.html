@@ -49,6 +49,207 @@
     <div id="content">
       
   
+    <article id="post-migrate-bevy" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2023/05/17/migrate-bevy/">Migrating Bevy can be easier with (semi-)automation. Here is how.</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2023-05-17T18:45:14.000Z" itemprop="datePublished">May 17, 2023, 11:45 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>Using open source software can be a double-edged sword: We enjoy the latest features and innovations, but we hate frequent and sometimes tedious upgrades.</p>
+<p>Bevy is a fast and flexible game engine written in Rust. It aims to provide a modern and modular architecture, notably <a target="_blank" rel="noopener" href="https://www.wikiwand.com/en/Entity_component_system">Entity Component System(ECS)</a>, that allows developers to craft rich and interactive experiences.<br>However, the shiny new engine is also an evolving project that periodically introduces breaking changes in its API.<br>Bevy’s migration guide is comprehensive, but daunting. It is sometimes overwhelmingly long because it covers many topics and scenarios.</p>
+<p>In this article, we will show you how to make migration easier by using some command line tools such as <a target="_blank" rel="noopener" href="https://git-scm.com/"><code>git</code></a>, <a target="_blank" rel="noopener" href="https://doc.rust-lang.org/cargo/"><code>cargo</code></a> and <a target="_blank" rel="noopener" href="https://ast-grep.github.io/"><code>ast-grep</code></a>. These tools can help you track the changes, search for specific patterns in your code, and automate API migration. Hope you can migrate your Bevy projects with less hassle and more confidence by following our tips.</p>
+<hr>
+<p>We will use the utility AI library <a target="_blank" rel="noopener" href="https://github.com/zkat/big-brain">big-brain</a>, the second most starred Bevy project on GitHub, as an example to illustrate bumping Bevy version from 0.9 to 0.10.<br>Upgrading consists of four big steps: <strong>make a clean git branch</strong>, <strong>updating the dependencies</strong>, <strong>running fix commands</strong>, and <strong>manually fixing the remaining errors</strong>. And here is a list of commands used in the migration.</p>
+<ul>
+<li><code>git</code>: Manage code history, keep code snapshot, and help you revert changes if needed.</li>
+<li><code>cargo check</code>: Quickly check code for errors and warnings without building it.</li>
+<li><code>ast-grep</code>: Search for ASTs in source and automate code rewrite using patterns or expressions.</li>
+<li><code>cargo fmt</code>: Format the rewritten code according to Rust style guidelines.</li>
+<li><code>cargo test</code>: Run tests in the project and report the results to ensure the program still works.</li>
+</ul>
+<h1 id="Preparation"><a href="#Preparation" class="headerlink" title="Preparation"></a>Preparation</h1><p>Before we start, we need to make sure that we have the following tools installed: <a target="_blank" rel="noopener" href="https://rustup.rs/">Rust</a>, <a target="_blank" rel="noopener" href="https://git-scm.com/">git</a> and <a target="_blank" rel="noopener" href="https://ast-grep.github.io/">ast-grep</a>.</p>
+<p>Compared to the other two tools, ast-grep is lesser-known. In short it can do search and replace based on <a target="_blank" rel="noopener" href="https://www.wikiwand.com/en/Abstract_syntax_tree">abstract syntax trees</a>. You can install it via <a target="_blank" rel="noopener" href="https://crates.io/crates/ast-grep"><code>cargo</code></a> or <a target="_blank" rel="noopener" href="https://formulae.brew.sh/formula/ast-grep"><code>brew</code></a>.</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">install the binary `sg`/`ast-grep`</span></span><br><span class="line">cargo install ast-grep</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">or use brew</span></span><br><span class="line">brew install ast-grep</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li>Clone</li>
+</ol>
+<p>The first step is to clone your repository to your local machine. You can use the following command to clone the big-brain project:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> git@github.com:HerringtonDarkholme/big-brain.git</span><br></pre></td></tr></table></figure>
+
+<p>Note that the big-brain project is not the official repository of the game, but a fork that has not updated its dependencies yet. We use this fork for illustration purposes only.</p>
+<ol start="2">
+<li>Check out a new branch</li>
+</ol>
+<p>Next, you need to create a new branch for the migration. This will allow you to keep track of your changes and revert them if something goes wrong. You can use the following command to create and switch to a new branch called <code>upgrade-bevy</code>:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git checkout -b upgrade-bevy</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Key take away: make sure you have a clean git history and create a new branch for upgrading.</p>
+</blockquote>
+<h1 id="Update-Dependency"><a href="#Update-Dependency" class="headerlink" title="Update Dependency"></a>Update Dependency</h1><p>Now it’s time for us to kick off the real migration! First big step is to update dependencies. It can be a little bit tricker than you think because of transitive dependencies.</p>
+<ol start="3">
+<li>Update dependencies</li>
+</ol>
+<p>Let’s change the dependency file <code>Cargo.toml</code>. Luckily big-brain has clean dependencies.</p>
+<p>Here is the diff:</p>
+<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">diff --git a/Cargo.toml b/Cargo.toml</span></span><br><span class="line"><span class="comment">index c495381..9e99a3b 100644</span></span><br><span class="line"><span class="comment">--- a/Cargo.toml</span></span><br><span class="line"><span class="comment">+++ b/Cargo.toml</span></span><br><span class="line"><span class="meta">@@ -14,11 +14,11 @@</span> homepage = &quot;https://github.com/zkat/big-brain&quot;</span><br><span class="line"> [workspace]</span><br><span class="line"></span><br><span class="line"> [dependencies]</span><br><span class="line"><span class="deletion">-bevy = &#123; version = &quot;0.9.0&quot;, default-features = false &#125;</span></span><br><span class="line"><span class="addition">+bevy = &#123; version = &quot;0.10.0&quot;, default-features = false &#125;</span></span><br><span class="line"> big-brain-derive = &#123; version = &quot;=0.16.0&quot;, path = &quot;./derive&quot; &#125;</span><br><span class="line"></span><br><span class="line"> [dev-dependencies]</span><br><span class="line"><span class="deletion">-bevy = &#123; version = &quot;0.9.0&quot;, default-features = true &#125;</span></span><br><span class="line"><span class="addition">+bevy = &#123; version = &quot;0.10.0&quot;, default-features = true &#125;</span></span><br><span class="line"> rand = &#123; version = &quot;0.8.5&quot;, features = [&quot;small_rng&quot;] &#125;</span><br><span class="line"></span><br><span class="line"> [features]</span><br></pre></td></tr></table></figure>
+
+<ol start="4">
+<li>Update lock-file</li>
+</ol>
+<p>After you have updated your dependencies, you need to build a new lock-file that reflects the changes. You can do this by running the following command:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cargo check</span><br></pre></td></tr></table></figure>
+
+<p>This will check your code for errors and generate a new Cargo.lock file that contains the exact versions of your dependencies.</p>
+<ol start="5">
+<li>Check Cargo.lock, return to step 3 if necessary</li>
+</ol>
+<p>You should inspect your Cargo.lock file to make sure that all your dependencies are compatible and use the same version of Bevy. Bevy is <a target="_blank" rel="noopener" href="https://www.wikiwand.com/en/The_Cathedral_and_the_Bazaar">more a bazaar than a cathedral</a>. You may install third-party plugins and extensions from the ecosystem besides the core library. This means that some of these crates may not be updated or compatible with the latest version of Bevy or may have different dependencies themselves, causing errors or unexpected behavior in your code.<br>If you find any inconsistencies, you can go back to step 3 and modify your dependencies accordingly. Repeat this process until your Cargo.lock file is clean and consistent.</p>
+<p>A tip here is to search <code>bevy 0.9</code> in the lock file. <code>Cargo.lock</code> will list library with different version numbers.</p>
+<p>Fortunately, Bevy is the only dependency in big-brain. So we are good to go now!</p>
+<blockquote>
+<p>Key take away: take advantage of Cargo.lock to find transitive dependencies that need updating.</p>
+</blockquote>
+<h1 id="Semi-Automate-Migration"><a href="#Semi-Automate-Migration" class="headerlink" title="(Semi-)Automate Migration"></a>(Semi-)Automate Migration</h1><ol start="6">
+<li><code>cargo check</code> and <code>ast-grep --rewrite</code></li>
+</ol>
+<p>We will use compiler to spot breaking changes and use AST rewrite tool to repeatedly fix these issues.<br>This is a semi-automated process because we need to manually check the results and fix the remaining errors.</p>
+<h2 id="CoreSet"><a href="#CoreSet" class="headerlink" title="CoreSet"></a><code>CoreSet</code></h2><p>The first error is quite easy.</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">error[E0432]: unresolved import `CoreStage`</span><br><span class="line"><span class="meta prompt_">   --&gt; </span><span class="language-bash">src/lib.rs:226:13</span></span><br><span class="line">    |</span><br><span class="line">226 |         use CoreStage::*;</span><br><span class="line">    |             ^^^^^^^^^ use of undeclared type `CoreStage`</span><br></pre></td></tr></table></figure>
+<p>From <a target="_blank" rel="noopener" href="https://bevyengine.org/learn/migration-guides/0.9-0.10/">migration guide</a>:</p>
+<blockquote>
+<p>The CoreStage, StartupStage, RenderStage, and AssetStage enums have been replaced with CoreSet, StartupSet, RenderSet and AssetSet. The same scheduling guarantees have been preserved.</p>
+</blockquote>
+<p><a target="_blank" rel="noopener" href="https://ast-grep.github.io/guide/introduction.html#introduction">Using ast-grep is trivial here</a>.<br>We need to provide a pattern, <code>-p</code>, for it to search as well as a rewrite string, <code>-r</code> to replace the old API with the new one. The command should be quite self-explanatory.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sg -p &#x27;CoreStage&#x27; -r CoreSet -i</span><br></pre></td></tr></table></figure>
+
+<p>We suggest to add <code>-i</code> flag for <code>--interactive</code> editing. ast-grep will display the changed code diff and ask your decision to accept or not.</p>
+<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--- a/src/lib.rs</span></span><br><span class="line"><span class="comment">+++ b/src/lib.rs</span></span><br><span class="line"><span class="meta">@@ -223,7 +223,7 @@</span> pub struct BigBrainPlugin;</span><br><span class="line"></span><br><span class="line"> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line">     fn build(&amp;self, app: &amp;mut App) &#123;</span><br><span class="line"><span class="deletion">-        use CoreStage::*;</span></span><br><span class="line"><span class="addition">+        use CoreSet::*;</span></span><br></pre></td></tr></table></figure>
+
+
+<h2 id="StageLabel"><a href="#StageLabel" class="headerlink" title="StageLabel"></a><code>StageLabel</code></h2><p>Our next error is also easy-peasy.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">error: cannot find derive macro `StageLabel` in this scope</span><br><span class="line">   --&gt; src/lib.rs:269:45</span><br><span class="line">    |</span><br><span class="line">269 | #[derive(Clone, Debug, Hash, Eq, PartialEq, StageLabel, Reflect)]</span><br><span class="line">    |</span><br></pre></td></tr></table></figure>
+
+<p>The <a target="_blank" rel="noopener" href="https://bevyengine.org/learn/migration-guides/0.9-0.10/#label-types">doc</a>:</p>
+<blockquote>
+<p>System labels have been renamed to systems sets and unified with stage labels. The <code>StageLabel</code> trait should be replaced by a system set, using the <code>SystemSet</code> trait as dicussed immediately below.</p>
+</blockquote>
+<p>The command:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sg -p <span class="string">&#x27;StageLabel&#x27;</span> -r SystemSet -i</span><br></pre></td></tr></table></figure>
+
+<h2 id="SystemStage"><a href="#SystemStage" class="headerlink" title="SystemStage"></a><code>SystemStage</code></h2><p>The next error is much harder.</p>
+<p>First, the error complains two breaking changes.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">error[E0599]: no method named `add_stage_after` found for mutable reference `&amp;mut bevy::prelude::App` in the current scope</span><br><span class="line">   --&gt; src/lib.rs:228:13</span><br><span class="line">    |                                                            ↓↓↓↓↓↓↓↓↓↓↓ use of undeclared type `SystemStage`</span><br><span class="line">228 |         app.add_stage_after(First, BigBrainStage::Scorers, SystemStage::parallel());</span><br><span class="line">    |             ^^^^^^^^^^^^^^^ help: there is a method with a similar name: `add_state`</span><br></pre></td></tr></table></figure>
+
+<p>Let’s see what <a target="_blank" rel="noopener" href="https://bevyengine.org/learn/migration-guides/0.9-0.10/#stages">migration guide</a> said. This time we will give the code example.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">// before</span><br><span class="line">app.add_stage_after(CoreStage::Update, AfterUpdate, SystemStage::parallel());</span><br><span class="line"></span><br><span class="line">// after</span><br><span class="line">app.configure_set(</span><br><span class="line">    AfterUpdate</span><br><span class="line">        .after(CoreSet::UpdateFlush)</span><br><span class="line">        .before(CoreSet::PostUpdate),</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p><code>add_stage_after</code> is removed and <code>SystemStage</code> is renamed. We should use <code>configure_set</code> and <code>before</code>&#x2F;<code>after</code> methods.</p>
+<p>Let’s write a command for this code migration.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sg \</span><br><span class="line">  -p <span class="string">&#x27;$APP.add_stage_after($STAGE, $OWN_STAGE, SystemStage::parallel())&#x27;</span> \</span><br><span class="line">  -r <span class="string">&#x27;$APP.configure_set($OWN_STAGE.after($STAGE))&#x27;</span> -i</span><br></pre></td></tr></table></figure>
+
+<p>This pattern deserves some explanation.</p>
+<p><code>$STAGE</code> and <code>$OWN_STAGE</code> are <a target="_blank" rel="noopener" href="https://ast-grep.github.io/guide/pattern-syntax.html#meta-variable">meta-variables</a>.</p>
+<p>meta-variable is a wildcard expression that can match any single AST node. So we effectively find all <code>add_stage_after</code> call. We can also use meta-variables in the rewrite string and ast-grep will replace them with captured AST nodes. ast-grep’s meta-variables are very similar to regular expression’s dot <code>.</code>, except it is not textual.</p>
+<p>However, I found some <code>add_stage_after</code> are not replaced. Nah, ast-grep is quite dumb that it cannot handle the optional comma after the last argument. So I used another query with a trailing comma.</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sg \</span><br><span class="line">  -p &#x27;app.add_stage_after($STAGE, $OWN_STAGE, SystemStage::parallel(),)&#x27; \</span><br><span class="line">  -r &#x27;app.configure_set($OWN_STAGE.after($STAGE))&#x27; -i</span><br></pre></td></tr></table></figure>
+
+<p>Cool! Now it replaced all <code>add_stage_after</code> calls!</p>
+<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--- a/src/lib.rs</span></span><br><span class="line"><span class="comment">+++ b/src/lib.rs</span></span><br><span class="line"><span class="meta">@@ -225,7 +225,7 @@</span> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line"><span class="deletion">-        app.add_stage_after(First, BigBrainStage::Scorers, SystemStage::parallel());</span></span><br><span class="line"><span class="addition">+        app.configure_set(BigBrainStage::Scorers.after(First));</span></span><br><span class="line"><span class="meta">@@ -245,7 +245,7 @@</span> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line"><span class="deletion">-        app.add_stage_after(PreUpdate, BigBrainStage::Actions, SystemStage::parallel());</span></span><br><span class="line"><span class="addition">+        app.configure_set(BigBrainStage::Actions.after(PreUpdate));</span></span><br><span class="line"><span class="meta">@@ -253,7 +253,7 @@</span> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line"><span class="deletion">-        app.add_stage_after(Last, BigBrainStage::Cleanup, SystemStage::parallel());</span></span><br><span class="line"><span class="addition">+        app.configure_set(BigBrainStage::Cleanup.after(Last));</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Stage"><a href="#Stage" class="headerlink" title="Stage"></a><code>Stage</code></h2><p>Our next error is about <a target="_blank" rel="noopener" href="https://bevyengine.org/learn/migration-guides/0.9-0.10/#stages"><code>add_system_to_stage</code></a>. The migration guide told us:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Before:</span></span><br><span class="line">app.<span class="title function_ invoke__">add_system_to_stage</span>(CoreStage::PostUpdate, my_system)</span><br><span class="line"><span class="comment">// After:</span></span><br><span class="line">app.<span class="title function_ invoke__">add_system</span>(my_system.<span class="title function_ invoke__">in_base_set</span>(CoreSet::PostUpdate))</span><br></pre></td></tr></table></figure>
+
+<p>Let’s also write a pattern for it.</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sg \</span><br><span class="line">  -p <span class="string">&#x27;$APP.add_system_to_stage($STAGE, $SYS)&#x27;</span> \</span><br><span class="line">  -r <span class="string">&#x27;$APP.add_system($SYS.in_base_set($STAGE))&#x27;</span> -i</span><br></pre></td></tr></table></figure>
+
+<p>Example diff:</p>
+<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--- a/src/lib.rs</span></span><br><span class="line"><span class="comment">+++ b/src/lib.rs</span></span><br><span class="line"><span class="meta">@@ -243,7 +243,7 @@</span> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line"><span class="deletion">-        app.add_system_to_stage(BigBrainStage::Thinkers, thinker::thinker_system);</span></span><br><span class="line"><span class="addition">+        app.add_system(thinker::thinker_system.in_base_set(BigBrainStage::Thinkers));</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="system-sets"><a href="#system-sets" class="headerlink" title="system_sets"></a><code>system_sets</code></h2><p>The next error corresponds to the system_sets in <a target="_blank" rel="noopener" href="https://bevyengine.org/learn/migration-guides/0.9-0.10/#system-sets-bevy-0-9">migration guide</a>.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">// Before:</span><br><span class="line">app.add_system_set(</span><br><span class="line">  SystemSet::new()</span><br><span class="line">    .with_system(a)</span><br><span class="line">    .with_system(b)</span><br><span class="line">    .with_run_criteria(my_run_criteria)</span><br><span class="line">);</span><br><span class="line">// After:</span><br><span class="line">app.add_systems((a, b).run_if(my_run_condition));</span><br></pre></td></tr></table></figure>
+
+<p>We need to change <code>SystemSet::new().with_system(a).with_system(b)</code> to <code>(a, b)</code>.<br>Alas, I don’t know how to write a pattern to fix that. Maybe ast-grep is not strong enough to support this. I just change <code>with_system</code> manually.<br><em>It is still faster than me scratching my head about how to automate everything.</em></p>
+<p>Another change is to use <code>add_systems</code> instead of <code>add_system_set</code>. This is a simple pattern!</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sg \</span><br><span class="line">  -p <span class="string">&#x27;$APP.add_system_set_to_stage($STAGE, $SYS,)&#x27;</span> \</span><br><span class="line">  -r <span class="string">&#x27;$APP.add_systems($SYS.in_set($STAGE))&#x27;</span> -i</span><br></pre></td></tr></table></figure>
+
+<p>This should fix <code>system_sets</code>!</p>
+<h2 id="Last-error"><a href="#Last-error" class="headerlink" title="Last error"></a>Last error</h2><p>Our last error is about <code>in_base_set</code>‘s type.</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">error[E0277]: the trait bound `BigBrainStage: BaseSystemSet` is not satisfied</span><br><span class="line"><span class="meta prompt_">   --&gt; </span><span class="language-bash">src/lib.rs:238:60</span></span><br><span class="line">    |</span><br><span class="line">238 |         app.add_system(thinker::thinker_system.in_base_set(BigBrainStage::Thinkers));</span><br><span class="line">    |                                                ----------- ^^^^^^^^^^^^^^^^^^^^^^^ the trait `BaseSystemSet` is not implemented for `BigBrainStage`</span><br><span class="line">    |                                                |</span><br><span class="line">    |                                                required by a bound introduced by this call</span><br><span class="line">    |</span><br><span class="line">    = help: the following other types implement trait `BaseSystemSet`:</span><br><span class="line">              StartupSet</span><br><span class="line">              bevy::prelude::CoreSet</span><br><span class="line">note: required by a bound in `bevy::prelude::IntoSystemConfig::in_base_set`</span><br></pre></td></tr></table></figure>
+
+<p>Okay, <code>BigBrainStage::Thinkers</code> is not a base set in Bevy, so we should change it to <code>in_set</code>.</p>
+<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="deletion">-        .add_system(one_off_action_system.in_base_set(BigBrainStage::Actions))</span></span><br><span class="line"><span class="addition">+        .add_system(one_off_action_system.in_set(BigBrainStage::Actions))</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Hoooray! Finally the program compiles! <del>ship it</del> Now let’s test it.</strong></p>
+<hr>
+<h2 id="cargo-fmt"><a href="#cargo-fmt" class="headerlink" title="cargo fmt"></a>cargo fmt</h2><p>Congrats! You have automated code refactoring! But ast-grep’s rewrite can be messy and hard to read. Most code-rewriting tool does not support pretty-print, sadly.<br>A simple solution is to run <code>cargo fmt</code> and make the repository neat and tidy.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cargo fmt</span><br></pre></td></tr></table></figure>
+
+<p>A good practice is to run this command every time after a code rewrite.</p>
+<hr>
+<h1 id="Test-Our-Refactor"><a href="#Test-Our-Refactor" class="headerlink" title="Test Our Refactor"></a>Test Our Refactor</h1><h2 id="cargo-test"><a href="#cargo-test" class="headerlink" title="cargo test"></a><code>cargo test</code></h2><p>Let’s use Rust’s standard test command to verify our changes: <code>cargo test</code>.</p>
+<p>Oops. we have one test error, not too bad!</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">running 1 test</span><br><span class="line">test steps ... FAILED</span><br><span class="line"></span><br><span class="line">failures:</span><br><span class="line"></span><br><span class="line">---- steps stdout ----</span><br><span class="line">steps test</span><br><span class="line">thread &#x27;steps&#x27; panicked at &#x27;`&quot;Update&quot;` and `&quot;Cleanup&quot;` have a `before`-`after` relationship (which may be transitive) but share systems.&#x27;</span><br><span class="line">note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</span><br></pre></td></tr></table></figure>
+
+<p>Okay, it complains that <code>Update</code> and <code>Cleanup</code> have a conflicting running order. This is probably caused by <code>configure_set</code>.</p>
+<p>I should have caught the bug during diff review but I missed that. It is not too late to change it manually.</p>
+<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--- a/src/lib.rs</span></span><br><span class="line"><span class="comment">+++ b/src/lib.rs</span></span><br><span class="line"><span class="meta">@@ -225,7 +225,7 @@</span> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line"><span class="deletion">-        app.configure_set(BigBrainStage::Scorers.after(First));</span></span><br><span class="line"><span class="addition">+        app.configure_set(BigBrainStage::Scorers.in_base_set(First));</span></span><br><span class="line"><span class="meta">@@ -242,12 +242,12 @@</span> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line"><span class="deletion">-        app.configure_set(BigBrainStage::Actions.after(PreUpdate));</span></span><br><span class="line"><span class="addition">+        app.configure_set(BigBrainStage::Actions.in_base_set(PreUpdate));</span></span><br></pre></td></tr></table></figure>
+
+<p>Run <code>cargo test</code> again?</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">   Doc-tests big-brain</span><br><span class="line"></span><br><span class="line">failures:</span><br><span class="line"></span><br><span class="line">---- src/lib.rs - (line 127) stdout ----</span><br><span class="line">error[E0599]:</span><br><span class="line">  no method named `add_system_to_stage` found for mutable reference</span><br><span class="line">    `&amp;mut bevy::prelude::App`</span><br><span class="line">  in the current scope</span><br></pre></td></tr></table></figure>
+
+<p>We failed doc-test!</p>
+<p>Because our ast based tool does not process comments. Lame. :(<br>We need manually fix them.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">--- a/src/lib.rs</span><br><span class="line">+++ b/src/lib.rs</span><br><span class="line">@@ -137,8 +137,8 @@</span><br><span class="line">-//!         .add_system_to_stage(BigBrainStage::Actions, drink_action_system)</span><br><span class="line">-//!         .add_system_to_stage(BigBrainStage::Scorers, thirsty_scorer_system)</span><br><span class="line">+//!         .add_system(drink_action_system.in_set(BigBrainStage::Actions))</span><br><span class="line">+//!         .add_system(thirsty_scorer_system.in_set(BigBrainStage::Scorers))</span><br></pre></td></tr></table></figure>
+
+<p><strong>Finally we passed all tests!</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.68s</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h1><p>Now we can commit and push our version upgrade to the upstream. It is not a too long battle, is it?</p>
+<p>I have created a pull request for reference. <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/big-brain/pull/1/files">https://github.com/HerringtonDarkholme/big-brain/pull/1/files</a></p>
+<p>Reading a long migration guide is not easy, and fixing compiler errors is even harder.</p>
+<p>It would be nice if the official guide can contain some automated command to ease the burden. For example, <a target="_blank" rel="noopener" href="https://yew.rs/docs/next/migration-guides/yew/from-0_20_0-to-next">yew.rs</a> did a great job by providing automation in every release note!</p>
+<p>To recap our semi-automated refactoring, this is our four steps:</p>
+<ul>
+<li>Keep a clean git branch for upgrading</li>
+<li>Update all dependencies in the project and check lock files.</li>
+<li>Compile, Rewrite, Verify and Format. Repeat this process until the project compiles.</li>
+<li>Run Test and fix the remaining bugs.</li>
+</ul>
+<p>I hope this workflow will help you and other programming language developers in the future!</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
     <article id="post-server-component" class="article article-type-post" itemprop="blogPost" itemscope>
   <div class="article-inner">
     
@@ -56,14 +257,14 @@
         
   
     <h2 class="article-title" itemprop="name">
-      <a href="/2023/07/09/server-component/">Grok React Server Component by Quizzes</a>
+      <a href="/2023/05/07/server-component/">Grok React Server Component by Quizzes</a>
       
     </h2>
   
 
 
         <div class="article-meta">
-          <time class="article-date" datetime="2023-07-10T05:26:14.000Z" itemprop="datePublished">July 9, 2023, 10:26 PM</time>
+          <time class="article-date" datetime="2023-05-08T05:26:14.000Z" itemprop="datePublished">May 7, 2023, 10:26 PM</time>
 
           
         </div>
@@ -464,162 +665,6 @@
 <img width="1513" alt="Merging rules" src="https://user-images.githubusercontent.com/2883231/215318867-b670b5fe-c678-4c31-985f-36e4f620baeb.png">
 
 <p>Optimizing ast-grep is a fun journey. I learned a lot about Rust and performance tuning. I hope you enjoyed this post as well.</p>
-
-      
-    </div>
-    
-    
-    
-  </div>
-</article>
-
-
-
-  
-    <article id="post-migrate-bevy" class="article article-type-post" itemprop="blogPost" itemscope>
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h2 class="article-title" itemprop="name">
-      <a href="/2022/05/17/migrate-bevy/">Migrating Bevy can be easier than you thought. Here is how.</a>
-      
-    </h2>
-  
-
-
-        <div class="article-meta">
-          <time class="article-date" datetime="2022-05-17T07:00:00.000Z" itemprop="datePublished">May 17, 2022, 12:00 AM</time>
-
-          
-        </div>
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-      
-        <p>Using open source software can be a double-edged sword: We enjoy the latest features and innovations, but we hate frequent and sometimes tedious upgrades.</p>
-<p>Bevy is a fast and flexible game engine written in Rust. It aims to provide a modern and modular architecture, notably Entity Component System(ECS), that allows developers to craft rich and interactive experiences.</p>
-<p>However, the shiny new engine is also an evolving project that periodically introduces breaking changes in its API.<br>Bevy’s migration guide is comprehensive, but daunting. It is sometimes overwhelmingly long because it covers many topics and scenarios.</p>
-<p>In this article, we will show you how to make migration easier by using some command line tools such as git, cargo and ast-grep. These tools can help you track the changes, automate the fixes, and search for specific patterns in your code. By following our tips, you will be able to migrate your Bevy projects with less hassle and more confidence.</p>
-<p>Here is a list of commands used in this migration.</p>
-<ul>
-<li>git: Manage code history, keep code snapshot, and help you revert changes if needed.</li>
-<li>cargo check: Quickly check code for errors and warnings without building it.</li>
-<li>ast-grep: Search for ASTs in source and automate code rewrite using patterns or expressions.</li>
-<li>cargo fmt: Format the rewritten code according to Rust style guidelines.</li>
-<li>cargo test: Run tests in the project and report the results to ensure the program still works.</li>
-</ul>
-<p>that consists of three steps: updating the dependencies, running the cargo fix command, and manually fixing the remaining errors.</p>
-<h1 id="Preparation"><a href="#Preparation" class="headerlink" title="Preparation."></a>Preparation.</h1><ol>
-<li><p>Clone</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git@github.com:HerringtonDarkholme/big-brain.git</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>Check out a new branch</p>
-</li>
-</ol>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git checkout -b upgrade-bevy</span><br></pre></td></tr></table></figure>
-
-
-<blockquote>
-<p>Key take away: make sure you have a clean git history and create a new branch for upgrading.</p>
-</blockquote>
-<h1 id="Update-Dependency"><a href="#Update-Dependency" class="headerlink" title="Update Dependency"></a>Update Dependency</h1><ol start="3">
-<li>Update dependencies, recursively</li>
-</ol>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">diff --git a/Cargo.toml b/Cargo.toml</span><br><span class="line">index c495381..9e99a3b 100644</span><br><span class="line">--- a/Cargo.toml</span><br><span class="line">+++ b/Cargo.toml</span><br><span class="line">@@ -14,11 +14,11 @@ homepage = &quot;https://github.com/zkat/big-brain&quot;</span><br><span class="line"> [workspace]</span><br><span class="line"></span><br><span class="line"> [dependencies]</span><br><span class="line">-bevy = &#123; version = &quot;0.9.0&quot;, default-features = false &#125;</span><br><span class="line">+bevy = &#123; version = &quot;0.10.0&quot;, default-features = false &#125;</span><br><span class="line"> big-brain-derive = &#123; version = &quot;=0.16.0&quot;, path = &quot;./derive&quot; &#125;</span><br><span class="line"></span><br><span class="line"> [dev-dependencies]</span><br><span class="line">-bevy = &#123; version = &quot;0.9.0&quot;, default-features = true &#125;</span><br><span class="line">+bevy = &#123; version = &quot;0.10.0&quot;, default-features = true &#125;</span><br><span class="line"> rand = &#123; version = &quot;0.8.5&quot;, features = [&quot;small_rng&quot;] &#125;</span><br><span class="line"></span><br><span class="line"> [features]</span><br></pre></td></tr></table></figure>
-
-<ol start="4">
-<li><p>Cargo check!</p>
-</li>
-<li><p>Check Cargo.lock. Return to 3 if necessary</p>
-</li>
-</ol>
-<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[[package]]</span></span><br><span class="line"><span class="attr">name</span> = <span class="string">&quot;bevy&quot;</span></span><br><span class="line"><span class="attr">version</span> = <span class="string">&quot;0.10.1&quot;</span></span><br><span class="line"><span class="attr">source</span> = <span class="string">&quot;registry+https://github.com/rust-lang/crates.io-index&quot;</span></span><br><span class="line"><span class="attr">checksum</span> = <span class="string">&quot;b93f906133305915d63f04108e6873c1b93a6605fe374b8f3391f6bda093e396&quot;</span></span><br><span class="line"><span class="attr">dependencies</span> = [</span><br><span class="line"> <span class="string">&quot;bevy_internal&quot;</span>,</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>Key take away: take advantage of Cargo.lock to find transitive dependencies that need updating.</p>
-</blockquote>
-<h1 id="Semi-Automate-Breaking-Change"><a href="#Semi-Automate-Breaking-Change" class="headerlink" title="(Semi)Automate Breaking Change"></a>(Semi)Automate Breaking Change</h1><ol start="6">
-<li>Cargo check.<br><a target="_blank" rel="noopener" href="https://bevyengine.org/learn/migration-guides/0.9-0.10/">https://bevyengine.org/learn/migration-guides/0.9-0.10/</a></li>
-</ol>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">error[E0432]: unresolved import `CoreStage`</span><br><span class="line">   --&gt; src/lib.rs:226:13</span><br><span class="line">    |</span><br><span class="line">226 |         use CoreStage::*;</span><br><span class="line">    |             ^^^^^^^^^ use of undeclared type `CoreStage`</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>The CoreStage, StartupStage, RenderStage, and AssetStage enums have been replaced with CoreSet, StartupSet, RenderSet and AssetSet. The same scheduling guarantees have been preserved.</p>
-</blockquote>
-<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">diff --git a/src/lib.rs b/src/lib.rs</span></span><br><span class="line"><span class="comment">index 0ebad24..40255cb 100644</span></span><br><span class="line"><span class="comment">--- a/src/lib.rs</span></span><br><span class="line"><span class="comment">+++ b/src/lib.rs</span></span><br><span class="line"><span class="meta">@@ -223,7 +223,7 @@</span> pub struct BigBrainPlugin;</span><br><span class="line"></span><br><span class="line"> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line">     fn build(&amp;self, app: &amp;mut App) &#123;</span><br><span class="line"><span class="deletion">-        use CoreStage::*;</span></span><br><span class="line"><span class="addition">+        use CoreSet::*;</span></span><br><span class="line"></span><br><span class="line">         app.add_stage_after(First, BigBrainStage::Scorers, SystemStage::parallel());</span><br><span class="line">         app.add_system_set_to_stage(</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sg -p &#x27;CoreStage&#x27; -r CoreSet -i</span><br></pre></td></tr></table></figure>
-
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">error: cannot find derive macro `StageLabel` in this scope</span><br><span class="line">   --&gt; src/lib.rs:269:45</span><br><span class="line">    |</span><br><span class="line">269 | #[derive(Clone, Debug, Hash, Eq, PartialEq, StageLabel, Reflect)]</span><br><span class="line">    |</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>System labels have been renamed to systems sets and unified with stage labels. The StageLabel trait should be replaced by a system set, using the SystemSet trait as dicussed immediately below.</p>
-</blockquote>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sg -p &#x27;StageLabel&#x27; -r SystemSet -i</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git diff, git add.</span><br></pre></td></tr></table></figure>
-
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">error[E0599]: no method named `add_stage_after` found for mutable reference `&amp;mut bevy::prelude::App` in the current scope</span><br><span class="line">   --&gt; src/lib.rs:228:13</span><br><span class="line">    |</span><br><span class="line">228 |         app.add_stage_after(First, BigBrainStage::Scorers, SystemStage::parallel());</span><br><span class="line">    |             ^^^^^^^^^^^^^^^ help: there is a method with a similar name: `add_state`</span><br><span class="line"></span><br><span class="line">error[E0433]: failed to resolve: use of undeclared type `SystemStage`</span><br><span class="line">   --&gt; src/lib.rs:228:60</span><br><span class="line">    |</span><br><span class="line">228 |         app.add_stage_after(First, BigBrainStage::Scorers, SystemStage::parallel());</span><br><span class="line">    |                                                            ^^^^^^^^^^^ use of undeclared type `SystemStage`</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sg -p &#x27;app.add_stage_after($STAGE, $OWN_STAGE, SystemStage::parallel())&#x27; -r &#x27;app.configure_set($OWN_STAGE.after($STAGE))&#x27; -i</span><br><span class="line">sg -p &#x27;app.add_stage_after($STAGE, $OWN_STAGE, SystemStage::parallel(),)&#x27; -r &#x27;app.configure_set($OWN_STAGE.after($STAGE))&#x27; -i</span><br></pre></td></tr></table></figure>
-
-
-<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">diff --git a/src/lib.rs b/src/lib.rs</span></span><br><span class="line"><span class="comment">index a7bd98a..4ba898b 100644</span></span><br><span class="line"><span class="comment">--- a/src/lib.rs</span></span><br><span class="line"><span class="comment">+++ b/src/lib.rs</span></span><br><span class="line"><span class="meta">@@ -225,7 +225,7 @@</span> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line">     fn build(&amp;self, app: &amp;mut App) &#123;</span><br><span class="line">         use CoreSet::*;</span><br><span class="line"></span><br><span class="line"><span class="deletion">-        app.add_stage_after(First, BigBrainStage::Scorers, SystemStage::parallel());</span></span><br><span class="line"><span class="addition">+        app.configure_set(BigBrainStage::Scorers.after(First));</span></span><br><span class="line">         app.add_system_set_to_stage(</span><br><span class="line">             BigBrainStage::Scorers,</span><br><span class="line">             SystemSet::new()</span><br><span class="line"><span class="meta">@@ -245,7 +245,7 @@</span> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line">         );</span><br><span class="line">         app.add_system_to_stage(BigBrainStage::Thinkers, thinker::thinker_system);</span><br><span class="line"></span><br><span class="line"><span class="deletion">-        app.add_stage_after(PreUpdate, BigBrainStage::Actions, SystemStage::parallel());</span></span><br><span class="line"><span class="addition">+        app.configure_set(BigBrainStage::Actions.after(PreUpdate));</span></span><br><span class="line">         app.add_system_set_to_stage(</span><br><span class="line">             BigBrainStage::Actions,</span><br><span class="line">             SystemSet::new()</span><br><span class="line"><span class="meta">@@ -253,7 +253,7 @@</span> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line">                 .with_system(actions::concurrent_system),</span><br><span class="line">         );</span><br><span class="line"></span><br><span class="line"><span class="deletion">-        app.add_stage_after(Last, BigBrainStage::Cleanup, SystemStage::parallel());</span></span><br><span class="line"><span class="addition">+        app.configure_set(BigBrainStage::Cleanup.after(Last));</span></span><br><span class="line">         app.add_system_set_to_stage(</span><br><span class="line">             BigBrainStage::Cleanup,</span><br><span class="line">             SystemSet::new()</span><br></pre></td></tr></table></figure>
-
-
-<p><a target="_blank" rel="noopener" href="https://bevyengine.org/learn/migration-guides/0.9-0.10/#stages">https://bevyengine.org/learn/migration-guides/0.9-0.10/#stages</a></p>
-<p>Before:</p>
-<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">app</span><br><span class="line">    .<span class="title function_ invoke__">add_system_to_stage</span>(CoreStage::PostUpdate, my_system)</span><br><span class="line">    .<span class="title function_ invoke__">add_startup_system_to_stage</span>(StartupStage::PostStartup, my_startup_system);</span><br></pre></td></tr></table></figure>
-
-<p>After:</p>
-<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">app</span><br><span class="line">    .<span class="title function_ invoke__">add_system</span>(my_system.<span class="title function_ invoke__">in_base_set</span>(CoreSet::PostUpdate))</span><br><span class="line">    .<span class="title function_ invoke__">add_startup_system</span>(my_startup_system.<span class="title function_ invoke__">in_base_set</span>(StartupSet::PostStartup));</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sg -p <span class="string">&#x27;$APP.add_system_to_stage($STAGE, $SYS)&#x27;</span> -r <span class="string">&#x27;$APP.add_system($SYS.in_base_set($STAGE))&#x27;</span> -i</span><br></pre></td></tr></table></figure>
-
-
-<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">diff --git a/src/lib.rs b/src/lib.rs</span></span><br><span class="line"><span class="comment">index 4ba898b..ac062d6 100644</span></span><br><span class="line"><span class="comment">--- a/src/lib.rs</span></span><br><span class="line"><span class="comment">+++ b/src/lib.rs</span></span><br><span class="line"><span class="meta">@@ -243,7 +243,7 @@</span> impl Plugin for BigBrainPlugin &#123;</span><br><span class="line">             BigBrainStage::Thinkers,</span><br><span class="line">             SystemStage::parallel(),</span><br><span class="line">         );</span><br><span class="line"><span class="deletion">-        app.add_system_to_stage(BigBrainStage::Thinkers, thinker::thinker_system);</span></span><br><span class="line"><span class="addition">+        app.add_system(thinker::thinker_system.in_base_set(BigBrainStage::Thinkers));</span></span><br><span class="line"></span><br><span class="line">         app.configure_set(BigBrainStage::Actions.after(PreUpdate));</span><br><span class="line">         app.add_system_set_to_stage(</span><br></pre></td></tr></table></figure>
-
-
-
-<p>system_sets<br><a target="_blank" rel="noopener" href="https://bevyengine.org/learn/migration-guides/0.9-0.10/#system-sets-bevy-0-9">https://bevyengine.org/learn/migration-guides/0.9-0.10/#system-sets-bevy-0-9</a></p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sg -p <span class="string">&#x27;$SYS_SET.with_system($SYS)&#x27;</span> -r <span class="string">&#x27;$SYS,&#x27;</span> -i</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sg -p <span class="string">&#x27;$APP.add_system_set_to_stage($STAGE, $SYS,)&#x27;</span> -r <span class="string">&#x27;$APP.add_systems($SYS.in_set($STAGE))&#x27;</span> -i</span><br></pre></td></tr></table></figure>
-
-
-<p>Last error.</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">error[E0277]: the trait bound `BigBrainStage: BaseSystemSet` is not satisfied</span><br><span class="line">   --&gt; src/lib.rs:238:60</span><br><span class="line">    |</span><br><span class="line">238 |         app.add_system(thinker::thinker_system.in_base_set(BigBrainStage::Thinkers));</span><br><span class="line">    |                                                ----------- ^^^^^^^^^^^^^^^^^^^^^^^ the trait `BaseSystemSet` is not implemented for `BigBrainStage`</span><br><span class="line">    |                                                |</span><br><span class="line">    |                                                required by a bound introduced by this call</span><br><span class="line">    |</span><br><span class="line">    = help: the following other types implement trait `BaseSystemSet`:</span><br><span class="line">              StartupSet</span><br><span class="line">              bevy::prelude::CoreSet</span><br><span class="line">note: required by a bound in `bevy::prelude::IntoSystemConfig::in_base_set`</span><br></pre></td></tr></table></figure>
-
-<p>Okay, BigBrainStage::Thinkers is not a base set, so we should change it to <code>in_set</code>.</p>
-<p>–</p>
-<p>cargo fmt</p>
-<hr>
-<p>cargo test</p>
-<p>Oops. we have a test error.</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">running 1 test</span><br><span class="line">test steps ... FAILED</span><br><span class="line"></span><br><span class="line">failures:</span><br><span class="line"></span><br><span class="line">---- steps stdout ----</span><br><span class="line">steps test</span><br><span class="line">thread &#x27;steps&#x27; panicked at &#x27;`&quot;Update&quot;` and `&quot;Cleanup&quot;` have a `before`-`after` relationship (which may be transitive) but share systems.&#x27;, /Users/bytedance/.cargo/registry/src/github.com-1ecc6299db9ec823/bevy_ecs-0.10.1/src/schedule/schedule.rs:248:51</span><br><span class="line">note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">diff --git a/src/lib.rs b/src/lib.rs</span><br><span class="line">index 84deb6a..44ea0bb 100644</span><br><span class="line">--- a/src/lib.rs</span><br><span class="line">+++ b/src/lib.rs</span><br><span class="line">@@ -225,7 +225,7 @@ impl Plugin for BigBrainPlugin &#123;</span><br><span class="line">     fn build(&amp;self, app: &amp;mut App) &#123;</span><br><span class="line">         use CoreSet::*;</span><br><span class="line"></span><br><span class="line">-        app.configure_set(BigBrainStage::Scorers.after(First));</span><br><span class="line">+        app.configure_set(BigBrainStage::Scorers.in_base_set(First));</span><br><span class="line">         app.add_systems(</span><br><span class="line">             (</span><br><span class="line">                 scorers::fixed_score_system,</span><br><span class="line">@@ -242,12 +242,12 @@ impl Plugin for BigBrainPlugin &#123;</span><br><span class="line">         app.configure_set(BigBrainStage::Thinkers.after(BigBrainStage::Scorers));</span><br><span class="line">         app.add_system(thinker::thinker_system.in_set(BigBrainStage::Thinkers));</span><br><span class="line"></span><br><span class="line">-        app.configure_set(BigBrainStage::Actions.after(PreUpdate));</span><br><span class="line">+        app.configure_set(BigBrainStage::Actions.in_base_set(PreUpdate));</span><br><span class="line">         app.add_systems(</span><br><span class="line">             (actions::steps_system, actions::concurrent_system).in_set(BigBrainStage::Actions),</span><br><span class="line">         );</span><br><span class="line"></span><br><span class="line">-        app.configure_set(BigBrainStage::Cleanup.after(Last));</span><br><span class="line">+        app.configure_set(BigBrainStage::Cleanup.in_base_set(Last));</span><br><span class="line">         app.add_systems(</span><br><span class="line">             (</span><br><span class="line">                 thinker::thinker_component_attach_system,</span><br></pre></td></tr></table></figure>
-
-<p>Run again?</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">   Doc-tests big-brain</span><br><span class="line"></span><br><span class="line">failures:</span><br><span class="line"></span><br><span class="line">---- src/lib.rs - (line 127) stdout ----</span><br><span class="line">error[E0599]: no method named `add_system_to_stage` found for mutable reference `&amp;mut bevy::prelude::App` in the current scope</span><br><span class="line">  --&gt; src/lib.rs:140:10</span><br><span class="line">   |</span><br><span class="line">10 | /     App::new()</span><br><span class="line">11 | |         .add_plugins(DefaultPlugins)</span><br><span class="line">12 | |         .add_plugin(BigBrainPlugin)</span><br><span class="line">13 | |         .add_startup_system(init_entities)</span><br><span class="line">14 | |         .add_system(thirst_system)</span><br><span class="line">15 | |         .add_system_to_stage(BigBrainStage::Actions, drink_action_system)</span><br><span class="line">   | |         -^^^^^^^^^^^^^^^^^^^ help: there is a method with a similar name: `add_system`</span><br><span class="line">   | |_________|</span><br><span class="line">   |</span><br><span class="line"></span><br><span class="line">error: aborting due to previous error</span><br></pre></td></tr></table></figure>
-
-<p>We failed doc-test!</p>
-<p>Oops, because our ast based tool does not process comments.</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">diff --git a/src/lib.rs b/src/lib.rs</span><br><span class="line">index 44ea0bb..9eeed9e 100644</span><br><span class="line">--- a/src/lib.rs</span><br><span class="line">+++ b/src/lib.rs</span><br><span class="line">@@ -137,8 +137,8 @@</span><br><span class="line"> //!         .add_plugin(BigBrainPlugin)</span><br><span class="line"> //!         .add_startup_system(init_entities)</span><br><span class="line"> //!         .add_system(thirst_system)</span><br><span class="line">-//!         .add_system_to_stage(BigBrainStage::Actions, drink_action_system)</span><br><span class="line">-//!         .add_system_to_stage(BigBrainStage::Scorers, thirsty_scorer_system)</span><br><span class="line">+//!         .add_system(drink_action_system.in_set(BigBrainStage::Actions))</span><br><span class="line">+//!         .add_system(thirsty_scorer_system.in_set(BigBrainStage::Scorers))</span><br><span class="line"> //!         .run();</span><br><span class="line"> //! &#125;</span><br><span class="line"> //! ```</span><br></pre></td></tr></table></figure>
-
-<p>this time we need manually fix them</p>
-<p>Finally we passed all tests!</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.68s</span><br></pre></td></tr></table></figure>
-
-<hr>
-<p>commit and push!</p>
-<p>Now we can commit and push!</p>
-<p><a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/big-brain/pull/1/files">https://github.com/HerringtonDarkholme/big-brain/pull/1/files</a></p>
 
       
     </div>
