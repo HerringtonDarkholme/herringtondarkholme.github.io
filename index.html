@@ -49,6 +49,181 @@
     <div id="content">
       
   
+    <article id="post-benchmarking-napi-parser" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2023/11/25/benchmarking-napi-parser/">Benchmark TypeScript Parsers: Demystify Rust Tooling Performance</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2023-11-25T08:00:00.000Z" itemprop="datePublished">November 25, 2023, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <h1 id="Benchmark-TypeScript-Parsers-Demystify-Rust-Tooling-Performance"><a href="#Benchmark-TypeScript-Parsers-Demystify-Rust-Tooling-Performance" class="headerlink" title="Benchmark TypeScript Parsers: Demystify Rust Tooling Performance"></a>Benchmark TypeScript Parsers: Demystify Rust Tooling Performance</h1><blockquote>
+<p>TL;DR: Native parsers used in JavaScript are not always faster due to extra work across languages. Avoiding these overhead and using multi-core are crucial for performance.</p>
+</blockquote>
+<p><strong>Rust</strong> is rapidly becoming a language of choice within the JavaScript ecosystem for its performance and safety features. However, integrating Rust into JavaScript tooling presents unique challenges, particularly when it comes to designing an efficient and portable plugin system.</p>
+<blockquote>
+<p>“Rewriting JavaScript tooling in Rust is advantageous for speed-focused projects that do not require extensive external contributions.” - <a target="_blank" rel="noopener" href="https://twitter.com/slicknet/status/1726663311541100626">Nicholas C. Zakas, creator of ESLint</a></p>
+</blockquote>
+<p>Learning Rust can be daunting due to its steep learning curve, and distributing compiled binaries across different platforms is not straightforward.<br>A Rust based plugins necessitates either static compilation of all plugins or a carefully designed application binary interface for dynamic loading.<br>These considerations, however, are beyond the scope of this article. Instead, we’ll concentrate on how to provide robust tooling for writing plugins in JavaScript.</p>
+<p>A critical component of JavaScript tooling is the parsing of source code into an Abstract Syntax Tree (AST). Plugins commonly inspect and manipulate the AST to transform the source code. Therefore, it’s not sufficient to parse in Rust alone; we must also make the AST accessible to JavaScript.</p>
+<p>This post will benchmark several popular TypeScript parsers implemented in JavaScript, Rust, and C.</p>
+<h2 id="Parser-Choices"><a href="#Parser-Choices" class="headerlink" title="Parser Choices"></a>Parser Choices</h2><p>While there are numerous JavaScript parsers available, we focus on TypeScript parsers for this benchmark. Modern bundlers must support TypeScript out-of-the-box, and TypeScript is a superset of JavaScript. Benchmarking TypeScript is a sensible choice to emulate the real-world bundler workload.</p>
+<p>The parsers we’re evaluating include:</p>
+<ul>
+<li><strong><a target="_blank" rel="noopener" href="https://babeljs.io/">Babel</a></strong>: The Babel parser (previously Babylon) is a JavaScript parser used in Babel compiler.</li>
+<li><strong><a target="_blank" rel="noopener" href="https://www.typescriptlang.org/">TypeScript</a></strong>: The official parser implementation from the TypeScript team.</li>
+<li><strong><a target="_blank" rel="noopener" href="https://tree-sitter.github.io/">Tree-sitter</a></strong>: An incremental parsing library that can build and update concrete syntax trees for source files, aiming to parse any programming language quickly enough for <em>text editor use</em>.</li>
+<li><strong><a target="_blank" rel="noopener" href="https://ast-grep.github.io/">ast-grep</a></strong>: A CLI tool for code structural search, lint, and rewriting based on abstract syntax trees. We are using its <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/tree/main/crates/napi">napi binding</a> here.</li>
+<li><strong><a target="_blank" rel="noopener" href="https://swc.rs/">swc</a></strong>: A super-fast TypeScript&#x2F;JavaScript compiler written in Rust, with a focus on performance and being a library for both Rust and JavaScript users.</li>
+<li><strong><a target="_blank" rel="noopener" href="https://oxc-project.github.io/">oxc</a></strong>: The Oxidation Compiler is a suite of high-performance tools for JS&#x2F;TS, claiming to have the fastest and most conformant parser written in Rust.</li>
+</ul>
+<h2 id="Native-Addon-Performance-Characteristics"><a href="#Native-Addon-Performance-Characteristics" class="headerlink" title="Native Addon Performance Characteristics"></a>Native Addon Performance Characteristics</h2><p>Before diving into the benchmarks, let’s first review the performance characteristics of Node-API based solutions.</p>
+<p><strong>Node-API Pros:</strong></p>
+<ul>
+<li><strong>Better Compiler Optimization:</strong> Code in native languages have compact data layouts, leading to fewer CPU instructions.</li>
+<li><strong>No Garbage Collector Runtime Overhead:</strong> This allows for more predictable performance.</li>
+</ul>
+<p>However, Node-API is not a silver bullet.</p>
+<p><strong>Node-API Cons:</strong></p>
+<ul>
+<li><strong>FFI Overhead:</strong> The cost of interfacing between different programming languages.</li>
+<li><strong>Serde Overhead:</strong> Serialization and deserialization of Rust data structures can be costly.</li>
+<li><strong>Encoding Overhead:</strong> Converting JS string in utf-16 to Rust’s utf-8 string can introduce significant delays.</li>
+</ul>
+<p>We need to understand the pros and cons of using native node addons in order to design an insightful benchmark.</p>
+<h2 id="Benchmark-Design"><a href="#Benchmark-Design" class="headerlink" title="Benchmark Design"></a>Benchmark Design</h2><p>We consider two main factors:</p>
+<ol>
+<li><p><strong>File Size:</strong> Different file sizes reveal distinct performance characteristics. The parsing time of an N-API based parser consists of actual parsing and cross-language overhead. While parsing time is proportional to file size, the growth of cross-language overhead depends on the parser’s implementation.</p>
+</li>
+<li><p><strong>Concurrency Level:</strong> Parallel parsing is not possible in JavaScript’s single main thread. However, N-API based parsers can run in separate threads, either using libuv’s thread pool or their own threading model. That said, thread spawning also incurs overhead.</p>
+</li>
+</ol>
+<p>We are not considering these factors in this post.</p>
+<ul>
+<li><strong>Warmup and JIT:</strong> No significant difference observed between warmup and non-warmup runs.</li>
+<li><strong>GC, Memory Usage:</strong> Not evaluated in this benchmark.</li>
+<li><strong>Node.js CLI arguments:</strong> To make the benchmark representative, default Node.js arguments were used, although tuning could potentially improve performance.</li>
+</ul>
+<h2 id="Benchmark-Setup"><a href="#Benchmark-Setup" class="headerlink" title="Benchmark Setup"></a>Benchmark Setup</h2><p>The benchmark code is hosted in ast-grep’s repo <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/blob/main/benches/bench.ts">https://github.com/ast-grep/ast-grep/blob/main/benches/bench.ts</a>.</p>
+<h3 id="Testing-Environment"><a href="#Testing-Environment" class="headerlink" title="Testing Environment"></a>Testing Environment</h3><p>The benchmarks were executed on a system equipped with the following specifications:</p>
+<ul>
+<li><strong>Operating System:</strong> macOS 12.6</li>
+<li><strong>Processor:</strong> arm64 Apple M1</li>
+<li><strong>Memory:</strong> 16.00 GB</li>
+<li><strong>Benchmarking Tool:</strong> <a target="_blank" rel="noopener" href="https://caderek.github.io/benny/">Benny</a></li>
+</ul>
+<h3 id="File-Size-Categories"><a href="#File-Size-Categories" class="headerlink" title="File Size Categories"></a>File Size Categories</h3><p>To assess parser performance across a variety of codebases, we categorized file sizes as follows:</p>
+<ul>
+<li><strong>Single Line:</strong> A minimal TypeScript snippet, <code>let a = 123;</code>, to measure baseline overhead.</li>
+<li><strong>Small File:</strong> A concise 24-line TypeScript module, representing a common utility file.</li>
+<li><strong>Medium File:</strong> A typical 400-line TypeScript file, reflecting average development workloads.</li>
+<li><strong>Large File:</strong> The extensive 2.79MB <code>checker.ts</code> from the TypeScript repository, challenging parsers with a complex and sizable codebase.</li>
+</ul>
+<h3 id="Concurrency-Level"><a href="#Concurrency-Level" class="headerlink" title="Concurrency Level"></a>Concurrency Level</h3><p>For this benchmark, we simulate a realistic workload by parsing five files concurrently. This number is an arbitrary but reasonable proxy to the actual JavaScript tooling.</p>
+<p>It’s worth noting, to seasoned Node.js developers, that this setup may influence asynchronous parsing performance. However it does not disproportionately favor Rust-based parsers. The rationale behind this is left as an exercise for the reader. :)</p>
+<hr>
+<p>This post aims to provide a general overview of the benchmarking for TypeScript parsers, focusing on the performance characteristics of N-API based solutions and the trade-offs involved. Feel free to adjust the benchmark setup to better fit your workload.</p>
+<p>Now, let’s delve into the results of TypeScript parser benchmarking!</p>
+<h2 id="Results"><a href="#Results" class="headerlink" title="Results"></a>Results</h2><p>Raw data can be found in this <a target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/1oIRXDaJ-EnjKz8GKpmUjVwh_FNw4Nsf6mbA0QPCiTh0/edit#gid=0">Google Sheet</a>.</p>
+<h3 id="Synchronous-Parsing"><a href="#Synchronous-Parsing" class="headerlink" title="Synchronous Parsing"></a>Synchronous Parsing</h3><p>The performance of each parser is quantified in operations per second—a metric provided by the Benny benchmarking framework. For ease of comparison, we’ve normalized the results:</p>
+<ul>
+<li>The fastest parser is designated as the benchmark, set at 100% efficiency.</li>
+<li>Other parsers are evaluated relative to this benchmark, with their performance expressed as a percentage of the benchmark’s speed.</li>
+</ul>
+<p><img src="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/rghu4pqjmutcueudt81s.png" alt="Image description"></p>
+<p><img src="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/qfwhfivek2p0rq3m3paf.png" alt="Image description"></p>
+<p>TypeScript consistently outperforms the competition across all file sizes, being twice as fast as Babel.<br>Native language parsers show improved performance for larger files due to the reduced relative impact of FFI overhead.<br>Nevertheless, the performance gains are not as pronounced due to serialization and deserialization (serde) overhead, which is proportional to the input file size.</p>
+<h3 id="Asynchronous-Parsing"><a href="#Asynchronous-Parsing" class="headerlink" title="Asynchronous Parsing"></a>Asynchronous Parsing</h3><p>In the asynchronous parsing scenario, we observe the following:</p>
+<p><img src="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/xs8ve7oelccjcrh1lbdj.png" alt="Image description"></p>
+<p><img src="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/vnyust8234v4y1vtsm6q.png" alt="Image description"></p>
+<p>ast-grep excels when handling multiple medium to large files simultaneously, effectively utilizing multi-core capabilities. TypeScript and Tree-sitter, however, experience a decline in performance with larger files. SWC and Oxc maintain consistent performance, indicating efficient use of multi-core processing.</p>
+<h3 id="Parse-Time-Breakdown"><a href="#Parse-Time-Breakdown" class="headerlink" title="Parse Time Breakdown"></a>Parse Time Breakdown</h3><p>When benchmarking a Node-API based program, it’s crucial to understand the time spent not only executing Rust code but also the Node.js glue code that binds everything together. The parsing time can be dissected into three main components:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">time = ffi_time + parse_time + serde_time</span><br></pre></td></tr></table></figure>
+
+<p>Here’s a closer look at each term:</p>
+<ul>
+<li><p><strong><code>ffi_time</code> (Foreign Function Interface Time):</strong> This represents the overhead associated with invoking functions across different programming languages. Typically, <code>ffi_time</code> is a fixed cost and remains constant regardless of the input file size.</p>
+</li>
+<li><p><strong><code>parse_time</code> (Parse Time):</strong> The core duration required for the parser to analyze the source code and generate an Abstract Syntax Tree (AST). <code>parse_time</code> scales with the size of the input, making it a variable cost in the parsing process.</p>
+</li>
+<li><p><strong><code>serde_time</code> (Serialization&#x2F;Deserialization Time):</strong> The time needed to serialize Rust data structures into a format compatible with JavaScript, and vice versa. As with <code>parse_time</code>, <code>serde_time</code> increases as the input file size grows.</p>
+</li>
+</ul>
+<p>In essence, benchmarking a parser involves measuring the time for the actual parsing (<code>parse_time</code>) and accounting for the extra overhead from cross-language function calls (<code>ffi_time</code>) and data format conversion (<code>serde_time</code>). Understanding these elements helps us evaluate the efficiency and scalability of the parser in question.</p>
+<h3 id="Result-Interpretation"><a href="#Result-Interpretation" class="headerlink" title="Result Interpretation"></a>Result Interpretation</h3><p>This section offers a detailed and technical analysis of the benchmark results based on the parse time framework above. Readers seeking a high-level overview may prefer to skip ahead to the summary.</p>
+<p><strong>FFI Overhead</strong></p>
+<p>In both sync parsing and async parsing scenario, the “one line” test case, which is predominant FFI overhead with minimal parsing or serialization, shows TypeScript’s superior performance. Surprisingly, Babel, expected to excel in this one-line scenario, demonstrates its own peculiar overhead.</p>
+<p>As file size increases, FFI overhead becomes less significant, as it’s largely size-independent. For instance, ast-grep’s relative speed is 78% for a large file compared to 72% for a single line, suggesting an approximate 6% FFI overhead in synchronous parsing.</p>
+<p>FFI overhead is more pronounced in asynchronous parsing. ast-grep’s performance drops from 72% to 60% when comparing synchronous to asynchronous parsing of a single line. The absence of a notable difference in performance for swc&#x2F;oxc may be due to their <a target="_blank" rel="noopener" href="https://github.com/oxc-project/oxc/blob/2d5e0d5d0775300463f36b925e2f1ce71f119b90/napi/parser/src/lib.rs#L96">unique implementation details</a>.</p>
+<p><strong>Serde Overhead</strong><br>Unfortunately, we failed to replicate swc&#x2F;oxc’s blazing performance we witnessed in other applications.<br>Despite minimal FFI impact in “Large file” test cases, swc and oxc underperform compared to the TypeScript compiler. This can be attributed to their reliance on calling <a target="_blank" rel="noopener" href="https://github.com/swc-project/swc/blob/5d944185187402691292fdb73ea767bd580e2a52/node-swc/src/index.ts#L108"><code>JSON.parse</code> on strings</a> returned from Rust, which is, to our disappointment, still more efficient than direct data structure returns.</p>
+<p>Tree-sitter and ast-grep avoid serde overhead by <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/blob/1c3accfd7dccef293c480951759b86c418cde977/crates/napi/src/sg_node.rs#L297">returning a tree object</a> rather than a full AST structure. Accessing tree nodes requires <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/blob/1c3accfd7dccef293c480951759b86c418cde977/crates/napi/src/sg_node.rs#L78">invoking Rust methods</a> from JavaScript, which distributes the cost over the reading process.</p>
+<p><strong>Parallel</strong></p>
+<p>Except tree-sitter, all native TS parsers have parallel support. Contrary to JS parsers, native parsers performance will not degrade when concurrently parsing larger files. This is thanks to the power of multiple cores. JS parsers suffer from CPU bound because they have to parse file one by one.</p>
+<h3 id="Perf-summary-for-parsers"><a href="#Perf-summary-for-parsers" class="headerlink" title="Perf summary for parsers"></a>Perf summary for parsers</h3><p>The performance of each parser is summarized in the table below, which outlines the time complexity for different operations.</p>
+<p><img src="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/0rm26rv2o0jndzeubxib.png" alt="Image description"></p>
+<p>In the table, <code>constant</code> denotes a constant time cost that does not change with input size, while <code>proportional</code> indicates a variable cost that grows proportionally with the input size. An <code>N/A</code> signifies that the cost is not applicable.</p>
+<p>JS-based parsers operate entirely within the JavaScript environment, thus avoiding any FFI or serde overhead. Their performance is solely dependent on the parsing time, which scales with the size of the input file.</p>
+<p>The performance of Rust-based parsers is influenced by a fixed FFI overhead and a parsing time that grows with input size. However, their serde overhead varies depending on the implementation:</p>
+<p>For ast-grep and tree-sitter, they have a fixed serialization cost of one tree object, regardless of the input size.<br>For swc and oxc, the serialization and deserialization costs increase linearly with the input size, impacting overall performance.</p>
+<h2 id="Discussion"><a href="#Discussion" class="headerlink" title="Discussion"></a>Discussion</h2><h3 id="Transform-vs-Parse"><a href="#Transform-vs-Parse" class="headerlink" title="Transform vs. Parse"></a>Transform vs. Parse</h3><p>While Rust-based tools are renowned for their speed in transpiling code, our benchmarks reveal a different narrative when it comes to converting code into an AST that’s usable in JavaScript.<br>This discrepancy highlights a critical consideration for Rust tooling authors: the process of passing Rust data structures to JavaScript is a complex task that can significantly affect performance.<br>It’s essential to optimize this data exchange to maintain the high efficiency expected from Rust tooling.</p>
+<h3 id="Criteria-for-Parser-Inclusion"><a href="#Criteria-for-Parser-Inclusion" class="headerlink" title="Criteria for Parser Inclusion"></a>Criteria for Parser Inclusion</h3><p>In our benchmark, we focused on parsers that offer a JavaScript API, which influenced our selection:</p>
+<ul>
+<li><strong>Sucrase:</strong> Excluded due to its lack of a parsing API and <a target="_blank" rel="noopener" href="https://github.com/alangpierce/sucrase#motivation">inability to produce a complete AST</a>, which are crucial for our evaluation criteria.</li>
+<li><strong>Esbuild&#x2F;Biome:</strong> Not included because esbuild functions primarily as a bundler, not a standalone parser. It offers transformation and build capabilities but <a target="_blank" rel="noopener" href="https://esbuild.github.io/api/#js-details">does not expose an AST</a> to JavaScript. Similarly, biome is a CLI application without a JavaScript API.</li>
+<li><strong>Esprima:</strong> Not considered for this benchmark as it lacks TypeScript support, which is a key requirement for the modern JavaScript development ecosystem.</li>
+</ul>
+<h3 id="JS-Parser-Review"><a href="#JS-Parser-Review" class="headerlink" title="JS Parser Review"></a>JS Parser Review</h3><p><strong>Babel:</strong><br>Babel is divided into two main packages: <code>@babel/core</code> and <code>@babel/parser</code>. It’s noteworthy that <code>@babel/core</code> exhibits lower performance compared to <code>@babel/parser</code>. This is because the additional entry and hook code that surrounds the parser in the core package. Furthermore, the <code>parseAsync</code> function in Babel core is not genuinely asynchronous; it’s essentially a synchronous parser method wrapped in an asynchronous function. This wrapper provides extra hooks but does not enhance performance for CPU-intensive tasks due to JavaScript’s single-threaded nature. In fact, the overhead of managing asynchronous tasks can further burden the performance of <code>@babel/core</code>.</p>
+<p><strong>TypeScript:</strong></p>
+<p>The parsing capabilities of TypeScript defy the common perception of the TypeScript compiler (TSC) being slow. The benchmark results suggest that the primary bottleneck for TSC is not in parsing but in the subsequent type checking phase.</p>
+<h3 id="Native-Parser-Review"><a href="#Native-Parser-Review" class="headerlink" title="Native Parser Review"></a>Native Parser Review</h3><p><strong>SWC:</strong><br>As the first Rust parser to make its mark, SWC adopts a direct approach by serializing the entire AST for use in JavaScript. It stands out for offering a broad range of APIs, making it a top choice for those seeking Rust-based tooling solutions. Despite some inherent overhead, SWC’s robustness and pioneering status continue to make it a preferred option.</p>
+<p><strong>Oxc:</strong>:<br>Oxc is a contender for the title of the fastest parser available, but its performance is tempered by serialization and deserialization (serde) overhead. The inclusion of JSON parsing in our benchmarks reflects real-world usage, although omitting this step could significantly boost Oxc’s speed.</p>
+<p><strong>Tree-sitter</strong><br>Tree-sitter serves as a versatile parser suitable for a variety of languages, not specifically optimized for TypeScript. Consequently, its performance aligns closely with that of Babel, a JavaScript-focused parser implemented in JavaScript. Alas, a Rust parser is not inherently faster by default, even without any N-API overhead.<br>A general purpose parser in Rust may not beat a carefully hand-crafted parser in JavaScript.</p>
+<p><strong>ast-grep</strong></p>
+<p>ast-grep is powered by tree-sitter. Its performance is marginally faster than tree-sitter, indicating napi.rs is a faster binding than manual using C++ nan.h.<br>I cannot tell whether the performance gain is from napi or napi.rs but<br>Leveraging the capabilities of tree-sitter, ast-grep achieves slightly better performance, suggesting that napi.rs offers a more efficient binding than traditional C++ <a target="_blank" rel="noopener" href="https://github.com/tree-sitter/node-tree-sitter/blob/master/src/parser.h">nan.h</a> methods. While the exact source of this performance gain—whether from napi or napi.rs—is unclear, the results speak to the effectiveness of the implementation. Or put it in another way, <a target="_blank" rel="noopener" href="https://twitter.com/Brooooook_lyn">Broooooklyn</a> is 🐐.</p>
+<h3 id="Native-Parser-Performance-Tricks"><a href="#Native-Parser-Performance-Tricks" class="headerlink" title="Native Parser Performance Tricks"></a>Native Parser Performance Tricks</h3><p><strong>tree-sitter &amp; ast-grep’ Edge</strong></p>
+<p>These parsers manage to bypass serde costs post-parsing by returning a Rust object wrapper to Node.js. This strategy, while efficient, can lead to slower AST access in JavaScript as the cost is amortized over the reading phase.</p>
+<p><strong>ast-grep’s async advantage:</strong></p>
+<p>ast-grep’s performance in concurrent parsing scenarios is largely due to its utilization of multiple <a target="_blank" rel="noopener" href="http://docs.libuv.org/en/v1.x/threadpool.html">libuv threads</a>. By default, the libuv thread pool size is set to four, but there’s potential to enhance performance further by <a target="_blank" rel="noopener" href="https://dev.to/bleedingcode/increase-node-js-performance-with-libuv-thread-pool-5h10">expanding the thread pool size</a>, thus fully leveraging the available CPU cores.</p>
+<h2 id="Future-Outlook"><a href="#Future-Outlook" class="headerlink" title="Future Outlook"></a>Future Outlook</h2><p>As we look to the future, several promising avenues could further refine TypeScript parser performance:</p>
+<ul>
+<li><p><strong>Minimizing Serde Overhead:</strong> By optimizing serialization and deserialization processes, such as employing Rust object wrappers, we can reduce the performance toll these operations take.</p>
+</li>
+<li><p><strong>Harnessing Multi-core Capabilities:</strong> Effective utilization of multi-core architectures can lead to substantial gains in parsing speeds, transforming the efficiency of our tooling.</p>
+</li>
+<li><p><strong>Promoting AST Reusability:</strong> Facilitating the reuse of Abstract Syntax Trees within JavaScript can diminish the frequency of costly parsing operations.</p>
+</li>
+<li><p><strong>Shifting Workloads to Rust:</strong> The creation of a domain-specific language (DSL) tailored for AST node querying could shift a greater portion of computational work to the Rust side, enhancing overall efficiency.</p>
+</li>
+</ul>
+<p>These potential improvements represent exciting opportunities to push the boundaries of Rust tooling in parsing performance.</p>
+<p>Hope this article helps you! We can continue to innovate and deliver even more powerful tools to the developer community!</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
     <article id="post-migrate-bevy" class="article article-type-post" itemprop="blogPost" itemscope>
   <div class="article-inner">
     
@@ -1202,143 +1377,6 @@
 <h3 id="5-Type-Safety"><a href="#5-Type-Safety" class="headerlink" title="5. Type Safety"></a>5. Type Safety</h3><p>av-ts and vue-ts-component can inject Vue’s native types by <code>extends Vue</code>. Neat. vuets users have to re-annotate all the method again, <a href="http://herringtondarkholme.github.io/2016/08/21/vue-ts/">alas</a>. av-ts has more type safety when defining special methods like <code>render</code>, <code>lifecycle</code> and <code>transition</code>. This is powerer by new decorators introduced. Again, these decorators are created by <code>Component.register</code> and the implementation is not hard-coded into one file.</p>
 <h3 id="6-Expressiveness"><a href="#6-Expressiveness" class="headerlink" title="6. Expressiveness"></a>6. Expressiveness</h3><p>vuets is as expressive as original vue, at the cost of more annotation. vue-ts-component can express most basic API in vue, but there is something it cannot. av-ts can use <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/av-ts#mixin">mixin</a> and can <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/av-ts#data">use props in data method</a>. I have thought over these scenarios before hand.</p>
 <h3 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h3><p>av-ts may not be the best component library for vue, but I believe it strikes the sweet point between conciseness, type safety and expressiveness. I’m happy to see more TS+Vue users try it out, and give me feedback so it can become better.</p>
-
-      
-    </div>
-    
-    
-    
-  </div>
-</article>
-
-
-
-  
-    <article id="post-vue2-ts2" class="article article-type-post" itemprop="blogPost" itemscope>
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h2 class="article-title" itemprop="name">
-      <a href="/2016/10/03/vue2-ts2/">Vue2 + TypeScript2 -- an introductory guide</a>
-      
-    </h2>
-  
-
-
-        <div class="article-meta">
-          <time class="article-date" datetime="2016-10-03T07:00:00.000Z" itemprop="datePublished">October 3, 2016, 12:00 AM</time>
-
-          
-        </div>
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-      
-        <p>Safety check and error detection are important to development experience. Vue has gone to <a target="_blank" rel="noopener" href="https://github.com/vuejs/vue/issues/3831#issuecomment-250996462">great lengths</a> to provide <a target="_blank" rel="noopener" href="https://github.com/vuejs/vue/pull/3656">component information</a> when typos or mistakes happen. But we can do better, error reporting can happen at compile time. This is why we want to use TypeScript with Vue.</p>
-<p><img src="https://github.com/HerringtonDarkholme/vue-ts-example/raw/master/screen.png" alt="final result"></p>
-<blockquote>
-<p>Our goal: writing Vue in TypeScript</p>
-</blockquote>
-<h2 id="Goals"><a href="#Goals" class="headerlink" title="Goals"></a>Goals</h2><p>In this guide we will finally achieve these goals:</p>
-<ul>
-<li>writing type safe vue instance declaration</li>
-<li>writing TypeScript in Vue’s <a target="_blank" rel="noopener" href="https://vuejs.org/guide/single-file-components.html">single file component</a></li>
-<li>semantic completion in pure TypeScript file</li>
-<li>type checking all TypeScript, even TypeScript in <code>*.vue</code>‘s script tag.</li>
-</ul>
-<blockquote>
-<p>All code example can be found <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/vue-ts-example">here</a>, with separte commits standing for sections in this article.</p>
-</blockquote>
-<h2 id="Prerequisite"><a href="#Prerequisite" class="headerlink" title="Prerequisite"></a>Prerequisite</h2><p>You have to know about TypeScript2.0 and Vue2.0. And optionally webpack’s knowledge is very useful. And of course if you’re reading this article you must have known <code>npm</code>.</p>
-<h2 id="Basic-setup"><a href="#Basic-setup" class="headerlink" title="Basic setup:"></a>Basic setup:</h2><p>First make a new directory for your project. And then init your new project and install dependencies.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> vue-ts-test</span><br><span class="line"><span class="built_in">cd</span> vue-ts-test</span><br><span class="line">npm init</span><br><span class="line"><span class="comment"># pressing `enter`s and done</span></span><br><span class="line">npm install vue --save</span><br><span class="line">npm install typescript --save</span><br></pre></td></tr></table></figure>
-
-<p>Note both vue and TypeScript need to be version 2. They have both definition files baked in so it’s much easier to start up with them than before. (I still respect definitely typed!)</p>
-<p>make html template, say, <code>index.html</code>:</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;app&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;node_modules/vue/dist/vue.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;app.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<p>Then in your <code>app.ts</code>:</p>
-<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">declare</span> <span class="keyword">var</span> <span class="title class_">Vue</span>: <span class="built_in">any</span></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">Vue</span>(&#123;</span><br><span class="line">  <span class="attr">el</span>: <span class="string">&#x27;#app&#x27;</span>,</span><br><span class="line">  <span class="title function_">render</span>(<span class="params">h</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_">h</span>(<span class="string">&#x27;h1&#x27;</span>, <span class="string">&#x27;hello world&#x27;</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
-
-<p>And compile your code:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./node_modules/.bin/tsc app.ts</span><br></pre></td></tr></table></figure>
-
-<p>Then open <code>index.html</code> in your browswer! It should give you a hello world!</p>
-<h2 id="Exploring-Vue-with-TypeScript"><a href="#Exploring-Vue-with-TypeScript" class="headerlink" title="Exploring Vue with TypeScript"></a>Exploring Vue with TypeScript</h2><p>But there are a lot of feature missing in the above example. For example, you want a build step to combine all your scripts. You want component style co-locates with template and script, yet still sytnax highlighting  every thing.</p>
-<p>Let’s use Vue’s genius single file component. It requires <a target="_blank" rel="noopener" href="https://webpack.github.io/">webpack</a> and <a target="_blank" rel="noopener" href="http://vue-loader.vuejs.org/en/index.html">vue-loader</a></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">npm install webpack --save-dev</span><br><span class="line">npm install vue-loader --save-dev</span><br><span class="line">npm install css-loader --save-dev</span><br></pre></td></tr></table></figure>
-<p>Or you can use <a target="_blank" rel="noopener" href="https://github.com/vuejs/vue-cli">vue-cli</a></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vue init webpack-simple vue-ts-test</span><br></pre></td></tr></table></figure>
-
-<p>You need to make vue-loader to transpile your TypeScript code. <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/vue-ts-loader">vue-ts-loader</a> can work with vue-loader.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install vue-ts-loader --save-dev</span><br></pre></td></tr></table></figure>
-
-<p>And in <code>webpack.config.js</code></p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">module</span>.<span class="property">exports</span> = &#123;</span><br><span class="line">    <span class="attr">entry</span>: &#123; <span class="attr">app</span>: <span class="string">&#x27;./app.ts&#x27;</span>, &#125;,</span><br><span class="line">    <span class="attr">output</span>: &#123; <span class="attr">filename</span>: <span class="string">&#x27;app.js&#x27;</span> &#125;,</span><br><span class="line"></span><br><span class="line">    <span class="comment">// resolve TypeScript and Vue file</span></span><br><span class="line">    <span class="attr">resolve</span>: &#123;</span><br><span class="line">        <span class="attr">extensions</span>: [<span class="string">&#x27;&#x27;</span>, <span class="string">&#x27;.ts&#x27;</span>, <span class="string">&#x27;.vue&#x27;</span>, <span class="string">&#x27;.js&#x27;</span>]</span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    <span class="attr">module</span>: &#123;</span><br><span class="line">        <span class="attr">loaders</span>: [</span><br><span class="line">            &#123; <span class="attr">test</span>: <span class="regexp">/\.vue$/</span>, <span class="attr">loader</span>: <span class="string">&#x27;vue&#x27;</span> &#125;,</span><br><span class="line">            &#123; <span class="attr">test</span>: <span class="regexp">/\.ts$/</span>, <span class="attr">loader</span>: <span class="string">&#x27;vue-ts&#x27;</span> &#125;</span><br><span class="line">        ],</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">vue</span>: &#123;</span><br><span class="line">      <span class="comment">// instruct vue-loader to load TypeScript</span></span><br><span class="line">      <span class="attr">loaders</span>: &#123; <span class="attr">js</span>: <span class="string">&#x27;vue-ts-loader&#x27;</span>, &#125;,</span><br><span class="line">      <span class="comment">// make TS&#x27; generated code cooperate with vue-loader</span></span><br><span class="line">      <span class="attr">esModule</span>: <span class="literal">true</span></span><br><span class="line">    &#125;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>Now you can add write Vue code in single file component!</p>
-<p>Suppose in <code>app.vue</code></p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">template</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">h1</span> @<span class="attr">click</span>=<span class="string">&quot;hello&quot;</span>&gt;</span>hello world<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">template</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span></span><br><span class="line"><span class="language-javascript">  <span class="attr">methods</span>: &#123;</span></span><br><span class="line"><span class="language-javascript">    <span class="comment">// type annotation!</span></span></span><br><span class="line"><span class="language-javascript">    <span class="title function_">hello</span>(): <span class="keyword">void</span> &#123;</span></span><br><span class="line"><span class="language-javascript">      <span class="title function_">alert</span>(<span class="string">&#x27;hello world&#x27;</span>)</span></span><br><span class="line"><span class="language-javascript">    &#125;</span></span><br><span class="line"><span class="language-javascript">  &#125;</span></span><br><span class="line"><span class="language-javascript">&#125;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<p>And now you can change your <code>app.ts</code> into an entry file.</p>
-<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">declare</span> <span class="keyword">var</span> <span class="attr">require</span>: <span class="built_in">any</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="title class_">Vue</span> = <span class="built_in">require</span>(<span class="string">&#x27;vue&#x27;</span>)</span><br><span class="line"><span class="keyword">var</span> <span class="title class_">App</span> = <span class="built_in">require</span>(<span class="string">&#x27;./app.vue&#x27;</span>).<span class="property">default</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">Vue</span>(&#123;</span><br><span class="line">  <span class="attr">el</span>: <span class="string">&#x27;#app&#x27;</span>,</span><br><span class="line">  <span class="attr">components</span>: &#123; <span class="title class_">App</span> &#125;,</span><br><span class="line">  <span class="attr">render</span>: <span class="function"><span class="params">h</span> =&gt;</span> <span class="title function_">h</span>(<span class="string">&#x27;app&#x27;</span>)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
-
-<p>Now <code>webpack</code> your in your application directory. You can still see the <code>hello world</code>? Click it should give you an alert.</p>
-<p>Cool? And here is the <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/vue-ts-example/tree/f3d0d409d9b5de8b6f20b5a06b156b7313703475">source</a>.</p>
-<h2 id="Toward-a-more-type-safe-API"><a href="#Toward-a-more-type-safe-API" class="headerlink" title="Toward a more type safe API"></a>Toward a more type safe API</h2><p>Vue has a <a href="http://herringtondarkholme.github.io/2016/08/21/vue-ts/">typechecker hostile API</a>.<br>We can use helper library to get a better type checking. <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/av-ts">av-ts</a>, Awesome Vue for TypeScript, is a good start point to use.</p>
-<p>Install it by npm, again.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install --save av-ts</span><br></pre></td></tr></table></figure>
-
-<p>Then you can change your <code>app.vue</code> to this.</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">template</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">h1</span> @<span class="attr">click</span>=<span class="string">&quot;hello&quot;</span>&gt;</span>hello &#123;&#123;name&#125;&#125;<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">template</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript"><span class="comment">// import dependency</span></span></span><br><span class="line"><span class="language-javascript"><span class="keyword">import</span> &#123;<span class="title class_">Vue</span>, <span class="title class_">Component</span>&#125; <span class="keyword">from</span> <span class="string">&#x27;av-ts&#x27;</span></span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript"><span class="comment">// decorat vue class</span></span></span><br><span class="line"><span class="language-javascript">@<span class="title class_">Component</span></span></span><br><span class="line"><span class="language-javascript"><span class="keyword">export</span> <span class="keyword">default</span> <span class="keyword">class</span> <span class="title class_">App</span> <span class="keyword">extends</span> <span class="title class_ inherited__">Vue</span> &#123;</span></span><br><span class="line"><span class="language-javascript">  <span class="comment">// undecorated property will be packed in `data` option</span></span></span><br><span class="line"><span class="language-javascript">  name = <span class="string">&#x27;world&#x27;</span></span></span><br><span class="line"><span class="language-javascript">  <span class="comment">// undecorated method is just method</span></span></span><br><span class="line"><span class="language-javascript">  <span class="title function_">hello</span>(<span class="params"></span>) &#123;</span></span><br><span class="line"><span class="language-javascript">    <span class="title function_">alert</span>(<span class="string">&#x27;hello &#x27;</span> + <span class="variable language_">this</span>.<span class="property">name</span>)</span></span><br><span class="line"><span class="language-javascript">  &#125;</span></span><br><span class="line"><span class="language-javascript">&#125;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<p><code>webpack</code> will give you an error. Because decorator is still considered experimental. You need to switch it on explicitly.</p>
-<p>Add a <code>tsconfig.json</code> in your directory.</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;compilerOptions&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;module&quot;</span><span class="punctuation">:</span> <span class="string">&quot;commonjs&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;target&quot;</span><span class="punctuation">:</span> <span class="string">&quot;es5&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;experimentalDecorators&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<p>Now it compiles! Check it out in browser!</p>
-<p>av-ts has several features that isn’t present in other libraries.<br>First, <code>prop</code> is defined in class, so you can access these as properties in other methods without declaring in class again. Second, <code>data</code>, <code>render</code> and lifecycle hooks are declared by decorator, which is a mark to tell you these methods are different. Plus, their names and signatures can be checked by decorators. Third, extension is easy in av-ts. You can register new decorator, and still keep type safety.</p>
-<p>For source as a whole, you can take a look <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/vue-ts-example/tree/2609c7c754379c86788bb7bf515eb001989c0b6a">here</a>.</p>
-<h2 id="Even-more-typesafety"><a href="#Even-more-typesafety" class="headerlink" title="Even more typesafety"></a>Even more typesafety</h2><p><a target="_blank" rel="noopener" href="http://vuex.vuejs.org/en/index.html">Vuex</a> is another popular state management library for vue.</p>
-<p><a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/kilimanjaro">Kilimanjaro</a> is a type safe fork for Vuex.</p>
-<p>To create a store is familiar with its original API.</p>
-<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123; create &#125; <span class="keyword">from</span> <span class="string">&#x27;kilimanjaro&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> store =</span><br><span class="line">  <span class="title function_">create</span>(&#123;<span class="attr">count</span>: <span class="number">0</span>&#125;) <span class="comment">// create a state with initial state</span></span><br><span class="line">  .<span class="title function_">getter</span>(<span class="string">&#x27;count&#x27;</span>, <span class="function"><span class="params">s</span> =&gt;</span> s.<span class="property">count</span>) <span class="comment">// a getter</span></span><br><span class="line">  .<span class="title function_">mutation</span>(<span class="string">&#x27;increment&#x27;</span>, <span class="function"><span class="params">s</span> =&gt;</span> <span class="function">() =&gt;</span> s.<span class="property">count</span>++) <span class="comment">// define a mutation</span></span><br><span class="line">  .<span class="title function_">mutation</span>(<span class="string">&#x27;decrement&#x27;</span>, <span class="function"><span class="params">s</span> =&gt;</span> <span class="function">() =&gt;</span> s.<span class="property">count</span>--) <span class="comment">// payload is in the second parameter parenthesis</span></span><br><span class="line">  .<span class="title function_">done</span>()</span><br><span class="line"></span><br><span class="line">store.<span class="title function_">commit</span>(<span class="string">&#x27;increment&#x27;</span>) <span class="comment">// make a state change</span></span><br><span class="line"><span class="comment">// store.commit(&#x27;ncrement&#x27;) // typo won&#x27;t compile! magic!</span></span><br></pre></td></tr></table></figure>
-
-<p>By heavy use of string literal type and overloading, kilimanjaro provides a similiar type safe API to vuex.<br>If you mistakenly commit a wrong mutation name, or the mutation payload does not have correct type, kilimanjaro will make TypeScript compiler report that for you.</p>
-<p>There is also component helper in kilimanjaro. Check the example below</p>
-<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123;<span class="title class_">Vuex</span>, getHelper&#125; <span class="keyword">from</span> <span class="string">&#x27;kilimanjaro&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> &#123; getters, commit &#125; = <span class="title function_">getHelper</span>(store)</span><br><span class="line"></span><br><span class="line"><span class="meta">@Componet</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">App</span> <span class="keyword">extends</span> <span class="title class_ inherited__">Vue</span> &#123;</span><br><span class="line">  <span class="meta">@Vuex</span> <span class="attr">count</span>: <span class="built_in">number</span> = <span class="title function_">getters</span>(<span class="string">&#x27;count&#x27;</span>)</span><br><span class="line">  <span class="meta">@Vuex</span> <span class="attr">add</span>: <span class="title class_">Function</span> = <span class="title function_">commit</span>(<span class="string">&#x27;increment&#x27;</span>)</span><br><span class="line">  <span class="comment">// @Vuex typo: Function = commit(&#x27;ncrement&#x27;) // won&#x27;t compile</span></span><br><span class="line">  <span class="comment">// @Vuex wrong: string = getters(&#x27;count&#x27;) // type incompatible</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>You can get component helpers by calling <code>getHelper</code>. Helpers are function that take a getter&#x2F;mutation&#x2F;action name and return corresponding result. Given a mutation name, <code>commit</code> helper will return a function that, once called, changes store state. The similiar for <code>dispatch</code> helper.</p>
-<p><code>getters</code> is more magical. Given a getter name, it will return a <em>symbol</em> with correct result type. But at runtime, it will be changed to a <code>computed</code> accessor in the VM. The magic is done by the <code>Vuex</code> decorator, which is an extension of <code>av-ts</code>. Like mentioned above, av-ts is a very extensible library.</p>
-<blockquote>
-<p>For a working example, you can take a look <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/vue-ts-example">here</a>. And <a href="https://herringtondarkholme.github.io/vue-ts-example/">Live demo</a> is here.</p>
-</blockquote>
-<p>Vue-router is type safe enough for pragmatic usage. It is really a well written and designed library. Designing a library that provides 100% type safety is just an overkill bringing marginal benefits at huge cost of debugging compiling error.<br>If vue-router cannot cater for a type paranoid, this <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/paranoid-router">sketch</a> will be interesting.</p>
-<h2 id="Limitation"><a href="#Limitation" class="headerlink" title="Limitation"></a>Limitation</h2><p>You might want even more features from TypeScript, say</p>
-<ul>
-<li>semantic completion in single file component</li>
-<li>type checking template code</li>
-</ul>
-<p><img src="https://s-media-cache-ak0.pinimg.com/originals/86/72/e6/8672e6fb04620cbcf72ab3b1222ae5b5.jpg" alt="go home, you&#39;re drunk"></p>
-<p>They are way way hard to implement. Semantic completion in <code>vue</code> file requires editor support and <a target="_blank" rel="noopener" href="https://github.com/Microsoft/TypeScript/pull/10160">compiler support</a>. None of them is easy to implement.</p>
-<p>You can write your vm code in a separate file and import into your vue template. But that is opposite to the design philosophy of single file component. In reality, keeping <code>vue</code> small and clean is better choice. With small number of symbols in source file, generic completion should also work well. (at least as well as plain JavaScript)</p>
-<p>Template code is an even more heculean task. Vue compiles its template into <code>with(this) &#123; ... &#125;</code> format (<a target="_blank" rel="noopener" href="http://vuejs.org/guide/render-function.html">doc</a>). <code>with</code> statements are not checked in TypeScript, nor flow-type. Plus, vue compiler does analyze no expression, making it impossible to do checking without reimplementing a compiler. However, again, it is no worse than plain JavaScript.</p>
-<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>Vue is an elegant and lightweight library. With the integration of TypeScript, Vue can be more safe and productive!</p>
-<p>Compared to other frameworks, you can instantly get precompiled template code, small code footprint, flat learning curve.<br>But when it comes to scale bigger, you might want additional help.</p>
-<p>There are overhead to integrate TypeScript with Vue, indeed. But the error checking and refactoring help still worth your try.</p>
-<p>Tools we used to achieve type-safety</p>
-<ul>
-<li>TypeScript2 and Vue2, for their definition files</li>
-<li><a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/vue-ts-loader">vue-ts-loader</a>: load TypeScript in vue’s single file component</li>
-<li><a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/av-ts">av-ts</a>: wrap vue’s API in type safe way</li>
-</ul>
-<p>Optionally</p>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/kilimanjaro">kilimanjaro</a>: type safe vuex, requires deeper understanding of TypeScript’s advanced features.</li>
-</ul>
 
       
     </div>

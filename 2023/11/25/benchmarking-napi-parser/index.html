@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Benchmark TypeScript Parsers: Demystify Rust Tooling Performance | Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="Benchmark TypeScript Parsers: Demystify Rust Tooling Performance TL;DR: Native parsers used in JavaScript are not always faster due to extra work across languages. Avoiding these overhead and using mu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Benchmark TypeScript Parsers: Demystify Rust Tooling Performance">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2023/11/25/benchmarking-napi-parser/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="Benchmark TypeScript Parsers: Demystify Rust Tooling Performance TL;DR: Native parsers used in JavaScript are not always faster due to extra work across languages. Avoiding these overhead and using mu">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/rghu4pqjmutcueudt81s.png">
+<meta property="og:image" content="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/qfwhfivek2p0rq3m3paf.png">
+<meta property="og:image" content="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/xs8ve7oelccjcrh1lbdj.png">
+<meta property="og:image" content="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/vnyust8234v4y1vtsm6q.png">
+<meta property="og:image" content="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/0rm26rv2o0jndzeubxib.png">
+<meta property="article:published_time" content="2023-11-25T08:00:00.000Z">
+<meta property="article:modified_time" content="2023-11-23T20:08:34.935Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta property="article:tag" content="Rust">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/rghu4pqjmutcueudt81s.png"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-benchmarking-napi-parser" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="headline name">
+      Benchmark TypeScript Parsers: Demystify Rust Tooling Performance
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2023-11-25T08:00:00.000Z" itemprop="datePublished">November 25, 2023, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <h1 id="Benchmark-TypeScript-Parsers-Demystify-Rust-Tooling-Performance"><a href="#Benchmark-TypeScript-Parsers-Demystify-Rust-Tooling-Performance" class="headerlink" title="Benchmark TypeScript Parsers: Demystify Rust Tooling Performance"></a>Benchmark TypeScript Parsers: Demystify Rust Tooling Performance</h1><blockquote>
+<p>TL;DR: Native parsers used in JavaScript are not always faster due to extra work across languages. Avoiding these overhead and using multi-core are crucial for performance.</p>
+</blockquote>
+<p><strong>Rust</strong> is rapidly becoming a language of choice within the JavaScript ecosystem for its performance and safety features. However, integrating Rust into JavaScript tooling presents unique challenges, particularly when it comes to designing an efficient and portable plugin system.</p>
+<blockquote>
+<p>“Rewriting JavaScript tooling in Rust is advantageous for speed-focused projects that do not require extensive external contributions.” - <a target="_blank" rel="noopener" href="https://twitter.com/slicknet/status/1726663311541100626">Nicholas C. Zakas, creator of ESLint</a></p>
+</blockquote>
+<p>Learning Rust can be daunting due to its steep learning curve, and distributing compiled binaries across different platforms is not straightforward.<br>A Rust based plugins necessitates either static compilation of all plugins or a carefully designed application binary interface for dynamic loading.<br>These considerations, however, are beyond the scope of this article. Instead, we’ll concentrate on how to provide robust tooling for writing plugins in JavaScript.</p>
+<p>A critical component of JavaScript tooling is the parsing of source code into an Abstract Syntax Tree (AST). Plugins commonly inspect and manipulate the AST to transform the source code. Therefore, it’s not sufficient to parse in Rust alone; we must also make the AST accessible to JavaScript.</p>
+<p>This post will benchmark several popular TypeScript parsers implemented in JavaScript, Rust, and C.</p>
+<h2 id="Parser-Choices"><a href="#Parser-Choices" class="headerlink" title="Parser Choices"></a>Parser Choices</h2><p>While there are numerous JavaScript parsers available, we focus on TypeScript parsers for this benchmark. Modern bundlers must support TypeScript out-of-the-box, and TypeScript is a superset of JavaScript. Benchmarking TypeScript is a sensible choice to emulate the real-world bundler workload.</p>
+<p>The parsers we’re evaluating include:</p>
+<ul>
+<li><strong><a target="_blank" rel="noopener" href="https://babeljs.io/">Babel</a></strong>: The Babel parser (previously Babylon) is a JavaScript parser used in Babel compiler.</li>
+<li><strong><a target="_blank" rel="noopener" href="https://www.typescriptlang.org/">TypeScript</a></strong>: The official parser implementation from the TypeScript team.</li>
+<li><strong><a target="_blank" rel="noopener" href="https://tree-sitter.github.io/">Tree-sitter</a></strong>: An incremental parsing library that can build and update concrete syntax trees for source files, aiming to parse any programming language quickly enough for <em>text editor use</em>.</li>
+<li><strong><a target="_blank" rel="noopener" href="https://ast-grep.github.io/">ast-grep</a></strong>: A CLI tool for code structural search, lint, and rewriting based on abstract syntax trees. We are using its <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/tree/main/crates/napi">napi binding</a> here.</li>
+<li><strong><a target="_blank" rel="noopener" href="https://swc.rs/">swc</a></strong>: A super-fast TypeScript&#x2F;JavaScript compiler written in Rust, with a focus on performance and being a library for both Rust and JavaScript users.</li>
+<li><strong><a target="_blank" rel="noopener" href="https://oxc-project.github.io/">oxc</a></strong>: The Oxidation Compiler is a suite of high-performance tools for JS&#x2F;TS, claiming to have the fastest and most conformant parser written in Rust.</li>
+</ul>
+<h2 id="Native-Addon-Performance-Characteristics"><a href="#Native-Addon-Performance-Characteristics" class="headerlink" title="Native Addon Performance Characteristics"></a>Native Addon Performance Characteristics</h2><p>Before diving into the benchmarks, let’s first review the performance characteristics of Node-API based solutions.</p>
+<p><strong>Node-API Pros:</strong></p>
+<ul>
+<li><strong>Better Compiler Optimization:</strong> Code in native languages have compact data layouts, leading to fewer CPU instructions.</li>
+<li><strong>No Garbage Collector Runtime Overhead:</strong> This allows for more predictable performance.</li>
+</ul>
+<p>However, Node-API is not a silver bullet.</p>
+<p><strong>Node-API Cons:</strong></p>
+<ul>
+<li><strong>FFI Overhead:</strong> The cost of interfacing between different programming languages.</li>
+<li><strong>Serde Overhead:</strong> Serialization and deserialization of Rust data structures can be costly.</li>
+<li><strong>Encoding Overhead:</strong> Converting JS string in utf-16 to Rust’s utf-8 string can introduce significant delays.</li>
+</ul>
+<p>We need to understand the pros and cons of using native node addons in order to design an insightful benchmark.</p>
+<h2 id="Benchmark-Design"><a href="#Benchmark-Design" class="headerlink" title="Benchmark Design"></a>Benchmark Design</h2><p>We consider two main factors:</p>
+<ol>
+<li><p><strong>File Size:</strong> Different file sizes reveal distinct performance characteristics. The parsing time of an N-API based parser consists of actual parsing and cross-language overhead. While parsing time is proportional to file size, the growth of cross-language overhead depends on the parser’s implementation.</p>
+</li>
+<li><p><strong>Concurrency Level:</strong> Parallel parsing is not possible in JavaScript’s single main thread. However, N-API based parsers can run in separate threads, either using libuv’s thread pool or their own threading model. That said, thread spawning also incurs overhead.</p>
+</li>
+</ol>
+<p>We are not considering these factors in this post.</p>
+<ul>
+<li><strong>Warmup and JIT:</strong> No significant difference observed between warmup and non-warmup runs.</li>
+<li><strong>GC, Memory Usage:</strong> Not evaluated in this benchmark.</li>
+<li><strong>Node.js CLI arguments:</strong> To make the benchmark representative, default Node.js arguments were used, although tuning could potentially improve performance.</li>
+</ul>
+<h2 id="Benchmark-Setup"><a href="#Benchmark-Setup" class="headerlink" title="Benchmark Setup"></a>Benchmark Setup</h2><p>The benchmark code is hosted in ast-grep’s repo <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/blob/main/benches/bench.ts">https://github.com/ast-grep/ast-grep/blob/main/benches/bench.ts</a>.</p>
+<h3 id="Testing-Environment"><a href="#Testing-Environment" class="headerlink" title="Testing Environment"></a>Testing Environment</h3><p>The benchmarks were executed on a system equipped with the following specifications:</p>
+<ul>
+<li><strong>Operating System:</strong> macOS 12.6</li>
+<li><strong>Processor:</strong> arm64 Apple M1</li>
+<li><strong>Memory:</strong> 16.00 GB</li>
+<li><strong>Benchmarking Tool:</strong> <a target="_blank" rel="noopener" href="https://caderek.github.io/benny/">Benny</a></li>
+</ul>
+<h3 id="File-Size-Categories"><a href="#File-Size-Categories" class="headerlink" title="File Size Categories"></a>File Size Categories</h3><p>To assess parser performance across a variety of codebases, we categorized file sizes as follows:</p>
+<ul>
+<li><strong>Single Line:</strong> A minimal TypeScript snippet, <code>let a = 123;</code>, to measure baseline overhead.</li>
+<li><strong>Small File:</strong> A concise 24-line TypeScript module, representing a common utility file.</li>
+<li><strong>Medium File:</strong> A typical 400-line TypeScript file, reflecting average development workloads.</li>
+<li><strong>Large File:</strong> The extensive 2.79MB <code>checker.ts</code> from the TypeScript repository, challenging parsers with a complex and sizable codebase.</li>
+</ul>
+<h3 id="Concurrency-Level"><a href="#Concurrency-Level" class="headerlink" title="Concurrency Level"></a>Concurrency Level</h3><p>For this benchmark, we simulate a realistic workload by parsing five files concurrently. This number is an arbitrary but reasonable proxy to the actual JavaScript tooling.</p>
+<p>It’s worth noting, to seasoned Node.js developers, that this setup may influence asynchronous parsing performance. However it does not disproportionately favor Rust-based parsers. The rationale behind this is left as an exercise for the reader. :)</p>
+<hr>
+<p>This post aims to provide a general overview of the benchmarking for TypeScript parsers, focusing on the performance characteristics of N-API based solutions and the trade-offs involved. Feel free to adjust the benchmark setup to better fit your workload.</p>
+<p>Now, let’s delve into the results of TypeScript parser benchmarking!</p>
+<h2 id="Results"><a href="#Results" class="headerlink" title="Results"></a>Results</h2><p>Raw data can be found in this <a target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/1oIRXDaJ-EnjKz8GKpmUjVwh_FNw4Nsf6mbA0QPCiTh0/edit#gid=0">Google Sheet</a>.</p>
+<h3 id="Synchronous-Parsing"><a href="#Synchronous-Parsing" class="headerlink" title="Synchronous Parsing"></a>Synchronous Parsing</h3><p>The performance of each parser is quantified in operations per second—a metric provided by the Benny benchmarking framework. For ease of comparison, we’ve normalized the results:</p>
+<ul>
+<li>The fastest parser is designated as the benchmark, set at 100% efficiency.</li>
+<li>Other parsers are evaluated relative to this benchmark, with their performance expressed as a percentage of the benchmark’s speed.</li>
+</ul>
+<p><img src="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/rghu4pqjmutcueudt81s.png" alt="Image description"></p>
+<p><img src="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/qfwhfivek2p0rq3m3paf.png" alt="Image description"></p>
+<p>TypeScript consistently outperforms the competition across all file sizes, being twice as fast as Babel.<br>Native language parsers show improved performance for larger files due to the reduced relative impact of FFI overhead.<br>Nevertheless, the performance gains are not as pronounced due to serialization and deserialization (serde) overhead, which is proportional to the input file size.</p>
+<h3 id="Asynchronous-Parsing"><a href="#Asynchronous-Parsing" class="headerlink" title="Asynchronous Parsing"></a>Asynchronous Parsing</h3><p>In the asynchronous parsing scenario, we observe the following:</p>
+<p><img src="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/xs8ve7oelccjcrh1lbdj.png" alt="Image description"></p>
+<p><img src="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/vnyust8234v4y1vtsm6q.png" alt="Image description"></p>
+<p>ast-grep excels when handling multiple medium to large files simultaneously, effectively utilizing multi-core capabilities. TypeScript and Tree-sitter, however, experience a decline in performance with larger files. SWC and Oxc maintain consistent performance, indicating efficient use of multi-core processing.</p>
+<h3 id="Parse-Time-Breakdown"><a href="#Parse-Time-Breakdown" class="headerlink" title="Parse Time Breakdown"></a>Parse Time Breakdown</h3><p>When benchmarking a Node-API based program, it’s crucial to understand the time spent not only executing Rust code but also the Node.js glue code that binds everything together. The parsing time can be dissected into three main components:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">time = ffi_time + parse_time + serde_time</span><br></pre></td></tr></table></figure>
+
+<p>Here’s a closer look at each term:</p>
+<ul>
+<li><p><strong><code>ffi_time</code> (Foreign Function Interface Time):</strong> This represents the overhead associated with invoking functions across different programming languages. Typically, <code>ffi_time</code> is a fixed cost and remains constant regardless of the input file size.</p>
+</li>
+<li><p><strong><code>parse_time</code> (Parse Time):</strong> The core duration required for the parser to analyze the source code and generate an Abstract Syntax Tree (AST). <code>parse_time</code> scales with the size of the input, making it a variable cost in the parsing process.</p>
+</li>
+<li><p><strong><code>serde_time</code> (Serialization&#x2F;Deserialization Time):</strong> The time needed to serialize Rust data structures into a format compatible with JavaScript, and vice versa. As with <code>parse_time</code>, <code>serde_time</code> increases as the input file size grows.</p>
+</li>
+</ul>
+<p>In essence, benchmarking a parser involves measuring the time for the actual parsing (<code>parse_time</code>) and accounting for the extra overhead from cross-language function calls (<code>ffi_time</code>) and data format conversion (<code>serde_time</code>). Understanding these elements helps us evaluate the efficiency and scalability of the parser in question.</p>
+<h3 id="Result-Interpretation"><a href="#Result-Interpretation" class="headerlink" title="Result Interpretation"></a>Result Interpretation</h3><p>This section offers a detailed and technical analysis of the benchmark results based on the parse time framework above. Readers seeking a high-level overview may prefer to skip ahead to the summary.</p>
+<p><strong>FFI Overhead</strong></p>
+<p>In both sync parsing and async parsing scenario, the “one line” test case, which is predominant FFI overhead with minimal parsing or serialization, shows TypeScript’s superior performance. Surprisingly, Babel, expected to excel in this one-line scenario, demonstrates its own peculiar overhead.</p>
+<p>As file size increases, FFI overhead becomes less significant, as it’s largely size-independent. For instance, ast-grep’s relative speed is 78% for a large file compared to 72% for a single line, suggesting an approximate 6% FFI overhead in synchronous parsing.</p>
+<p>FFI overhead is more pronounced in asynchronous parsing. ast-grep’s performance drops from 72% to 60% when comparing synchronous to asynchronous parsing of a single line. The absence of a notable difference in performance for swc&#x2F;oxc may be due to their <a target="_blank" rel="noopener" href="https://github.com/oxc-project/oxc/blob/2d5e0d5d0775300463f36b925e2f1ce71f119b90/napi/parser/src/lib.rs#L96">unique implementation details</a>.</p>
+<p><strong>Serde Overhead</strong><br>Unfortunately, we failed to replicate swc&#x2F;oxc’s blazing performance we witnessed in other applications.<br>Despite minimal FFI impact in “Large file” test cases, swc and oxc underperform compared to the TypeScript compiler. This can be attributed to their reliance on calling <a target="_blank" rel="noopener" href="https://github.com/swc-project/swc/blob/5d944185187402691292fdb73ea767bd580e2a52/node-swc/src/index.ts#L108"><code>JSON.parse</code> on strings</a> returned from Rust, which is, to our disappointment, still more efficient than direct data structure returns.</p>
+<p>Tree-sitter and ast-grep avoid serde overhead by <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/blob/1c3accfd7dccef293c480951759b86c418cde977/crates/napi/src/sg_node.rs#L297">returning a tree object</a> rather than a full AST structure. Accessing tree nodes requires <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/blob/1c3accfd7dccef293c480951759b86c418cde977/crates/napi/src/sg_node.rs#L78">invoking Rust methods</a> from JavaScript, which distributes the cost over the reading process.</p>
+<p><strong>Parallel</strong></p>
+<p>Except tree-sitter, all native TS parsers have parallel support. Contrary to JS parsers, native parsers performance will not degrade when concurrently parsing larger files. This is thanks to the power of multiple cores. JS parsers suffer from CPU bound because they have to parse file one by one.</p>
+<h3 id="Perf-summary-for-parsers"><a href="#Perf-summary-for-parsers" class="headerlink" title="Perf summary for parsers"></a>Perf summary for parsers</h3><p>The performance of each parser is summarized in the table below, which outlines the time complexity for different operations.</p>
+<p><img src="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/0rm26rv2o0jndzeubxib.png" alt="Image description"></p>
+<p>In the table, <code>constant</code> denotes a constant time cost that does not change with input size, while <code>proportional</code> indicates a variable cost that grows proportionally with the input size. An <code>N/A</code> signifies that the cost is not applicable.</p>
+<p>JS-based parsers operate entirely within the JavaScript environment, thus avoiding any FFI or serde overhead. Their performance is solely dependent on the parsing time, which scales with the size of the input file.</p>
+<p>The performance of Rust-based parsers is influenced by a fixed FFI overhead and a parsing time that grows with input size. However, their serde overhead varies depending on the implementation:</p>
+<p>For ast-grep and tree-sitter, they have a fixed serialization cost of one tree object, regardless of the input size.<br>For swc and oxc, the serialization and deserialization costs increase linearly with the input size, impacting overall performance.</p>
+<h2 id="Discussion"><a href="#Discussion" class="headerlink" title="Discussion"></a>Discussion</h2><h3 id="Transform-vs-Parse"><a href="#Transform-vs-Parse" class="headerlink" title="Transform vs. Parse"></a>Transform vs. Parse</h3><p>While Rust-based tools are renowned for their speed in transpiling code, our benchmarks reveal a different narrative when it comes to converting code into an AST that’s usable in JavaScript.<br>This discrepancy highlights a critical consideration for Rust tooling authors: the process of passing Rust data structures to JavaScript is a complex task that can significantly affect performance.<br>It’s essential to optimize this data exchange to maintain the high efficiency expected from Rust tooling.</p>
+<h3 id="Criteria-for-Parser-Inclusion"><a href="#Criteria-for-Parser-Inclusion" class="headerlink" title="Criteria for Parser Inclusion"></a>Criteria for Parser Inclusion</h3><p>In our benchmark, we focused on parsers that offer a JavaScript API, which influenced our selection:</p>
+<ul>
+<li><strong>Sucrase:</strong> Excluded due to its lack of a parsing API and <a target="_blank" rel="noopener" href="https://github.com/alangpierce/sucrase#motivation">inability to produce a complete AST</a>, which are crucial for our evaluation criteria.</li>
+<li><strong>Esbuild&#x2F;Biome:</strong> Not included because esbuild functions primarily as a bundler, not a standalone parser. It offers transformation and build capabilities but <a target="_blank" rel="noopener" href="https://esbuild.github.io/api/#js-details">does not expose an AST</a> to JavaScript. Similarly, biome is a CLI application without a JavaScript API.</li>
+<li><strong>Esprima:</strong> Not considered for this benchmark as it lacks TypeScript support, which is a key requirement for the modern JavaScript development ecosystem.</li>
+</ul>
+<h3 id="JS-Parser-Review"><a href="#JS-Parser-Review" class="headerlink" title="JS Parser Review"></a>JS Parser Review</h3><p><strong>Babel:</strong><br>Babel is divided into two main packages: <code>@babel/core</code> and <code>@babel/parser</code>. It’s noteworthy that <code>@babel/core</code> exhibits lower performance compared to <code>@babel/parser</code>. This is because the additional entry and hook code that surrounds the parser in the core package. Furthermore, the <code>parseAsync</code> function in Babel core is not genuinely asynchronous; it’s essentially a synchronous parser method wrapped in an asynchronous function. This wrapper provides extra hooks but does not enhance performance for CPU-intensive tasks due to JavaScript’s single-threaded nature. In fact, the overhead of managing asynchronous tasks can further burden the performance of <code>@babel/core</code>.</p>
+<p><strong>TypeScript:</strong></p>
+<p>The parsing capabilities of TypeScript defy the common perception of the TypeScript compiler (TSC) being slow. The benchmark results suggest that the primary bottleneck for TSC is not in parsing but in the subsequent type checking phase.</p>
+<h3 id="Native-Parser-Review"><a href="#Native-Parser-Review" class="headerlink" title="Native Parser Review"></a>Native Parser Review</h3><p><strong>SWC:</strong><br>As the first Rust parser to make its mark, SWC adopts a direct approach by serializing the entire AST for use in JavaScript. It stands out for offering a broad range of APIs, making it a top choice for those seeking Rust-based tooling solutions. Despite some inherent overhead, SWC’s robustness and pioneering status continue to make it a preferred option.</p>
+<p><strong>Oxc:</strong>:<br>Oxc is a contender for the title of the fastest parser available, but its performance is tempered by serialization and deserialization (serde) overhead. The inclusion of JSON parsing in our benchmarks reflects real-world usage, although omitting this step could significantly boost Oxc’s speed.</p>
+<p><strong>Tree-sitter</strong><br>Tree-sitter serves as a versatile parser suitable for a variety of languages, not specifically optimized for TypeScript. Consequently, its performance aligns closely with that of Babel, a JavaScript-focused parser implemented in JavaScript. Alas, a Rust parser is not inherently faster by default, even without any N-API overhead.<br>A general purpose parser in Rust may not beat a carefully hand-crafted parser in JavaScript.</p>
+<p><strong>ast-grep</strong></p>
+<p>ast-grep is powered by tree-sitter. Its performance is marginally faster than tree-sitter, indicating napi.rs is a faster binding than manual using C++ nan.h.<br>I cannot tell whether the performance gain is from napi or napi.rs but<br>Leveraging the capabilities of tree-sitter, ast-grep achieves slightly better performance, suggesting that napi.rs offers a more efficient binding than traditional C++ <a target="_blank" rel="noopener" href="https://github.com/tree-sitter/node-tree-sitter/blob/master/src/parser.h">nan.h</a> methods. While the exact source of this performance gain—whether from napi or napi.rs—is unclear, the results speak to the effectiveness of the implementation. Or put it in another way, <a target="_blank" rel="noopener" href="https://twitter.com/Brooooook_lyn">Broooooklyn</a> is 🐐.</p>
+<h3 id="Native-Parser-Performance-Tricks"><a href="#Native-Parser-Performance-Tricks" class="headerlink" title="Native Parser Performance Tricks"></a>Native Parser Performance Tricks</h3><p><strong>tree-sitter &amp; ast-grep’ Edge</strong></p>
+<p>These parsers manage to bypass serde costs post-parsing by returning a Rust object wrapper to Node.js. This strategy, while efficient, can lead to slower AST access in JavaScript as the cost is amortized over the reading phase.</p>
+<p><strong>ast-grep’s async advantage:</strong></p>
+<p>ast-grep’s performance in concurrent parsing scenarios is largely due to its utilization of multiple <a target="_blank" rel="noopener" href="http://docs.libuv.org/en/v1.x/threadpool.html">libuv threads</a>. By default, the libuv thread pool size is set to four, but there’s potential to enhance performance further by <a target="_blank" rel="noopener" href="https://dev.to/bleedingcode/increase-node-js-performance-with-libuv-thread-pool-5h10">expanding the thread pool size</a>, thus fully leveraging the available CPU cores.</p>
+<h2 id="Future-Outlook"><a href="#Future-Outlook" class="headerlink" title="Future Outlook"></a>Future Outlook</h2><p>As we look to the future, several promising avenues could further refine TypeScript parser performance:</p>
+<ul>
+<li><p><strong>Minimizing Serde Overhead:</strong> By optimizing serialization and deserialization processes, such as employing Rust object wrappers, we can reduce the performance toll these operations take.</p>
+</li>
+<li><p><strong>Harnessing Multi-core Capabilities:</strong> Effective utilization of multi-core architectures can lead to substantial gains in parsing speeds, transforming the efficiency of our tooling.</p>
+</li>
+<li><p><strong>Promoting AST Reusability:</strong> Facilitating the reuse of Abstract Syntax Trees within JavaScript can diminish the frequency of costly parsing operations.</p>
+</li>
+<li><p><strong>Shifting Workloads to Rust:</strong> The creation of a domain-specific language (DSL) tailored for AST node querying could shift a greater portion of computational work to the Rust side, enhancing overall efficiency.</p>
+</li>
+</ul>
+<p>These potential improvements represent exciting opportunities to push the boundaries of Rust tooling in parsing performance.</p>
+<p>Hope this article helps you! We can continue to innovate and deliver even more powerful tools to the developer community!</p>
+
+      
+    </div>
+    
+    
+    <div class="article-category">
+      
+      
+      
+        <b>Tags:</b>
+        <a class="article-tag-none-link" href="/tags/Rust/" rel="tag">Rust</a>
+      
+    </div>
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <span id="article-nav-newer" class="article-nav-link-wrap newer"></span>
+  
+  
+    <a href="/2023/05/17/migrate-bevy/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          Migrating Bevy can be easier with (semi-)automation. Here is how.
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>
