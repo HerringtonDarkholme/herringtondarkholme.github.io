@@ -3,8 +3,8 @@ date: 2024-01-01
 tags: AI
 ---
 
-Hi all! Happy new year! I am Herrington, the author of [ast-grep](https://github.com/ast-grep/ast-grep).
-Today I am going to show you how I build a [discord bot](https://discord.com/invite/4YZjf6htSQ) for ast-grep that help people to understand the tool and help them write patterns or YAML rules.
+Hi all! Happy New Year! I am Herrington, the author of [ast-grep](https://github.com/ast-grep/ast-grep).
+Today I am going to show you how I build a [discord bot](https://discord.com/invite/4YZjf6htSQ) for ast-grep that helps people to understand the tool and help them write patterns or YAML rules.
 
 And I get it done free, without code! You can try the bot via [ast-grep's discord channel](https://discord.com/invite/4YZjf6htSQ)!
 
@@ -29,7 +29,7 @@ How did I do it? Well, I used [coze](https://coze.com/), a free gpt-4, no-code w
 coze has four main features like GPTs, except that it is free:
 
 * Custom prompting: you can write your own prompts to control the flow of the conversation, ask for user input, validate the input, and generate responses.
-* Knowledge base retrieval: you can upload text files as a knowledge base, and coze will automatically segment it and index it for retrieval. The bumer is that you can upload at most ten files. :(
+* Knowledge base retrieval: you can upload text files as a knowledge base, and coze will automatically segment it and index it for retrieval. The bummer is that you can upload at most ten files. :(
 * Function call: you can invoke any external API from your prompts, and use the results in your responses.
 * Database access: you can store and retrieve data from a built-in database, and use it in your prompts and responses.
 
@@ -43,9 +43,9 @@ To build the knowledge base, I took a simple approach. I concatenated all the ma
 
 The next step was to build a workflow to instruct GPT to write a pattern or a YAML rule for the users.
 
-However, adding all details about patterns and YAML rules to one single prompt is too much for GPT4 to learn and handle.
+However, adding all the details about patterns and YAML rules to one single prompt is too much for GPT4 to learn and handle.
 
-So I used a workflow to break this task down into smaller tasks, and use a routing prompt to decide whether the task can be done with a pattern or a YAML rule.
+So I used a workflow to break this task down into smaller tasks and use a routing prompt to decide whether the task can be done with a pattern or a YAML rule.
 
 The workflow looks like this:
 
