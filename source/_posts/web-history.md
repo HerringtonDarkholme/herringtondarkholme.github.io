@@ -4,8 +4,6 @@ tags: JavaScript
 
 ---
 
-# A Mostly Wrong Web Frameworks Comparison by Food Analogy
-
 Welcome to the web framework restaurant, where we serve you a delicious dish of web frameworks with a side of humor and a pinch of salt.
 
 I'm your waiter, Herrington, and I'll be serving you a mostly wrong comparisons of the web. Don't worry, I won't spit in your food, but I might twist some facts for your entertainment. 😈
@@ -88,10 +86,10 @@ Don't believe me? Just look at Astro's official site. They have a burger in thei
 
 ### Qwik: The New Pizza 🍕
 
-Beside partial hydration techniques like islands-architecture, you might also think about the possibility of incremental hydration.
+Besides partial hydration techniques like islands-architecture, you might also think about the possibility of incremental hydration.
 You may want to try [Qwik](https://qwik.builder.io/), a new framework that promises instant-on interactivity, regardless of size or complexity.
 
-Qwik is different from other frameworks that use the Islands architecture, which selectively chooses components to hydrate. Qwik takes a more radical approach: it chops your app into tiny pieces, and hydrates them only when they need to be interactive. Qwik calls this resumability, which means your app can resume from any state without reloading or re-rendering.
+Qwik is different from other frameworks that use the Islands architecture, which selectively chooses components to hydrate. Qwik takes a more radical approach: it chops your app into tiny pieces and hydrates them only when they need to be interactive. Qwik calls this resumability, which means your app can resume from any state without reloading or re-rendering.
 
 Qwik works like this:
 - It renders static HTML pages on the server, like making pizza dough.
@@ -100,6 +98,9 @@ Qwik works like this:
 - It hydrates the dynamic components on the client according to the user's interaction, like adding toppings to the pizza.
 
 Qwik is like pizza: you can eat it as soon as it arrives, or you can customize it to your liking. You can add pepperoni, bacon, sausage, or whatever you want, slice by slice, until you get the full interactive pizza. It's delicious, satisfying, and quick. (pun intended)
+
+
+![Qwik pizza dough makes your page load faster](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/yknze8w385l13qsi6r8n.png)
 
 
 ### HTMX: The Renaissance of Ham Sandwich 🥪
@@ -118,10 +119,10 @@ HTMX is not the only framework that does this. [Turbo](https://github.com/hotwir
 
 ### React Server Components: The Ultimate JSX Lasagna 🍝
 
-You might have heard about [React](https://github.com/reactjs/rfcs/blob/main/text/0188-server-components.md) [Server](https://react.dev/blog/2020/12/21/data-fetching-with-react-server-components) [Components](https://www.mayank.co/blog/react-server-components/) a lot. RSC is a relatively new feature that lets you render components on the server and stream them to the client in the form of JSX in JSON. Though the name contains React™, Server component is not limited to certain framework.
-Actually Phoenix LiveView is a framework that uses the same model before RSC ever exists.
+You might have heard about [React](https://github.com/reactjs/rfcs/blob/main/text/0188-server-components.md) [Server](https://react.dev/blog/2020/12/21/data-fetching-with-react-server-components) [Components](https://www.mayank.co/blog/react-server-components/) a lot. RSC is a relatively new feature that lets you render components on the server and stream them to the client in the form of JSX in JSON. Though the name contains React™, server component is not limited to certain frameworks.
+Actually, Phoenix LiveView is a framework that has used the same model before RSC ever existed. [Streamlit](https://streamlit.io/) is also a nice example.
 
-React Server Components are not a single type of components but actually a programming model. RSC has two kinds of components: server components and client components.
+React Server Components are not a single type of components but a programming model. RSC has two kinds of components: server components and client components.
 
 - Server components are rendered on the server into static JSX, in a JSON-like structure, and are streamed to the client, like cooking lasagna noodles on the stove and sending them to the oven.
 - Client components are sent to the client as JavaScript files, and they generate JSX on the client, like adding raw meat sauce onto lasagna and cooking them in the oven.
