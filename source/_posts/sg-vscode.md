@@ -4,12 +4,12 @@ Hi, I'm [Herrington](https://twitter.com/hd_nvim).
 
 If you've ever searched code with regular expressions, you may have struggled with matching multiple lines, nested structures, or ignoring comments.
 
-Let me introduce ast-grep VSCode, a new extension leveraging the power of structural search and replace (SSR) to help you perform more precise and efficient search and replace.
+Let me introduce [ast-grep VSCode](https://marketplace.visualstudio.com/items?itemName=ast-grep.ast-grep-vscode), a new extension leveraging the power of structural search and replace (SSR) to help you perform more precise and efficient search and replace.
 
 
 ## The Limitations of Textual Search and Replace
 
-Suppose you want to refactor your JavaScript code to replace the lodash `_.filter` function with the native `Array.prototype.filter` method. A simple text search and replace might look like this:
+Suppose you want to refactor your JavaScript code to replace the [lodash](https://lodash.com/) `_.filter` function with the native `Array.prototype.filter` [method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter). A simple text search and replace might look like this:
 
 ```regex
 // Find
@@ -29,9 +29,9 @@ This might work for some cases, but it has several limitations:
 
 Can we make our search algorithm smarter, understand our code better, and be easier to use? Yes! Structural search and replace (SSR) comes to the rescue!
 
-Structural search and replace (SSR) is a technique that allows you to find and modify code patterns based on their syntax and semantics, not just their text. Instead of treating code as plain text, SSR treats code as a collection of nodes with types, properties, and relationships.
+[Structural search and replace](https://www.jetbrains.com/help/idea/structural-search-and-replace.html) (SSR) is a technique that allows you to find and modify code patterns based on their syntax and semantics, not just their text. Instead of treating code as plain text, SSR treats code as a collection of nodes with types, properties, and relationships.
 
-ast-grep is a command-line tool that implements SSR. The query for the lodash example above is quite simple.
+[ast-grep](https://ast-grep.github.io/) is a command-line tool that implements SSR. The query for the lodash example above is quite simple.
 
 ```javascript
 // Search pattern:
@@ -40,7 +40,7 @@ _.filter($ARR, $FUNC)
 $ARR.filter($FUNC)
 ```
 
-The pattern illustrates the basic usage of ast-grep. `$ARR` and `$FUNC` are meta-variables. Meta-variables are like the dot `.` in regular expressions, except they match AST nodes instead of characters. You can also use captured meta-variables in the rewrite pattern.
+The pattern illustrates the basic usage of ast-grep. `$ARR` and `$FUNC` are [meta-variables](https://ast-grep.github.io/guide/pattern-syntax.html#meta-variable). Meta-variables are like the dot `.` in regular expressions, except they match AST nodes instead of characters. You can also use captured meta-variables in the rewrite pattern.
 
 Other than the meta-variables, I hope the pattern and rewrite are self-explanatory.
 
@@ -54,11 +54,11 @@ This query has several advantages over the text search and replace:
 
 ### Unique Features of ast-grep
 
-ast-grep uses the tree-sitter library, a fast and robust parser for many programming languages. ast-grep allows you to write queries using a simple pattern syntax that resembles code and apply them to files or directories of code. Some of the unique features of ast-grep are:
+ast-grep uses the tree-sitter library, a fast and robust parser for many programming languages. ast-grep allows you to write queries using a simple [pattern syntax](https://ast-grep.github.io/guide/pattern-syntax.html#meta-variable) that resembles code and apply them to files or directories of code. Some of the unique features of ast-grep are:
 
-- It supports many languages, including JavaScript, TypeScript, Python, Ruby, Java, C#, Go, Rust, and more. You can also add support for new languages by registering tree-sitter grammars in the configuration.
-- It is written in Rust, which makes it very fast and memory-efficient. It can process large codebases in a matter of seconds.
-- It has a rich set of options and flags, such as recursive search, dry run, interactive mode, color output, and more. You can customize your SSR experience to suit your needs and preferences.
+- It supports many languages, including JavaScript, TypeScript, Python, Ruby, Java, C#, Go, Rust, and more. You can also add support for new languages by [registering tree-sitter grammars](https://ast-grep.github.io/advanced/custom-language.html) in the configuration.
+- It is [written in Rust](https://github.com/ast-grep/ast-grep), which makes it very fast and memory-efficient. It can process large codebases in a matter of seconds.
+- It has a [rich set of options](https://ast-grep.github.io/reference/cli.html) and flags, such as dry run, interactive mode, color output, and more. You can customize your SSR experience to suit your needs and preferences.
 
 But, ast-grep until now only has a command-line interface. Can we have its power right near our hands instead of switching between terminals and editors?
 
@@ -88,17 +88,16 @@ There are other SSR tools and extensions available. However, I believe ast-grep 
 
 - It has good performance, backed by a multi-threaded CLI written in a native language.
 - It supports multiple languages, leveraging the tree-sitter grammars widely used and maintained by the community.
-- It has a user-friendly and intuitive interface that feels like a VSCode built-in feature.
+- It has a user-friendly and intuitive interface that feels like a VSCode built-in feature. See it in [action](https://www.youtube.com/watch?v=1ZM4RfIvWKc).
 
 Finally, I want to highlight some React techniques used in ast-grep VSCode that make it fast and responsive:
 
-- [`useSyncExternalStore`](https://github.com/ast-grep/ast-grep-vscode/blob/789d27325fb9ce6a0bb969caefdc718942f6d2b3/src/webview/hooks/useSearch.tsx#L150-L159) was used to manage streaming results from ast-grep CLI. This hook allows components to subscribe to an external mutable source of data and update the rendering accordingly. This way, the extension can show the results as soon as they are available.
-- [`useDeferredValue`](https://github.com/ast-grep/ast-grep-vscode/blob/main/src/webview/SearchSidebar/index.tsx#L13-L16) deferred rendering the result list. This hook can avoid blocking user input and improve the perceived performance of the UI by delaying the update of a derived state until the next concurrent render.
+- [`useSyncExternalStore`](https://github.com/ast-grep/ast-grep-vscode/blob/789d27325fb9ce6a0bb969caefdc718942f6d2b3/src/webview/hooks/useSearch.tsx#L150-L159) was used to manage streaming results from ast-grep CLI. This [hook](https://react.dev/reference/react/useSyncExternalStore) allows components to subscribe to an external mutable source of data and update the rendering accordingly. This way, the extension can show the results as soon as they are available.
+- [`useDeferredValue`](https://github.com/ast-grep/ast-grep-vscode/blob/main/src/webview/SearchSidebar/index.tsx#L13-L16) deferred rendering the result list. This [hook](https://react.dev/reference/react/useDeferredValue) can avoid blocking user input and improve the perceived performance of the UI by delaying the update of a derived state until the next concurrent render.
 - The extension carefully used plenty of `memo` and CSS tricks to reduce the JavaScript workload.
 
 ## Conclusion
 
-I hope this article helps you understand the benefits of SSR and the features of ast-grep VSCode. If you are interested in trying it out, you can install it from the [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=ast-grep.ast-grep-vscode). ast-grep VSCode is still in development and has a lot of room for improvement. I would love to hear your feedback and suggestions, so feel free to open an issue or a pull request on [GitHub](https://github.com/ast-grep/ast-grep-vscode).
-Happy grepping!
+I hope this article helps you understand the benefits of SSR and the features of ast-grep VSCode. If you are interested in trying it out, you can install it from the [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=ast-grep.ast-grep-vscode). ast-grep VSCode is still in development and has a lot of room for improvement. I would love to hear your feedback and suggestions, so feel free to open an issue or a pull request on [GitHub](https://github.com/ast-grep/ast-grep-vscode). I also want to thank [SoonIter](https://github.com/SoonIter), [Steven Love](https://github.com/StevenLove), [Nyakku Shigure](https://github.com/SigureMo), and [ssr.nvim](https://github.com/cshuaimin/ssr.nvim) for their contribution and inspiration!
 
-(1) It might not be the best SSR plugin for neovim, though. [ssr.nvim](https://github.com/cshuaimin/ssr.nvim)
+Happy grepping!
