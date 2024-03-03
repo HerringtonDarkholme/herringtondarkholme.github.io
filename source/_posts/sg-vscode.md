@@ -1,6 +1,6 @@
 # ast-grep VSCode: A Powerful Tool for Structural Search and Replace
 
-Hi, I'm [Herrington](https://twitter.com/hd_nvim).
+Hi, I'm [Herrington](https://twitter.com/hd_nvim), the author of [ast-grep](https://ast-grep.github.io/).
 
 If you've ever searched code with regular expressions, you may have struggled with matching multiple lines, nested structures, or ignoring comments.
 
