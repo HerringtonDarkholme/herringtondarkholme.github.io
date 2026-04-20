@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="Celebrating 6000 Stars: ast-grep’s Journey of InnovationWe are thrilled to announce that ast-grep, the powerful code search tool, has reached a stellar milestone of 6000 stars on GitHub! This is a tes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2026/04/20/ast-grep-6000/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="Celebrating 6000 Stars: ast-grep’s Journey of InnovationWe are thrilled to announce that ast-grep, the powerful code search tool, has reached a stellar milestone of 6000 stars on GitHub! This is a tes">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-04-20T05:17:40.194Z">
+<meta property="article:modified_time" content="2026-04-20T05:17:40.194Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta name="twitter:card" content="summary"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-ast-grep-6000" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <h1 id="Celebrating-6000-Stars-ast-grep’s-Journey-of-Innovation"><a href="#Celebrating-6000-Stars-ast-grep’s-Journey-of-Innovation" class="headerlink" title="Celebrating 6000 Stars: ast-grep’s Journey of Innovation"></a>Celebrating 6000 Stars: ast-grep’s Journey of Innovation</h1><p>We are thrilled to announce that ast-grep, the powerful code search tool, has reached a stellar milestone of 6000 stars on GitHub! This is a testament to the community’s trust in our tool and the continuous improvements we’ve made. Let’s dive into the latest features and enhancements that make ast-grep the go-to tool for developers worldwide.</p>
+<h2 id="Feature-Enhancements"><a href="#Feature-Enhancements" class="headerlink" title="Feature Enhancements"></a>Feature Enhancements</h2><ul>
+<li><p><strong>Rewriters Addition</strong>: We’ve added support for rewriters <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/pull/855">#855</a>, enabling complex code transformations and refactoring with ease. The new feature unlocks a novel functional programming like code rewrite scheme: <a target="_blank" rel="noopener" href="https://ast-grep.github.io/advanced/find-n-patch.html">find and patch</a>. Check out our previous <a target="_blank" rel="noopener" href="https://dev.to/herrington_darkholme/find-patch-a-novel-functional-programming-like-code-rewrite-scheme-3964">blog post</a> for more details.</p>
+</li>
+<li><p><strong>Error&#x2F;Warning Suppression Support</strong>: The new feature <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/pull/446">#446</a> allows users to suppress specific errors or warnings, giving you more control over your code analysis. ast-grep also <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/issues/1019">respects suppression comments</a> in Language Server Protocol (LSP), making it easier to manage warnings and errors in your codebase.</p>
+</li>
+<li><p><strong>Enhanced Rule Constraints</strong>: The ast-grep rule <code>constraints</code> previously only accepts <code>pattern</code>, <code>kind</code> and <code>regex</code>.<br>Now it accepts a full rule <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/pull/855">#855</a>, providing more flexibility than ever before.</p>
+</li>
+</ul>
+<h2 id="VSCode-extension"><a href="#VSCode-extension" class="headerlink" title="VSCode extension"></a>VSCode extension</h2><p>The <a target="_blank" rel="noopener" href="https://marketplace.visualstudio.com/items?itemName=ast-grep.ast-grep-vscode">ast-grep VSCode extension</a> is an official VSCode integration for this CLI tool. It unleashes the power of structural search and replace (SSR) directly into your editor.</p>
+<h3 id="Notable-Features"><a href="#Notable-Features" class="headerlink" title="Notable Features"></a>Notable Features</h3><ul>
+<li><strong>Search</strong>: Find code patterns with syntax tree.</li>
+<li><strong>Replace</strong>: Refactor code with pattern.</li>
+<li><strong>Diagnose</strong>: Identify issues via ast-grep rule.</li>
+</ul>
+<h2 id="Performance-Boost"><a href="#Performance-Boost" class="headerlink" title="Performance Boost"></a>Performance Boost</h2><ul>
+<li><strong>Parallel Thread Output Fix</strong>: A significant fix <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/commit/be230ca">#be230ca</a> ensures parallel thread outputs are now guaranteed, boosting overall performance.</li>
+</ul>
+<h2 id="Architectural-Evolution"><a href="#Architectural-Evolution" class="headerlink" title="Architectural Evolution"></a>Architectural Evolution</h2><ul>
+<li><strong>Tree-Sitter Version Bump</strong>: We’ve upgraded to the latest tree-sitter version, enhancing parsing accuracy and speed. In future releases, we plan to leverage tree-sitter’s <a target="_blank" rel="noopener" href="https://zed.dev/blog/language-extensions-part-1">new Web Assembly grammar</a> to support even more languages.</li>
+<li><strong>Scan and Diff Merge</strong>: The <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/commit/c78299d2902662cd98bda44f3faf3fbc88439078">refactor</a> combines <code>CombinedScan::scan</code> and <code>CombinedScan::diff</code> for a more streamlined process.</li>
+<li><strong>Input Stream Optimization</strong>: Now, ast-grep avoids unnecessary input stream usage when updating all rules <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/pull/943">#943</a>, making it possible to use <code>sg scan --update-all</code>.</li>
+</ul>
+<h2 id="Usability-Improvements"><a href="#Usability-Improvements" class="headerlink" title="Usability Improvements"></a>Usability Improvements</h2><ul>
+<li><strong>Error Messaging for Rule File Parsing</strong>: The VSCode extension now provides clearer error messages <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/pull/968">#968</a> when rule file parsing fails, making troubleshooting a breeze.</li>
+<li><strong>Better Pattern Parsing</strong>: Improved expando character replacement <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/pull/883">#883</a> to make pattern .</li>
+<li><strong>More Permissive Patterns</strong>: Patterns have become more permissive <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/pull/1087">#1087</a> that allows matching <code>$METAVAR</code> with different syntax kind.</li>
+</ul>
+<h2 id="Enhanced-Error-Reporting"><a href="#Enhanced-Error-Reporting" class="headerlink" title="Enhanced Error Reporting"></a>Enhanced Error Reporting</h2><p>We’ve introduced a suite of features to improve error reporting, making it easier to debug and refine your code:</p>
+<ul>
+<li>Report undefined meta-variables, errors in fixes, unused rewriters, and undefined utility rules.</li>
+<li>Add field ID errors for relational rules and optimize test updates to avoid erroneous reports.</li>
+<li>Shift from reporting file counts to error counts for a more meaningful insight into code quality.</li>
+</ul>
+<h2 id="Language-Support-Expansion"><a href="#Language-Support-Expansion" class="headerlink" title="Language Support Expansion"></a>Language Support Expansion</h2><ul>
+<li><strong>Haskell Support</strong>: Haskell enthusiasts rejoice! ast-grep now supports Haskell via tree-sitter-haskell <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/pull/1128">#1128</a>, broadening our language coverage.</li>
+</ul>
+<h2 id="NAPI-Advancements"><a href="#NAPI-Advancements" class="headerlink" title="NAPI Advancements"></a>NAPI Advancements</h2><ul>
+<li><strong>NAPI Linux x64 musl Support</strong>: Our latest feat in NAPI <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep/commit/c4d7902">#c4d7902</a> adds support for Linux x64 musl, ensuring wider compatibility and performance.</li>
+</ul>
+<p>As ast-grep continues to grow, we remain committed to providing a tool that not only meets but exceeds the expectations of our diverse user base. We thank each and every one of you for your support, contributions, and feedback that have shaped ast-grep into what it is today. Here’s to many more milestones ahead!</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2026/04/20/sg-vscode/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2026/04/19/goodgirl/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          讲讲国产嘎啦给木
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

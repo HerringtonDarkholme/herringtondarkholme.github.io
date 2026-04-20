@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="あくまでも紳士です">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:url" content="https://herringtondarkholme.github.io/page/3/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="あくまでも紳士です">
+<meta property="og:locale" content="en_US">
+<meta property="article:author" content="Herrington Darkholme">
+<meta name="twitter:card" content="summary"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      
+  
+    <article id="post-typesafe-di" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2016/02/01/typesafe-di/">TypeSafe DI in TypeScript</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2016-02-02T00:26:14.000Z" itemprop="datePublished">February 1, 2016, 7:26 PM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/miku805.jpg" class="">
+
+<blockquote>
+<p>Yet Another Type Level Arithmetics</p>
+</blockquote>
+<p>DI is getting more popularity in JavaScript. Though, those solution is far way beyond JSR-330 compatible libraries in terms of type safety and performance.</p>
+<p>This snippet strives to dig more type-safety from TS’ type system. However, it can hardly achieve equivalent type safety like Java’s counterpart, e.g., Dagger, Guice.</p>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p><a target="_blank" rel="noopener" href="https://gist.github.com/HerringtonDarkholme/f11152e6e29145040fa4">This DI</a> snippet can, ideally, ensure every binding is resolved in compile time, which is a hard task for other DI solution. The main idea is an <code>Injector</code> can statically know its current binding, and judge whether dependencies of a new added binding can be already resolved by itself. Since dependency graph is a DAG, there exists a topological sorting order that every binding’s dependency can be resolved solely by those of preceding bindings . So once the injector is created and bindings are attached to it, we can assert that the dependencies can be resolved.</p>
+<p>Say, there is a minimal example to illustrate this:</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Inject</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Clerk</span> &#123;&#125;</span><br><span class="line"><span class="meta">@Inject</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Shop</span> &#123;<span class="title function_">constructor</span>(<span class="params"><span class="attr">c</span>: <span class="title class_">Clerk</span></span>)&#125;</span><br><span class="line"><span class="keyword">var</span> inj = <span class="title class_">Injector</span>.<span class="title function_">create</span>()</span><br><span class="line">  .<span class="title function_">bind</span>(<span class="title class_">Shop</span>).<span class="title function_">toClass</span>(<span class="title class_">Shop</span>) <span class="comment">// compile error here, injector cannot resolve Clerk</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> inj = <span class="title class_">Injector</span>.<span class="title function_">create</span>()</span><br><span class="line">  .<span class="title function_">bind</span>(<span class="title class_">Clerk</span>).<span class="title function_">toClass</span>(<span class="title class_">Clerk</span>)</span><br><span class="line">  .<span class="title function_">bind</span>(<span class="title class_">Shop</span>).<span class="title function_">toClass</span>(<span class="title class_">Shop</span>) <span class="comment">// compiles. Clerk resolved before Shop</span></span><br></pre></td></tr></table></figure>
+
+<p>To implement this, Injector has a shadow type <code>Base</code> that indicates resolved bindings. When new binding is added to injector, compiler will verify the new coming constructor&#x2F;function will only depend on classes the injector has already resolved. Concretely, every argument in newly added constructor must be a subtype of <code>Base</code>.</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> <span class="title class_">Ctor</span> = <span class="title function_">new</span> (...<span class="attr">args</span>: <span class="title class_">Base</span>[]): T</span><br><span class="line"></span><br><span class="line">injector&lt;<span class="title class_">Base</span>&gt;</span><br><span class="line">  .<span class="title function_">bind</span>(<span class="title class_">NewClass</span>)</span><br><span class="line">  .<span class="title function_">toClass</span>(<span class="title class_">NewClass</span> <span class="keyword">as</span> <span class="title class_">Ctor</span>)</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">Make sure here `toClass` is defined like</span></span><br><span class="line"><span class="comment">type toClass = (Ctor) =&gt; Injector&lt;Base | T&gt;</span></span><br><span class="line"><span class="comment">the union type indicates resolved type, and `T extends Base|T` holds valid</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+
+<p><code>Base</code> is a large union type storing all binding types, so every resolved type is a subtype of <code>Base</code>. And <code>bind</code> will return a <code>binder</code> that has <code>toClass / toFactory</code> method which further returns an injector whose resolved binding is a union of the previous binding type and the newly added binding type. Hence, after <code>bind ... toClass</code>, the injector has a new class appended to its resolved type list.</p>
+<p>The implementation and test can be found at <a target="_blank" rel="noopener" href="https://gist.github.com/HerringtonDarkholme/f11152e6e29145040fa4">Github Gist</a>.</p>
+<h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>But TS’ type system does not allow a full-fledged DI in this way.</p>
+<ol>
+<li><p>First, runtime types are erased. One must annotate dependency for function in <code>toFactory</code> method. <code>toClass</code> is better because TS supports <code>emitDecoratorMetadata</code>. (maybe resolved in TS2.0). TS’ specific metadata implementation is also problematic. For cyclic dependent classes, at least one class’ annotation is <code>undefined</code>(ES3&#x2F;5), or the script is crashed before it can run (ES6). Because metadata is attached to class declaration, in cyclic case there must be one class is used before it’s declared.</p>
+</li>
+<li><p>TypeScript has a double-edged sutructural type system. To fully exploit DI’s type check, user has to add a <code>private</code> <code>brand</code> field to every injectable class. This is not a good UI, though.</p>
+</li>
+<li><p>But even metadata is not enough. Runtime type data is first-order (in type-system’s view), that is, every type is represented by its constructor, no generic information is emitted. To work around this, token is introduced.</p>
+</li>
+</ol>
+<p>Token alleviates runtime type-system’s weakness, and enables binding multiple implementations to one single type. It also introduces more problem this DI wants to resolve in the first place. To work around point 1, we attached runtime types to constructor. Binding token will make type system think a type has resolved, but a following binding may not resolve it in runtime because it depends on constructor to find resolution.</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">injector</span><br><span class="line">  .<span class="title function_">bind</span>(clerkToken).<span class="title function_">toClass</span>(<span class="title class_">Clerk</span>)</span><br><span class="line">  .<span class="title function_">bind</span>(<span class="title class_">Shop</span>).<span class="title function_">toClass</span>(<span class="title class_">Shop</span>) <span class="comment">// compiles. but runtime error</span></span><br><span class="line"><span class="comment">// toClass will analyze Shop&#x27;s signature and extract the Clerk constructor</span></span><br><span class="line"><span class="comment">// it can be found in type-level because Token&lt;Clerk&gt; enable injector to resolve Clerk, but at runtime injector can only resolve clerkToken, not Clerk</span></span><br></pre></td></tr></table></figure>
+
+<p>Also, tokens with same types cannot avoid this.</p>
+<p>The workaround is, well, abusing string literal type. So every token is different at type-level. This requires users to type more types, and casts string literal from string type to string literal type. (TS’s generic inference does not have something like <code>T extends StringLiteral</code> so that <code>T</code> is inferred as string literal type)</p>
+<p>Also, the <code>toClass</code> and <code>toFactory</code> signature should differentiate what can be resolved by constructor and by token.  This is technically possible, just override these signature to support distinguishing between token and constructor. But the number of resulting overriding is exponential to the number of argument. 2 ^ n, where n is the number of arguments.</p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>To fully support type-safe DI and higher performance, a compiler extension or a code generator is needed. Java’s DI relies on annotations and code generation.</p>
+<p>Maybe Babel can do this right now. But TypeScript still needs a long way to go for a customizable emitter.</p>
+<h2 id="Source"><a href="#Source" class="headerlink" title="Source"></a>Source</h2><figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> <span class="string">&#x27;reflect-metadata&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> _ = &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> <span class="title class_">ClassN</span>&lt;N, T&gt; = &#123; <span class="title function_">new</span> (...<span class="attr">a</span>: N[]): T &#125;</span><br><span class="line"><span class="keyword">type</span> <span class="title class_">FN8</span>&lt;A, B, C, D, E, F, G, H, R&gt; = <span class="function">(<span class="params"><span class="attr">a</span>?: A, <span class="attr">b</span>?: B, <span class="attr">c</span>?: C, <span class="attr">d</span>?: D, <span class="attr">e</span>?: E, <span class="attr">f</span>?: F, <span class="attr">g</span>?: G, <span class="attr">h</span>?: H</span>) =&gt;</span> R</span><br><span class="line"><span class="keyword">type</span> <span class="title class_">CLS8</span>&lt;A, B, C, D, E, F, G, H, R&gt; = &#123; <span class="title function_">new</span> (<span class="attr">a</span>?: A, <span class="attr">b</span>?: B, <span class="attr">c</span>?: C, <span class="attr">d</span>?: D, <span class="attr">e</span>?: E, <span class="attr">f</span>?: F, <span class="attr">g</span>?: G, <span class="attr">h</span>?: H): R&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Token</span>&lt;T&gt; &#123;</span><br><span class="line">  <span class="keyword">private</span> _tokenBrand</span><br><span class="line">  <span class="title function_">constructor</span>(<span class="params"><span class="keyword">public</span> <span class="attr">name</span>: <span class="built_in">string</span></span>) &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">type</span> <span class="title class_">Bindable</span>&lt;T&gt; = <span class="title class_">Token</span>&lt;T&gt; | <span class="title class_">ClassN</span>&lt;_, T&gt;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="variable constant_">PARAMTYPE</span> = <span class="string">&#x27;design:paramtypes&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> getSignature&lt;T&gt;(<span class="attr">cls</span>: <span class="title class_">ClassN</span>&lt;T, _&gt;): <span class="title class_">Array</span>&lt;<span class="title class_">Bindable</span>&lt;T&gt;&gt; &#123; <span class="keyword">return</span> <span class="title class_">Reflect</span>.<span class="title function_">getOwnMetadata</span>(<span class="variable constant_">PARAMTYPE</span>, cls).<span class="title function_">slice</span>() || [] &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">enum</span> <span class="title class_">BindType</span> &#123; <span class="variable constant_">CLASS</span>, <span class="variable constant_">VALUE</span>, <span class="variable constant_">FACTORY</span> &#125;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Binder</span>&lt;T, <span class="title class_">Base</span>&gt; &#123;</span><br><span class="line">  <span class="attr">dependencies</span>: <span class="title class_">Bindable</span>&lt;<span class="title class_">Base</span>&gt;[] = []</span><br><span class="line">  <span class="attr">cacheable</span>: <span class="built_in">boolean</span> = <span class="literal">false</span></span><br><span class="line">  <span class="keyword">private</span> <span class="attr">_type</span>: <span class="title class_">BindType</span></span><br><span class="line">  <span class="keyword">private</span> <span class="attr">_cls</span>: <span class="title class_">ClassN</span>&lt;<span class="built_in">any</span>, T&gt; = <span class="literal">null</span></span><br><span class="line">  <span class="keyword">private</span> <span class="attr">_val</span>: T</span><br><span class="line">  <span class="keyword">private</span> <span class="attr">_fn</span>: <span class="title class_">Function</span></span><br><span class="line"></span><br><span class="line">  <span class="title function_">constructor</span>(<span class="params"><span class="keyword">private</span> <span class="attr">_injector</span>: <span class="title class_">Injector</span>&lt;<span class="title class_">Base</span>&gt;</span>) &#123;&#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="title function_">_releaseInjector</span>(<span class="params"></span>) &#123;</span><br><span class="line">    <span class="keyword">let</span> injector = <span class="variable language_">this</span>.<span class="property">_injector</span></span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">_injector</span> = <span class="literal">null</span></span><br><span class="line">    <span class="keyword">return</span> injector</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  toClass&lt;A <span class="keyword">extends</span> <span class="title class_">Base</span>, B <span class="keyword">extends</span> <span class="title class_">Base</span>, C <span class="keyword">extends</span> <span class="title class_">Base</span>, D <span class="keyword">extends</span> <span class="title class_">Base</span>, E <span class="keyword">extends</span> <span class="title class_">Base</span>, F <span class="keyword">extends</span> <span class="title class_">Base</span>, G <span class="keyword">extends</span> <span class="title class_">Base</span>, H <span class="keyword">extends</span> <span class="title class_">Base</span>&gt;(<span class="attr">fn</span>: <span class="title class_">CLS8</span>&lt;A, B, C,  D, E, F, G, H, T&gt;, <span class="attr">a</span>?: <span class="title class_">Bindable</span>&lt;A&gt;, <span class="attr">b</span>?: <span class="title class_">Bindable</span>&lt;B&gt;, <span class="attr">c</span>?: <span class="title class_">Bindable</span>&lt;C&gt;, <span class="attr">d</span>?: <span class="title class_">Bindable</span>&lt;D&gt;, <span class="attr">e</span>?: <span class="title class_">Bindable</span>&lt;E&gt;, <span class="attr">f</span>?: <span class="title class_">Bindable</span>&lt;F&gt;, <span class="attr">g</span>?: <span class="title class_">Bindable</span>&lt;G&gt;, <span class="attr">h</span>?: <span class="title class_">Bindable</span>&lt;H&gt;): <span class="title class_">Injector</span>&lt;<span class="title class_">Base</span> | T&gt;</span><br><span class="line">  <span class="title function_">toClass</span>(<span class="attr">cls</span>: <span class="title class_">ClassN</span>&lt;<span class="title class_">Base</span>, T&gt;, ...<span class="attr">deps</span>: <span class="title class_">Bindable</span>&lt;<span class="title class_">Base</span>&gt;[]): <span class="title class_">Injector</span>&lt;<span class="title class_">Base</span> | T&gt; &#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">_type</span> = <span class="title class_">BindType</span>.<span class="property">CLASS</span></span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">_cls</span> = cls</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">dependencies</span> = <span class="title function_">getSignature</span>(cls)</span><br><span class="line">    deps.<span class="title function_">forEach</span>(<span class="function">(<span class="params">d, i</span>) =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (d) <span class="variable language_">this</span>.<span class="property">dependencies</span>[i] = d</span><br><span class="line">    &#125;)</span><br><span class="line">    <span class="keyword">return</span> <span class="variable language_">this</span>.<span class="title function_">_releaseInjector</span>()</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="title function_">toValue</span>(<span class="attr">val</span>: T): <span class="title class_">Injector</span>&lt;<span class="title class_">Base</span> | T&gt; &#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">_type</span> = <span class="title class_">BindType</span>.<span class="property">VALUE</span></span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">_val</span> = val</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">cacheable</span> = <span class="literal">true</span></span><br><span class="line">    <span class="keyword">return</span> <span class="variable language_">this</span>.<span class="title function_">_releaseInjector</span>()</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  toFactory&lt;A <span class="keyword">extends</span> <span class="title class_">Base</span>, B <span class="keyword">extends</span> <span class="title class_">Base</span>, C <span class="keyword">extends</span> <span class="title class_">Base</span>, D <span class="keyword">extends</span> <span class="title class_">Base</span>, E <span class="keyword">extends</span> <span class="title class_">Base</span>, F <span class="keyword">extends</span> <span class="title class_">Base</span>, G <span class="keyword">extends</span> <span class="title class_">Base</span>, H <span class="keyword">extends</span> <span class="title class_">Base</span>&gt;(<span class="attr">fn</span>: <span class="title class_">FN8</span>&lt;A, B, C,  D, E, F, G, H, T&gt;, <span class="attr">a</span>?: <span class="title class_">Bindable</span>&lt;A&gt;, <span class="attr">b</span>?: <span class="title class_">Bindable</span>&lt;B&gt;, <span class="attr">c</span>?: <span class="title class_">Bindable</span>&lt;C&gt;, <span class="attr">d</span>?: <span class="title class_">Bindable</span>&lt;D&gt;, <span class="attr">e</span>?: <span class="title class_">Bindable</span>&lt;E&gt;, <span class="attr">f</span>?: <span class="title class_">Bindable</span>&lt;F&gt;, <span class="attr">g</span>?: <span class="title class_">Bindable</span>&lt;G&gt;, <span class="attr">h</span>?: <span class="title class_">Bindable</span>&lt;H&gt;): <span class="title class_">Injector</span>&lt;<span class="title class_">Base</span> | T&gt;</span><br><span class="line">  <span class="title function_">toFactory</span>(<span class="attr">fn</span>: <span class="function">(<span class="params">...<span class="attr">a</span>: <span class="title class_">Base</span>[]</span>) =&gt;</span> T, ...<span class="attr">deps</span>: <span class="title class_">Bindable</span>&lt;<span class="title class_">Base</span>&gt;[]): <span class="title class_">Injector</span>&lt;<span class="title class_">Base</span> | T&gt; &#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">_type</span> = <span class="title class_">BindType</span>.<span class="property">FACTORY</span></span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">_fn</span> = fn</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">dependencies</span> = deps</span><br><span class="line">    <span class="keyword">return</span> <span class="variable language_">this</span>.<span class="title function_">_releaseInjector</span>()</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="title function_">resolve</span>(<span class="attr">deps</span>: <span class="built_in">any</span>[]): <span class="title class_">Promise</span>&lt;T&gt; &#123;</span><br><span class="line">    <span class="keyword">switch</span> (<span class="variable language_">this</span>.<span class="property">_type</span>) &#123;</span><br><span class="line">      <span class="keyword">case</span> <span class="title class_">BindType</span>.<span class="property">CLASS</span>:</span><br><span class="line">        <span class="keyword">let</span> cls = <span class="variable language_">this</span>.<span class="property">_cls</span></span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">Promise</span>.<span class="title function_">resolve</span>(<span class="keyword">new</span> <span class="title function_">cls</span>(...deps))</span><br><span class="line">      <span class="keyword">case</span> <span class="title class_">BindType</span>.<span class="property">VALUE</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">Promise</span>.<span class="title function_">resolve</span>(<span class="variable language_">this</span>.<span class="property">_val</span>)</span><br><span class="line">      <span class="keyword">case</span> <span class="title class_">BindType</span>.<span class="property">FACTORY</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">Promise</span>.<span class="title function_">resolve</span>(<span class="variable language_">this</span>.<span class="title function_">_fn</span>(...deps))</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">class</span> <span class="title class_">Injector</span>&lt;<span class="title class_">Base</span>&gt; &#123;</span><br><span class="line">  <span class="keyword">private</span> _resolving = <span class="keyword">new</span> <span class="title class_">Set</span>&lt;<span class="title class_">Bindable</span>&lt;_&gt;&gt;()</span><br><span class="line">  <span class="keyword">private</span> _typeBinderMap = <span class="keyword">new</span> <span class="title class_">Map</span>&lt;<span class="title class_">Bindable</span>&lt;_&gt;, <span class="title class_">Binder</span>&lt;_, <span class="title class_">Base</span>&gt;&gt;()</span><br><span class="line">  <span class="keyword">private</span> _cache = <span class="keyword">new</span> <span class="title class_">Map</span>&lt;<span class="title class_">Bindable</span>&lt;_&gt;, <span class="title class_">Promise</span>&lt;<span class="built_in">any</span>&gt;&gt;()</span><br><span class="line"></span><br><span class="line">  get&lt;T <span class="keyword">extends</span> <span class="title class_">Base</span>&gt;(<span class="attr">cls</span>: <span class="title class_">Bindable</span>&lt;T&gt;): <span class="title class_">Promise</span>&lt;T&gt; &#123;</span><br><span class="line">    <span class="keyword">let</span> binder = <span class="variable language_">this</span>.<span class="property">_typeBinderMap</span>.<span class="title function_">get</span>(cls)</span><br><span class="line">    <span class="keyword">if</span> (!binder) <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NoBinding</span>(cls[<span class="string">&#x27;name&#x27;</span>])</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> cache = binder.<span class="property">cacheable</span> ? <span class="variable language_">this</span>.<span class="property">_cache</span>.<span class="title function_">get</span>(cls) : <span class="literal">null</span></span><br><span class="line">    <span class="keyword">if</span> (cache) &#123;</span><br><span class="line">      <span class="keyword">return</span> cache</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (<span class="variable language_">this</span>.<span class="property">_resolving</span>.<span class="title function_">has</span>(cls)) <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">CyclicDependency</span>(cls[<span class="string">&#x27;name&#x27;</span>])</span><br><span class="line"></span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">_resolving</span>.<span class="title function_">add</span>(cls)</span><br><span class="line">    <span class="keyword">let</span> depPromise = binder.<span class="property">dependencies</span>.<span class="title function_">map</span>(<span class="function"><span class="params">dep</span> =&gt;</span> <span class="variable language_">this</span>.<span class="title function_">get</span>(dep))</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">_resolving</span>.<span class="title function_">delete</span>(cls)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> ret = <span class="title class_">Promise</span>.<span class="title function_">all</span>(depPromise).<span class="title function_">then</span>(<span class="function"><span class="params">args</span> =&gt;</span> binder.<span class="title function_">resolve</span>(args))</span><br><span class="line">    <span class="keyword">if</span> (binder.<span class="property">cacheable</span>) <span class="variable language_">this</span>.<span class="property">_cache</span>.<span class="title function_">set</span>(cls, ret)</span><br><span class="line">    <span class="keyword">return</span> ret</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  bind&lt;T&gt;(<span class="attr">cls</span>: <span class="title class_">Bindable</span>&lt;T&gt;): <span class="title class_">Binder</span>&lt;T, <span class="title class_">Base</span>&gt; &#123;</span><br><span class="line">    <span class="keyword">let</span> binder = <span class="keyword">new</span> <span class="title class_">Binder</span>&lt;T, <span class="title class_">Base</span>&gt;(<span class="variable language_">this</span>)</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">_typeBinderMap</span>.<span class="title function_">set</span>(cls, binder)</span><br><span class="line">    <span class="keyword">return</span> binder</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">static</span> <span class="title function_">create</span>(): <span class="title class_">Injector</span>&lt;<span class="title class_">Injector</span>&lt;_&gt;&gt; &#123;</span><br><span class="line">    <span class="keyword">let</span> inj = <span class="keyword">new</span> <span class="title class_">Injector</span>&lt;<span class="title class_">Injector</span>&lt;_&gt;&gt;()</span><br><span class="line">    inj.<span class="title function_">bind</span>(<span class="title class_">Injector</span>).<span class="title function_">toValue</span>(inj)</span><br><span class="line">    <span class="keyword">return</span> inj</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-rplugin-notfound" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2015/12/06/rplugin-notfound/">Trouble Shooting NeoVim&#39;s rplugin not found</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2015-12-06T05:00:00.000Z" itemprop="datePublished">December 6, 2015, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p><a target="_blank" rel="noopener" href="http://geoff.greer.fm/2015/01/15/why-neovim-is-better-than-vim/">NeoVim</a> is awesome. But after its 0.1 release, neovim is not that awesome, after all, in a old vimmer’s eye.</p>
+<p>To support <a target="_blank" rel="noopener" href="https://wiki.archlinux.org/index.php/Xdg-open">XDG</a> configuration, NeoVim <a target="_blank" rel="noopener" href="https://github.com/neovim/neovim/wiki/Following-HEAD#20151026">changed default config paths</a>. After that patch, neovim search <code>~/.config/nvim/init.vim</code> rather than our old friend <code>~/.nvimrc</code>. So I changed my zshrc to alias <code>v</code> to <code>nvim -u ~/.nvimrc</code>. So I can use old configuration without relocating files.</p>
+<p>It works fine, except <a target="_blank" rel="noopener" href="https://github.com/Shougo/deoplete.nvim">Deoplete</a> always complain about its remote plugin is not registered. When I execute <code>UpdateRemotePlugins</code> as Deoplete’s doc said, a new <code>.-rplugin-</code> file always spawn in my working directory. Without that weird file, Deoplete will never work.</p>
+<p>I think this is configuration problem. But how can I figure out what happened? I start to resolving this by guess.</p>
+<p><code>.-rplugin</code> is the critical file on which Deoplete depends. So NeoVim should search for it when booting. I searched for NeoVim’s repository for its usage. Yes, it does appear in neovim’s source, in <code>neovim/runtime/autoload/remote/host.vim</code>.</p>
+<p>It reads:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">let s:remote_plugins_manifest = fnamemodify(expand($MYVIMRC, 1), &#x27;:h&#x27;)</span><br><span class="line">      \.&#x27;/.&#x27;.fnamemodify($MYVIMRC, &#x27;:t&#x27;).&#x27;-rplugin~&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>Hmmm, NeoVim will find <code>.-rplugin</code> in the same directory of <code>$MYVIMRC</code>. But where does <code>$MYVIMRC</code> come from?</p>
+<p>Searching neovim’s doc gives me the answer. In <a target="_blank" rel="noopener" href="https://github.com/neovim/neovim/blob/84a5709a86cc8d2d90cc29eea26f254b9b5d85fa/runtime/doc/starting.txt#L394"><code>:h starting</code></a>, it writes:</p>
+<blockquote>
+<p>If Vim was started with “-u filename”, the file “filename” is used.<br>  All following initializations until 4. are skipped. $MYVIMRC is not<br>  set.</p>
+</blockquote>
+<p>Oh, so I have to relocate my <code>vimrc</code> file. After that, every thing works :).</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-js-tracker" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2015/11/17/js-tracker/">JavaScript Error tracking in browsers</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2015-11-17T05:00:00.000Z" itemprop="datePublished">November 17, 2015, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>Error tracking is one of the awful part of JavaScript. Server side error tracking requires several configuration, which is not hard because server is under developers’ full control, after all. For Android&#x2F;iOS applications, error tracking is integrated into integrated into platform framework. Unfortunately, error tracking in browser is like survival in wild jungle.</p>
+<p>Here are some common pitfalls.</p>
+<h1 id="Incompatible-API"><a href="#Incompatible-API" class="headerlink" title="Incompatible API"></a>Incompatible API</h1><p>JavaScript errors in different browsers have different field names, as usual.</p>
+<p>One should never bother to care about api incompatibility among browsers. Here is the snippet to normalize those quirks.<br>Curse the variable <code>ieEvent</code>.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">errorTracker</span> (<span class="params">err</span>) &#123;</span><br><span class="line">  <span class="keyword">var</span> ieEvent</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> err !== <span class="string">&#x27;object&#x27;</span>) &#123;</span><br><span class="line">    ieEvent = &#123;&#125;</span><br><span class="line">    err = <span class="variable language_">window</span>.<span class="property">event</span></span><br><span class="line">    ieEvent.<span class="property">message</span> = err.<span class="property">errorMessage</span></span><br><span class="line">    ieEvent.<span class="property">filename</span> = err.<span class="property">errorUrl</span></span><br><span class="line">    ieEvent.<span class="property">lineno</span> = err.<span class="property">errorLine</span></span><br><span class="line">    err = ieEvent</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">    <span class="attr">message</span>: err.<span class="property">message</span>,</span><br><span class="line">    <span class="attr">line</span>: err.<span class="property">lineno</span> || err.<span class="property">lineNumber</span>,</span><br><span class="line">    <span class="attr">file</span>: err.<span class="property">filename</span> || err.<span class="property">fileName</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="CORS-Header"><a href="#CORS-Header" class="headerlink" title="CORS Header"></a>CORS Header</h1><p>You will see a lot of <code>Scritp error</code> message in your CDN hosted javascript file. Browsers report this useless error intentially. Revealing error details to web page in different domain is a security issue. It can leak one’s privacy and helps phishing and social engineering. To quote the <a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/5913978/cryptic-script-error-reported-in-javascript-in-chrome-and-firefox">SO answer</a></p>
+<blockquote>
+<p>This behavior is intentional, to prevent scripts from leaking information to external domains. For an example of why this is necessary, imagine accidentally visiting evilsite.com, that serves up a page with <code>&lt;script src=&quot;yourbank.com/index.html&quot;&gt;</code>. (yes, we’re pointing that script tag at html, not JS). This will result in a script error, but the error is interesting because it can tell us if you’re logged in or not. If you’re logged in, the error might be <code>&#39;Welcome Fred...&#39;</code> is undefined, whereas if you’re not it might be <code>&#39;Please Login ...&#39;</code> is undefined. Something along those lines.</p>
+</blockquote>
+<p>And in Chromium’s <a target="_blank" rel="noopener" href="https://chromium.googlesource.com/chromium/src.git/+/master/third_party/WebKit/Source/core/dom/ExecutionContext.cpp#178]">source code</a>, we can see error is sanitized, if the <code>corsStatus</code> does not satisify some condition.</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">bool</span> <span class="title">ExecutionContext::shouldSanitizeScriptError</span><span class="params">(<span class="type">const</span> String&amp; sourceURL, AccessControlStatus corsStatus)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (corsStatus == OpaqueResource)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">return</span> !(<span class="built_in">securityOrigin</span>()-&gt;<span class="built_in">canRequestNoSuborigin</span>(<span class="built_in">completeURL</span>(sourceURL)) || corsStatus == SharableCrossOrigin);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">ExecutionContext::dispatchErrorEvent</span><span class="params">(PassRefPtrWillBeRawPtr&lt;ErrorEvent&gt; event, AccessControlStatus corsStatus)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    EventTarget* target = <span class="built_in">errorEventTarget</span>();</span><br><span class="line">    <span class="keyword">if</span> (!target)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    RefPtrWillBeRawPtr&lt;ErrorEvent&gt; errorEvent = event;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">shouldSanitizeScriptError</span>(errorEvent-&gt;<span class="built_in">filename</span>(), corsStatus))</span><br><span class="line">        errorEvent = ErrorEvent::<span class="built_in">createSanitizedError</span>(errorEvent-&gt;<span class="built_in">world</span>());</span><br><span class="line"></span><br><span class="line">    <span class="built_in">ASSERT</span>(!m_inDispatchErrorEvent);</span><br><span class="line">    m_inDispatchErrorEvent = <span class="literal">true</span>;</span><br><span class="line">    target-&gt;<span class="built_in">dispatchEvent</span>(errorEvent);</span><br><span class="line">    m_inDispatchErrorEvent = <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">return</span> errorEvent-&gt;<span class="built_in">defaultPrevented</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>To enable <code>SharableCrossOrigin</code> scripts, one can add <code>crossorigin</code> attribute to script tags, and, add a <code>Access-Control-Allow-Origin</code> head in scripts’ server response, just like cross orgin XHR.</p>
+<p>Like this.</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;http://somremotesite.example/script.js&quot;</span> <span class="attr">crossorigin</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>And in your server conf, say, nginx, add something like this</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">  server_name static.jscdn.com;</span><br><span class="line">  # blah blah blah</span><br><span class="line"></span><br><span class="line">  location ~ \.js &#123;</span><br><span class="line">    add_header Access-Control-Allow-Origin &quot;*&quot;;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="More-Browser-Quirks-and-nasty-ISP"><a href="#More-Browser-Quirks-and-nasty-ISP" class="headerlink" title="More Browser Quirks and nasty ISP"></a>More Browser Quirks and nasty ISP</h1><p>Modern browser will protect users’ privacy and respect developers’ CORS setting. But IE may screw both. In some unpatched Internet Exploers, all script errors are accessible in <code>onError</code> handler, regardless of their origins. But some Internet Explorers, patched, just ignore the CORS head and swallow all crossorigin error messages.</p>
+<p>To catch errors in certain IEs, developers must manually wrap their code in <code>try &#123;...&#125; catch (e)&#123;report(e)&#125;</code> block. Alternatively, one can use build process to wrap function, like <a target="_blank" rel="noopener" href="https://github.com/BetterJS/try-wrapper">this</a>.</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/angular/zone.js">Zone</a> should also be a good candidate for error tracking, and does not require build process. Though I have not tried it.</p>
+<p>Another issue in error tracking is ISP and browser extensions. <code>onError</code> callbacks will receive all error in the host page. It usually contains many ISP injected script and extension script which trigger false alarm errors. So wrapping code in <code>try ... catch</code> may be a better solution.</p>
+<p><strong>UPDATE:</strong></p>
+<p>It seems <code>Zone</code> like hijacking method has been used in error tracking product. Like <a target="_blank" rel="noopener" href="https://bugsnag.com/blog/js-stacktraces">BugSnag</a>. The basic idea is: If code is executed synchronously, then it can be <code>try ... catch ...</code>ed in one single main function. If code is executed asynchronously, then, by wrapping all function that takes callback, one can wrap all callbacks in <code>try ...catch ...</code>.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">wrap</span>(<span class="params">func</span>) &#123;</span><br><span class="line">    <span class="comment">// Ensure we only wrap the function once.</span></span><br><span class="line">    <span class="keyword">if</span> (!func.<span class="property">_wrapped</span>) &#123;</span><br><span class="line">        func.<span class="property">_wrapped</span> = <span class="keyword">function</span> (<span class="params"></span>) &#123;</span><br><span class="line">            <span class="keyword">try</span>&#123;</span><br><span class="line">                func.<span class="title function_">apply</span>(<span class="variable language_">this</span>, <span class="variable language_">arguments</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span>(e) &#123;</span><br><span class="line">                <span class="variable language_">console</span>.<span class="title function_">log</span>(e.<span class="property">message</span>, <span class="string">&quot;from&quot;</span>, e.<span class="property">stack</span>);</span><br><span class="line">                <span class="keyword">throw</span> e;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> func.<span class="property">_wrapped</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>The above code will wrap all <code>func</code> in try and catch. So when error occurs, it will be always logged. However, calling wrapper function in every async code usage is impractical. We can invert it! Not wrapping callbacks, but wrapping functions that consume callbacks, say, <code>setTimeout</code>, <code>addEventListener</code>, etc. Once these async code entries have been wrapped, all callbacks are on track.</p>
+<p>And, because JavaScript is prototype based language, we can <code>hijack</code> the <code>EventTarget</code> prototype and automate our error tracking code.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> addEventListener = <span class="variable language_">window</span>.<span class="property">EventTarget</span>.<span class="property"><span class="keyword">prototype</span></span>.<span class="property">addEventListener</span>;</span><br><span class="line"><span class="variable language_">window</span>.<span class="property">EventTarget</span>.<span class="property"><span class="keyword">prototype</span></span>.<span class="property">addEventListener</span> = <span class="keyword">function</span> (<span class="params">event, callback, bubble</span>) &#123;</span><br><span class="line">    addEventListener.<span class="title function_">call</span>(<span class="variable language_">this</span>, event, <span class="title function_">wrap</span>(callback), bubble);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h1 id="IE9-and-friends"><a href="#IE9-and-friends" class="headerlink" title="IE9 and friends"></a>IE9 and friends</h1><p>Sadly, IE does not give us stack on error. But we can hand-roll our call stack by traversing <code>argument.callee.caller</code>.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// IE &lt;9</span></span><br><span class="line"><span class="variable language_">window</span>.<span class="property">onerror</span> = <span class="keyword">function</span> (<span class="params">message, file, line, column</span>) &#123;</span><br><span class="line">    <span class="keyword">var</span> column = column || (<span class="variable language_">window</span>.<span class="property">event</span> &amp;&amp; <span class="variable language_">window</span>.<span class="property">event</span>.<span class="property">errorCharacter</span>);</span><br><span class="line">    <span class="keyword">var</span> stack = [];</span><br><span class="line">    <span class="keyword">var</span> f = <span class="variable language_">arguments</span>.<span class="property">callee</span>.<span class="property">caller</span>;</span><br><span class="line">    <span class="keyword">while</span> (f) &#123;</span><br><span class="line">        stack.<span class="title function_">push</span>(f.<span class="property">name</span>);</span><br><span class="line">        f = f.<span class="property">caller</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(message, <span class="string">&quot;from&quot;</span>, stack);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h1 id="Garbage-Collector-Issue"><a href="#Garbage-Collector-Issue" class="headerlink" title="Garbage Collector Issue"></a>Garbage Collector Issue</h1><p>Error reporting is usually done by inserting an <code>Image</code> of which the <code>url</code> is the address of logging server comprised of encoded error info in query string.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> url = <span class="string">&#x27;xxx&#x27;</span>;</span><br><span class="line"><span class="keyword">new</span> <span class="title class_">Image</span>().<span class="property">src</span> = url;</span><br></pre></td></tr></table></figure>
+
+<p>But the <code>Image</code> has no reference to itself, and JS engine’s garbage collector will collect it before the request is sent. So one can assign the <code>Image</code> to a variable to hold its reference, and withdraw the reference in the <code>onload/onerror</code> callback.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> win = <span class="variable language_">window</span>;</span><br><span class="line"><span class="keyword">var</span> n = <span class="string">&#x27;jsFeImage_&#x27;</span> + <span class="title function_">_make_rnd</span>(),</span><br><span class="line">  img = win[n] = <span class="keyword">new</span> <span class="title class_">Image</span>();</span><br><span class="line">img.<span class="property">onload</span> = img.<span class="property">onerror</span> = <span class="keyword">function</span> (<span class="params"></span>) &#123;</span><br><span class="line">  win[n] = <span class="literal">null</span>;</span><br><span class="line">&#125;;</span><br><span class="line">img.<span class="property">src</span> = url;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-angular2-quick-start" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2015/10/25/angular2-quick-start/">The Real Angular2 quick start</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2015-10-25T04:00:00.000Z" itemprop="datePublished">October 25, 2015, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>Angular2 <a target="_blank" rel="noopener" href="https://angular.io/docs/ts/latest/quickstart.html">official page</a> wants you to make some dirty hack to get the fastest  <code>hellow world</code> in Angular2. But it immediately requires to correct your first sin in the same 5-min quickstart page. Maybe it is possible for a newcomert to set up Angular2 properly in 5 minutes, but reverting previous dirty hack and then setting the correct thing up are annoying. So here is the REAL Angular2 quickstart that does not piss you off.</p>
+<p><strong>DISCLAIMER</strong>: Knowledge about <a target="_blank" rel="noopener" href="https://www.npmjs.com/">npm</a>, <a target="_blank" rel="noopener" href="https://github.com/Microsoft/TypeScript/wiki/tsconfig.json">TypeScript</a> and <a target="_blank" rel="noopener" href="https://github.com/systemjs/systemjs/blob/master/docs/config-api.md">SystemJS</a> is recommended.<br>This quickstart deliberately skips explanation on the config and shell code for real real speed.</p>
+<h1 id="Step-1-Create-a-new-folder-for-our-application-project"><a href="#Step-1-Create-a-new-folder-for-our-application-project" class="headerlink" title="Step 1: Create a new folder for our application project."></a>Step 1: Create a new folder for our application project.</h1><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> angular2-quickstart</span><br><span class="line"><span class="built_in">cd</span> angular2-quickstart</span><br><span class="line"><span class="built_in">mkdir</span> -p src/app</span><br></pre></td></tr></table></figure>
+
+<h1 id="Step-2-Install-npm-packages"><a href="#Step-2-Install-npm-packages" class="headerlink" title="Step 2: Install npm packages"></a>Step 2: Install npm packages</h1><p>First step towards front end project as usual…</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">npm init -y</span><br><span class="line">npm i angular2@2.0.0-alpha.44 systemjs@0.19.2 --save --save-exact</span><br><span class="line">npm i typescript live-server --save-dev</span><br></pre></td></tr></table></figure>
+<p>Version number sucks, but it will be removed after Angular2’s public stable release.<br>We need to install angular2 and TypeScript as dependency, of course. SystemJS is used to load our app(alternatively one can use webpack or browserify).<br>Live-server gives us live-reloading in developement.</p>
+<h1 id="Step-4-Set-up-npm-script-tasks"><a href="#Step-4-Set-up-npm-script-tasks" class="headerlink" title="Step 4: Set up npm script tasks"></a>Step 4: Set up npm script tasks</h1><p>Let’s define some useful command.<br><strong>Find and replace</strong> the <code>script</code> section in <code>package.json</code></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">  <span class="attr">&quot;scripts&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;tsc&quot;</span><span class="punctuation">:</span> <span class="string">&quot;tsc -p src -w&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;start&quot;</span><span class="punctuation">:</span> <span class="string">&quot;live-server --open=src&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p><code>npm run tsc</code> compiles and watches file changes. <code>npm start</code> runs the live-reload server.</p>
+<h1 id="Step-5-Create-our-first-Angular2-component"><a href="#Step-5-Create-our-first-Angular2-component" class="headerlink" title="Step 5: Create our first Angular2 component"></a>Step 5: Create our first Angular2 component</h1><p><strong>Add a new file</strong> called <code>app.ts</code> in <code>src/app</code></p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123;<span class="title class_">Component</span>, bootstrap&#125; <span class="keyword">from</span> <span class="string">&#x27;angular2/angular2&#x27;</span>;</span><br><span class="line"><span class="meta">@Component</span>(&#123;</span><br><span class="line">    <span class="attr">selector</span>: <span class="string">&#x27;my-app&#x27;</span>,</span><br><span class="line">    <span class="attr">template</span>: <span class="string">&#x27;&lt;h1&gt;My First Angular 2 App&lt;/h1&gt;&#x27;</span></span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">AppComponent</span> &#123; &#125;</span><br><span class="line"><span class="title function_">bootstrap</span>(<span class="title class_">AppComponent</span>);</span><br></pre></td></tr></table></figure>
+
+<h1 id="Step-6-Create-our-entrance-html"><a href="#Step-6-Create-our-entrance-html" class="headerlink" title="Step 6: Create our entrance html"></a>Step 6: Create our entrance html</h1><p><strong>Create</strong> an index.html in <code>src</code> foler.</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>Angular 2 QuickStart<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;../node_modules/systemjs/dist/system.src.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;../node_modules/angular2/bundles/angular2.dev.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">      <span class="title class_">System</span>.<span class="title function_">config</span>(&#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">packages</span>: &#123;</span></span><br><span class="line"><span class="language-javascript">          <span class="string">&#x27;app&#x27;</span>: &#123;<span class="attr">defaultExtension</span>: <span class="string">&#x27;js&#x27;</span>&#125; <span class="comment">// defaultExtension makes require `app/app` works without `.js`</span></span></span><br><span class="line"><span class="language-javascript">          <span class="comment">// more packages config goes here</span></span></span><br><span class="line"><span class="language-javascript">          <span class="comment">// ...</span></span></span><br><span class="line"><span class="language-javascript">        &#125;</span></span><br><span class="line"><span class="language-javascript">      &#125;);</span></span><br><span class="line"><span class="language-javascript">      <span class="title class_">System</span>.<span class="keyword">import</span>(<span class="string">&#x27;app/app&#x27;</span>);</span></span><br><span class="line"><span class="language-javascript">    </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">my-app</span>&gt;</span>loading...<span class="tag">&lt;/<span class="name">my-app</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="Step-7-Compile-TypeScript"><a href="#Step-7-Compile-TypeScript" class="headerlink" title="Step 7: Compile TypeScript"></a>Step 7: Compile TypeScript</h1><p><strong>Create tsconfig.json</strong> in the <code>src</code> folder.</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;compilerOptions&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;target&quot;</span><span class="punctuation">:</span> <span class="string">&quot;ES5&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;module&quot;</span><span class="punctuation">:</span> <span class="string">&quot;commonjs&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;sourceMap&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;emitDecoratorMetadata&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;experimentalDecorators&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;removeComments&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;noImplicitAny&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>And then, in a <strong>new terminal window</strong>.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm run tsc</span><br></pre></td></tr></table></figure>
+
+<h1 id="Step-8-Run-the-app"><a href="#Step-8-Run-the-app" class="headerlink" title="Step 8: Run the app!"></a>Step 8: Run the app!</h1><p>And in <strong>yet another new terminal window</strong>.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm start</span><br></pre></td></tr></table></figure>
+
+<p>You should see <code>My First Angular2  App</code> in your browser.</p>
+<h1 id="Hooray"><a href="#Hooray" class="headerlink" title="Hooray!"></a>Hooray!</h1><p>Now you can make some changes to your source file. <code>tsc</code> compiles file on the fly and <code>live-server</code> automatically refreshes the browser!</p>
+<p>Hope you are not pissed off by this quickstart.</p>
+<p><em>P.S. Final structure</em></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">angular2-quickstart</span><br><span class="line">├── node_modules</span><br><span class="line">├── src</span><br><span class="line">│    ├── app</span><br><span class="line">|    │    └── app.ts</span><br><span class="line">│    ├── index.html</span><br><span class="line">│    └── tsconfig.json</span><br><span class="line">└── package.json</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-typescript-ctags" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2015/10/10/typescript-ctags/">Updated Ctags for TypeScript</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2015-10-10T22:26:14.000Z" itemprop="datePublished">October 10, 2015, 6:26 PM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>TypeScript has a decent tooling chain. However, sometimes a simple <code>ctags</code> is more handy and efficient.</p>
+<p>Here is a updated ctag configuration for TypeScript. It supports more features in TS 1.5+.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">--langdef=typescript</span><br><span class="line">--langmap=typescript:.ts</span><br><span class="line">--regex-typescript=/^[ \t]*(export)?[ \t]*class[ \t]+([a-zA-Z0-9_]+)/\2/c,classes/</span><br><span class="line">--regex-typescript=/^[ \t]*(export)?[ \t]*abstract class[ \t]+([a-zA-Z0-9_]+)/\2/a,abstract classes/</span><br><span class="line">--regex-typescript=/^[ \t]*(export)?[ \t]*module[ \t]+([a-zA-Z0-9_]+)/\2/n,modules/</span><br><span class="line">--regex-typescript=/^[ \t]*(export)?[ \t]*type[ \t]+([a-zA-Z0-9_]+)/\2/t,types/</span><br><span class="line">--regex-typescript=/^[ \t]*(export)?[ \t]*namespace[ \t]+([a-zA-Z0-9_]+)/\2/n,modules/</span><br><span class="line">--regex-typescript=/^[ \t]*(export)?[ \t]*function[ \t]+([a-zA-Z0-9_]+)/\2/f,functions/</span><br><span class="line">--regex-typescript=/^[ \t]*export[ \t]+var[ \t]+([a-zA-Z0-9_]+)/\1/v,variables/</span><br><span class="line">--regex-typescript=/^[ \t]*var[ \t]+([a-zA-Z0-9_]+)[ \t]*=[ \t]*function[ \t]*\(\)/\1/l,varlambdas/</span><br><span class="line">--regex-typescript=/^[ \t]*(export)?[ \t]*(public|private)[ \t]+(static)?[ \t]*([a-zA-Z0-9_]+)/\4/m,members/</span><br><span class="line">--regex-typescript=/^[ \t]*(export)?[ \t]*interface[ \t]+([a-zA-Z0-9_]+)/\2/i,interfaces/</span><br><span class="line">--regex-typescript=/^[ \t]*(export)?[ \t]*enum[ \t]+([a-zA-Z0-9_]+)/\2/e,enums/</span><br></pre></td></tr></table></figure>
+
+<p>For more vim integration, you can give <a target="_blank" rel="noopener" href="https://github.com/HerringtonDarkholme/yats.vim">YATS</a> a look</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-paamayim-nekudota" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2015/06/09/paamayim-nekudota/">Paamayim Nekudota Operator in ES7</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2015-06-09T04:00:00.000Z" itemprop="datePublished">June 9, 2015, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/50799930.jpg" class="">
+<p><a target="_blank" rel="noopener" href="http://www.pixiv.net/member_illust.php?mode=medium&illust_id=50799930">Source: ななろば華 - 雨上がりタペストリー</a></p>
+<p>Recently <a target="_blank" rel="noopener" href="http://babeljs.io/blog/2015/05/14/function-bind/">Babel</a> supports <a target="_blank" rel="noopener" href="https://github.com/zenparsing/es-function-bind">Function Bind Syntax</a> in ES7. A.K.A <a target="_blank" rel="noopener" href="http://en.wikipedia.org/wiki/Scope_resolution_operator">Paamayim Nekudotayim</a> Operator.(it should be Paamayim Nekudatayim, though)</p>
+<p>It inherits the spirit of Golang’s method, Switf’s <code>extension</code>, Scala’s <code>implicit class</code>, Ruby’s <code>instance_exec</code>, Haskell’s typeclass. While ES6 normalizes, and thus constrains, inheritance in JavaScript, <code>::</code> brings about ad-hoc virtual method to extends class’s behavior.</p>
+<p>Thanks to JavaScript’s prototype based and dynamic typing nature, Paamayim Nekudata introduces least semantic complexity and grants best expressiveness. It is much more concise than <code>method.call</code> in previous JS or <code>instance_exec</code> in Ruby. Using double colon <code>::</code>, other than dot <code>.</code> provides visual cue to the source and definition of virtual method, which is more clear and less confusing than Swift’s <code>extension</code> or Scala’s <code>implicit class</code>. Extension to native object is trivial if one uses this new syntax. We can easily write a underscore like itertool library and apply its API directly on native array. This cannot be done without hacking (or screwing up) Array.prototype in ES6-. Both proposal and implementation on Function Bind Syntax are easy and straightforward, again, thanks to JS’ nature.</p>
+<p>However, Function Bind Syntax does not work well with type checking, for now. Current candidate proposals on ES type system does not cover <code>this</code> keyword in function body. TypeScript simply waives type checking or forbids referencing <code>this</code> in function body. Flow is the only type checker that open method which is aware of <code>this</code> context. However, the type checking on open method is implicit to code authors. One cannot explicitly annotate function’s this type and type checking on open method is a sole compiler’s matter.</p>
+<p>Nontheless, it is great feature! I’m lovin it! Try it out!</p>
+<p>Source: <a target="_blank" rel="noopener" href="http://babeljs.io/blog/2015/05/14/function-bind/">http://babeljs.io/blog/2015/05/14/function-bind/</a></p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-scala-sam" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2015/01/24/scala-sam/">Explaining Scala SAM type</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2015-01-24T21:21:47.000Z" itemprop="datePublished">January 24, 2015, 4:21 PM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/42665600.jpg" class="">
+<p><a target="_blank" rel="noopener" href="http://www.pixiv.net/member_illust.php?mode=medium&illust_id=42665600">source</a></p>
+<p>For better syntax and user friendliness (and a lot more), Java 8 introduces <a target="_blank" rel="noopener" href="http://cr.openjdk.java.net/~briangoetz/lambda/lambda-state-3.html">SAM</a> type, Single Abstract Method type, starting to embrace the functional programming world.</p>
+<p>Previous to 1.8, Java already has somewhat a (bulky and leaky) type of closure: annonyous inner classes. For example, to start a working thread in Java usually requires following trivial but bloated statements, without a lexical <code>this</code>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// from android developer guide</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onClick</span><span class="params">(View v)</span> &#123;</span><br><span class="line">  <span class="keyword">new</span> <span class="title class_">Thread</span>(<span class="keyword">new</span> <span class="title class_">Runnable</span>() &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">      <span class="type">Bitmap</span> <span class="variable">b</span> <span class="operator">=</span> loadImageFromNetwork(<span class="string">&quot;http://www.example.org/image.gif&quot;</span>);</span><br><span class="line">      mImageView.setImage(b);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;).start()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Two classes, one method. The introduction of SAM type greatly reduces the syntactical overhead of Java.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onClick</span><span class="params">(View v)</span> &#123;</span><br><span class="line">  <span class="keyword">new</span> <span class="title class_">Thread</span>(#&#123; -&gt;</span><br><span class="line">    mImage.setImage(loadImageFromNetwork(<span class="string">&quot;/image.gif&quot;</span>));</span><br><span class="line">  &#125;).start();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>I’m not explaining Java8’s new features here, as a Scala user has already relished the conciseness and expressiveness of functional programming.</p>
+<p>So, why would scala user cares about SAM type in Java? I would say that interoperation with Java and performance are the main concerns here.</p>
+<p>Java8 introduces <code>Function</code> type, which is widely used in library like <code>stream</code>. Sadly, <code>Function</code> is not that of scala. Scala compiler just frowns at you using scala native function with Stream.</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.<span class="type">Arrays</span></span><br><span class="line"><span class="type">Arrays</span>.asList(<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>).stream.map((i: <span class="type">Int</span>) =&gt; i * <span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// &lt;console&gt;: error: type mismatch;</span></span><br><span class="line"><span class="comment">//  found   : Int =&gt; Int</span></span><br><span class="line"><span class="comment">//  required: java.util.function.Function[_ &gt;: Int, _]</span></span><br></pre></td></tr></table></figure>
+
+<p>Side notes: because function parameter is in a contravariant position,  <code>Function[_ &gt;: Int, _]</code> has a lower bound Int rather than a upper bound.<br>That is, the function passed as argument must accept types that are super types of <code>Int</code>.</p>
+<p>One can manually provide implicit conversion here to transform scala function types to java function types. However, <a target="_blank" rel="noopener" href="http://www.tikalk.com/incubator/simulating-sam-closures-scala/">implementing</a> such implicit conversion is of no fun. The implementation is either not generic enough, or requires mechanical code duplication(another alternative is advanced macro generation). Compiler support is more ideal, not only because it generates more efficient byte code, but also because this precludes incompatibility across different implementations.</p>
+<p><strong>SAM type is enabled by <code>-Xexperimental</code> flag in scala 2.11.x flags. Specifically, in scala 2.11.5, SAM type is better <a target="_blank" rel="noopener" href="https://github.com/scala/scala/pull/4101">supported</a>.</strong><br>SAM gets eta-expansion(one can use a method from another class as SAM), overloading(overloaded function&#x2F;method can also accept functions as SAM) and existential type support in scala 2.11.5.</p>
+<p>Basic usage os SAM is quite simple, if a <code>trait/abstract class</code> with <em>exactly one</em> <code>abstract method</code>, then a <code>Function</code> of the <em>same parameter and return type</em> of the abstract method can be converted into the <code>trait/abstract class</code>.</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">trait</span> <span class="title">Flyable</span> </span>&#123;</span><br><span class="line">  <span class="comment">// exactly one abstracg method</span></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">fly</span></span>(miles: <span class="type">Int</span>): <span class="type">Unit</span></span><br><span class="line">  <span class="comment">// optional concrete object</span></span><br><span class="line">  <span class="keyword">val</span> name = <span class="string">&quot;Unidentified Flyable Object&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// to reference SAM type itself</span></span><br><span class="line"><span class="comment">// create a named self-referencing lambda expression</span></span><br><span class="line"><span class="keyword">val</span> ufo: <span class="type">Flyable</span> = (m: <span class="type">Int</span>) =&gt; println(<span class="string">s&quot;<span class="subst">$&#123;ufo.name&#125;</span> flies <span class="subst">$m</span> miles!&quot;</span>)</span><br><span class="line">ufo.fly(<span class="number">123</span>)</span><br><span class="line"><span class="comment">// Unidentified Flyable Object flies 123 miles!</span></span><br></pre></td></tr></table></figure>
+<p>Easy Peasy. So for the <code>stream</code> example, if compiler has the <code>-Xexperimental</code> flag, scala will automatically change the function to java’s function, which grant scala user a seamless experience with the library.</p>
+<p>Usually, you don’t need SAM in scala, as scala already has first class generic function type, eta-expansion and a lot more. SAM reduces the readability as implicit conversion does. One can always use type alias to give function a more understandable name, instead of using SAM. SAM type cannot be pattern matched, <a target="_blank" rel="noopener" href="https://issues.scala-lang.org/browse/SI-8429">at least for now</a>.</p>
+<p>However, interoperating with Java requires SAM. And self-referencing SAM gives you additional flexibity in designing API. SAM also generates more efficient byte code since SAM has a native byte code counterpart. Using annonymous class for event handler or callback can be more pleasant in Scala just as in Java.</p>
+<p>Anyway, adding a feature is <a target="_blank" rel="noopener" href="https://github.com/scala/scala/pull/4101">easy</a>, but adding a feature that couples with edge case is hard. Scala already has bunches of features(variance, higher kinded, type level, continuation), whether SAM will gain its popularity is still an open question.</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-typescript-rant" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2015/01/17/typescript-rant/">Rant on TypeScript type guard</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2015-01-17T05:00:00.000Z" itemprop="datePublished">January 17, 2015, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <img src="/images/hisuitei.jpg" class="">
+<p>source: <a target="_blank" rel="noopener" href="http://hisuitei.com/">Ad: hisuitei</a></p>
+<p>Recently TypeScript team has released TypeScript 1.4, adding a new feature called <code>Union Type</code> which is intended for better incorporation into native JavaScript.<br>Type guard, as a natural dyad of union type, also comes into TypeScript world. But sadly, Microsoft choose a bizzare way to introduce type guard as they said in the <a target="_blank" rel="noopener" href="https://github.com/Microsoft/TypeScript/wiki/What%27s-new-in-TypeScript%3F#typescript-14">manual</a></p>
+<blockquote>
+<p>TypeScript now understands these conditions and will change type inference accordingly when used in an if block.</p>
+</blockquote>
+<p>It <em>accepts and only accepts</em> conditional statement like <code>if (typeof x === &#39;string&#39;)</code> as type guard.<br>TypeScript now creates new type like <code>number | string</code> meaning a type of either number or string.<br>Users can further refine the type by comparing the value <code>typeof</code> gives, like the example below:</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">createCustomer</span>(<span class="params"><span class="attr">name</span>: &#123; firstName: <span class="built_in">string</span>; lastName: <span class="built_in">string</span> &#125; | <span class="built_in">string</span></span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">typeof</span> name === <span class="string">&quot;string&quot;</span>) &#123;</span><br><span class="line">        <span class="comment">// Because of the typeof check in the if, we know name has type string</span></span><br><span class="line">        <span class="keyword">return</span> &#123; <span class="attr">fullName</span>: name &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// Since it&#x27;s not a string, we know name has</span></span><br><span class="line">        <span class="comment">// type &#123; firstName: string; lastName: string &#125;</span></span><br><span class="line">        <span class="keyword">return</span> &#123; <span class="attr">fullName</span>: name.<span class="property">firstName</span> + <span class="string">&quot; &quot;</span> + name.<span class="property">lastName</span> &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Both customers have type &#123; fullName: string &#125;</span></span><br><span class="line"><span class="keyword">var</span> customer = <span class="title function_">createCustomer</span>(<span class="string">&quot;John Smith&quot;</span>);</span><br><span class="line"><span class="keyword">var</span> customer2 = <span class="title function_">createCustomer</span>(&#123; <span class="attr">firstName</span>: <span class="string">&quot;Samuel&quot;</span>, <span class="attr">lastName</span>: <span class="string">&quot;Jones&quot;</span> &#125;);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>I would rather say this is a bad idea because:</p>
+<ol>
+<li>it intermixes type level constucts with value level constructs.</li>
+<li>for complex and flexible language like javascript, microsoft’s approach is unable to handle various expressions regarding types.</li>
+</ol>
+<p>Value level contructs are expression or statements dealing with values, e.g. assignment, comparison. <code>typeof</code> and <code>instanceof</code> in JavaScript are value level constructs because they generate boolean value, and their values can be passed to other variable or compared with other variable. Value type constucts do imply types, say, creating a new object of specific type, but they do not explicitly manipulate the types of expressions. There is no type casting JavaScript can do. On the other hand, type level constructs deals with types, for example, type annotation and generics.</p>
+<p>Doubling <code>typeof</code> as type guard blurs the demarcation between type level and value level, and naturally reduces program’s readability(somewhat subjective claim though). A variable can, without distinct syntax, change its type in a conditional block. <code>if</code> branching is ubiquitous typescript programs, from hello-world toys to cathedral-like projects. It’s quite hard to find the “type switch” for union type among other irrelevant <code>if</code>s. Also, one has to pay attention to call correct method of a same variable in different branches. So TypeScript’s type guard introduces a new <code>type scope</code> different from both lexical scope and function scope. It also cripples the compiler because now compiler has to check whether the condition in a <code>if</code> parentheses is type guard.</p>
+<p>What’s worse? Type guard is a value level constructs so it can interact with all other language constucts. But microsoft does not intend to support that. None of the following code compiles in TypeScript 1.4.1, but they ought to run correctly in plain javascript, if they can be compiled.</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">testNot</span>(<span class="params"><span class="attr">x</span>: <span class="built_in">string</span>|<span class="built_in">number</span>|<span class="title class_">Function</span></span>) &#123;</span><br><span class="line">  <span class="keyword">var</span> isNonNum = <span class="keyword">typeof</span> x !== <span class="string">&#x27;number&#x27;</span></span><br><span class="line">  <span class="keyword">if</span> (isNonNum) <span class="keyword">return</span> x.<span class="property">length</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">testReturn</span>(<span class="params"><span class="attr">x</span>: <span class="built_in">string</span>|<span class="built_in">number</span></span>) &#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> x === <span class="string">&#x27;number&#x27;</span>) <span class="keyword">return</span>;</span><br><span class="line">  <span class="keyword">return</span> x.<span class="property">length</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">testReturn</span>(<span class="params"><span class="attr">x</span>: <span class="built_in">string</span>|<span class="built_in">number</span></span>) &#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> x === <span class="string">&#x27;number&#x27;</span>) <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">Error</span>(<span class="string">&#x27;error type&#x27;</span>)</span><br><span class="line">  <span class="keyword">return</span> x.<span class="property">length</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">testFor</span>(<span class="params"><span class="attr">xs</span>: (<span class="built_in">string</span>|<span class="built_in">number</span>)[]</span>) &#123;</span><br><span class="line"> <span class="keyword">for</span>(<span class="keyword">var</span> i = <span class="number">0</span>, x = xs[i]; <span class="keyword">typeof</span> x === <span class="string">&#x27;string&#x27;</span>; i++) &#123;</span><br><span class="line">   <span class="variable language_">console</span>.<span class="title function_">log</span>(x.<span class="property">length</span>)</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">testWhile</span>(<span class="params"><span class="attr">xs</span>: [](<span class="built_in">string</span>|<span class="built_in">number</span>)</span>) &#123;</span><br><span class="line">  <span class="keyword">var</span> i = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">while</span> (<span class="keyword">typeof</span> xs[i] === <span class="string">&#x27;string&#x27;</span>) &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(xs[i].<span class="property">length</span>)</span><br><span class="line">    i++</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">testFilter</span>(<span class="params"><span class="attr">xs</span>: (<span class="built_in">string</span>|<span class="built_in">number</span>)[]</span>) &#123;</span><br><span class="line">  xs.<span class="title function_">filter</span>(<span class="function">(<span class="params">x</span>) =&gt;</span> <span class="keyword">typeof</span> x === <span class="string">&#x27;string&#x27;</span>).<span class="title function_">map</span>(<span class="function">(<span class="params">x</span>) =&gt;</span> x.<span class="property">length</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Indeed, TypeScript is not the first to mix type level and value level. Language constructs like <code>Pattern Match</code> also do that(and usually introduce bugs related to type inference, see scala bug track). But at least Pattern Match is a specialized syntax that does not interact much with other syntax. But Type guard is, well, too ubiquitous to be good.</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-yagami" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/12/28/yagami/">大雅雅于俗</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-12-28T05:00:00.000Z" itemprop="datePublished">December 28, 2014, 12:00 AM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <blockquote>
+<p>问君何能尔，心远地自偏。</p>
+</blockquote>
+<img src="/images/yagami.jpg" class="">
+
+
+
+<p>  我跟你讲，八神老师的LL本才是横跨氪金手游和同人薄本两界的旗舰之作。</p>
+<p>  不要看每本本子只有薄薄三十几页，但每一页都体现了老师对氪金手游业的大见识：一切氪金的本质，与“恶女榨金”无二。老师的本子虽薄，却为ACG产业，乃至现代文化消费形式，描绘了一张鸟瞰图。</p>
+<p>如若看官仅仅以无鸟事为鸟找事的心态去看LL本， 看到的不过是人物单方面榨取主人公体液的画面。进入了贤者状态的上级读者，才能看到老师在本子中表达的良苦用心。八神老师的整个作品都是个隐喻，从注射器到温度计，无一不暗示了氪金手游的运营手段。它们都有一个简单明了的目的：尽一切奇技淫巧，榨出玩家钱包里最后一滴金。</p>
+<p>本子中的主人公被描写为一个被动的体液机器，这和免费增值(Freemium)的商业模式中将消费者定位成消费机器的思路实际是异曲同工的。偶像不断用各色工具刺激玩家产生快感，玩家在这个过程中形成了氪金与成就的关联概念，在老师本子中，就是以受虐与快感关联的受虐情节所体现出来的。</p>
+<p>运营在情节和宣传中构造出的“偶像”、“奋斗”等概念，实际上是对玩家消费欲望的一个“改装”(distortion)，让消费欲能被玩家自身和玩家所在的社会环境所接受。在本子中刺激腺体的桥段，影射了游戏对玩家消费欲的刺激（生理层次上，对腹侧被盖区的刺激）。然而八神老师的文笔隽永之处就在于，他的笔触白虚伪的改装一一清除，入目三分地刻画了氪金手游的榨金本色。这一点在老师SC60的作品《 soldier money game》中展现无余。</p>
+<p>称LL薄本为俗萌之物，恰恰是没有理解八神秋一老师的用心之处。视角从薄本本身放开，提升到一个“元薄本”(meta-usuihon)的高度，才能品读出LL本中的精妙之处。八神老师的作品看似大俗，但作品的旨味却是大雅。在大俗的故事中反思了现代人的消费行为，才是艺术家在当代社会中的应有作为。</p>
+<p>作为人民艺术家，如果一味追求艺术形式上的“雅”，只会和观众拉开远非“一步之遥”的距离。所谓小雅雅于形，中雅雅于意，大雅雅于俗，八神老师的作品，不可不谓大俗大雅、雅俗共赏之作。</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+    <article id="post-typelevel-html" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h2 class="article-title" itemprop="name">
+      <a href="/2014/11/01/typelevel-html/">typelevel-html</a>
+      
+    </h2>
+  
+
+
+        <div class="article-meta">
+          <time class="article-date" datetime="2014-11-01T22:26:14.000Z" itemprop="datePublished">November 1, 2014, 6:26 PM</time>
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <p>Type level programming is a technique that exploits type system to represents information and logic, to the extent of language’s limit.</p>
+<p>Since values are encoded by variable’s type, type level drives compiler to validate logic or even determine program’s output.<br>All validation and computation are conducted statically at compiling phase, so the greatest benefit of type-level programming is its safety and reliability.</p>
+<p>As a rule of thumb, the more dynamic code is, the more flexible it can computes. Type level programming require all logic encoded into the source code. It is to hard to cram all logic into type system, as handling whimsical input from external source is either impossible or reduce source code to unwieldy state machine. So the niche of type level programming is usually encoding, pickling or parsing.</p>
+<p>But there is field where code is statically written: GUI. HTML template is hard coded in source. Type level can be used as linting and validation in html edition, especially in authoring web components. A piece of HTML fragment can be encoded in ordinary object, with type denoting its structure. Once the structure of HTMl is fixed, the output of JavaScript and css can be determined as well.<br>This is more helpful when one wants to make component. A tab-container must have tab-pane as child, and a tab-pane must live within a tab-container. Current approach of constraining HTML structure is encoding requirements in JavaScript and checking it in runtime. For example, angular uses <code>require: &#39;^parentDirective&#39;</code> to express the constraints and enable directive communication. If the component is programmatically constructed, using type annotation is a natural way to express the constraints. (As in Angular 2.0, <code>query&lt;ChildDirective&gt;</code>). We can go further in a language with full-bloomed type system.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">trait Tag</span><br><span class="line">class Concat[A &lt;: Tag, B &lt;: Tag](a: A, b: B) extends Tag</span><br><span class="line">trait NestTag[A &lt;: Tag] extends Tag &#123;</span><br><span class="line">  type Child = A</span><br><span class="line">&#125;</span><br><span class="line">trait Inline extends Tag</span><br><span class="line">trait Block extends Tag</span><br><span class="line">case class div[T &lt;: Tag](t :T = null) extends NestTag[T] with Block</span><br><span class="line">case class p[T &lt;: Tag](t :T = null) extends NestTag[T] with Block</span><br><span class="line">case class a[T &lt;: Inline](t :T = null) extends NestTag[T] with Inline</span><br><span class="line"></span><br><span class="line">implicit class PlusTag[A &lt;: Tag](a: A) &#123;</span><br><span class="line">  def +[B &lt;: Tag](b: B) = new Concat(a, b)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class Contains[A &lt;: Tag, C[_ &lt;: Tag] &lt;: NestTag[_], T[_ &lt;: Tag] &lt;: NestTag[_]]</span><br><span class="line"></span><br><span class="line">case class jQ[A &lt;: Tag, C[_ &lt;: Tag] &lt;: NestTag[_]](c: C[A]) &#123;</span><br><span class="line">  def has[T[_ &lt;: Tag] &lt;: NestTag[_]](implicit ev: Contains[A, C, T]) = true</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">implicit def htmlEq[A &lt;: Tag, C[_ &lt;: Tag] &lt;: NestTag[_], T[_ &lt;: Tag] &lt;: NestTag[_]](implicit ev: C[A] =:= T[A]) =</span><br><span class="line">  new Contains[A, C, T]</span><br><span class="line">implicit def recurEq[A &lt;: Tag, B[_ &lt;: Tag] &lt;: NestTag[_], C[_ &lt;: Tag] &lt;: NestTag[_], T[_ &lt;: Tag] &lt;: NestTag[_]]</span><br><span class="line">  (implicit ev: Contains[A, B, T]) = new Contains[B[A], C, T]</span><br><span class="line"></span><br><span class="line">val ele = div(</span><br><span class="line">  p(</span><br><span class="line">    a()</span><br><span class="line">  )</span><br><span class="line">)</span><br><span class="line">val r = jQ(ele).has[p]</span><br><span class="line">println(r)</span><br></pre></td></tr></table></figure>
+
+<p>The code above is just a demo. All html elements has type that denotes its structure. And one can tell whether a tag is in a html elemnt by calling <code>jQ(ele).has[Tag]</code>. (Note: ele is value level variable and Tag is a type level constructor.) And inline element cannot contains block element, because inline element’s child must be a subtype of <code>inline</code>.</p>
+<p>Programmatical markup has several benefits:</p>
+<ol>
+<li>no switching between script and template</li>
+<li>static type checking</li>
+<li>component dependency requirements</li>
+<li>component communication</li>
+<li>subtyping, inheritance… Classical OOP features</li>
+<li>relatively clean layout (though not as concise as Jade&#x2F;Slim)</li>
+</ol>
+<p>The biggest problem is, well, type level templates is strongly constrained by host language. Dynamic languages simply cannot have it. Users of classical static typed language without type inference cannot afford the verbosity of deeply nested type. And languages capable of type level have different approaches and implementation towards Type Level Programming.</p>
+<p>After all, type level is too crazy…, at least for daily business logic.</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+
+
+  
+
+
+  <nav id="page-nav" class="page-nav">
+    
+    <a class="extend prev" rel="prev" href="/page/2/">« Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/4/">Next »</a>
+  </nav>
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>

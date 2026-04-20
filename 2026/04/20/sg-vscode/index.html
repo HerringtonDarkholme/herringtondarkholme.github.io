@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Abitrarily Idiosyncratic Randomness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/css/highlight.css">
+
+  
+  <meta name="description" content="ast-grep VSCode: A Powerful Tool for Structural Search and ReplaceHi, I’m Herrington, the author of ast-grep. If you’ve ever searched code with regular expressions, you may have struggled with matchin">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:url" content="https://herringtondarkholme.github.io/2026/04/20/sg-vscode/index.html">
+<meta property="og:site_name" content="Abitrarily Idiosyncratic Randomness">
+<meta property="og:description" content="ast-grep VSCode: A Powerful Tool for Structural Search and ReplaceHi, I’m Herrington, the author of ast-grep. If you’ve ever searched code with regular expressions, you may have struggled with matchin">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://github.com/ast-grep/ast-grep-vscode/blob/main/readme/search-pattern.png?raw=true">
+<meta property="og:image" content="https://github.com/ast-grep/ast-grep-vscode/blob/main/readme/search-in-folder.png?raw=true">
+<meta property="og:image" content="https://github.com/ast-grep/ast-grep-vscode/blob/main/readme/replace.png?raw=true">
+<meta property="og:image" content="https://github.com/ast-grep/ast-grep-vscode/blob/main/readme/commit-replace.png?raw=true">
+<meta property="og:image" content="https://github.com/ast-grep/ast-grep-vscode/blob/main/readme/linter.png?raw=true">
+<meta property="article:published_time" content="2026-04-20T05:17:40.198Z">
+<meta property="article:modified_time" content="2026-04-20T05:17:40.198Z">
+<meta property="article:author" content="Herrington Darkholme">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://github.com/ast-grep/ast-grep-vscode/blob/main/readme/search-pattern.png?raw=true"><meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="wrapper">
+    <header id="header">
+  <h1 id="title">
+    <a href="/">Abitrarily Idiosyncratic Randomness</a>
+  </h1>
+  <nav>
+    
+    
+      
+      <a class="nav-link" href="/">Home</a>
+    
+      
+        <span class="nav-spacer">×</span>
+      
+      <a class="nav-link" href="/archives">Archives</a>
+    
+    
+  </nav>
+</header>
+
+    <div id="content">
+      <article id="post-sg-vscode" class="article article-type-post" itemprop="blogPost" itemscope>
+  <div class="article-inner">
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+        <h1 id="ast-grep-VSCode-A-Powerful-Tool-for-Structural-Search-and-Replace"><a href="#ast-grep-VSCode-A-Powerful-Tool-for-Structural-Search-and-Replace" class="headerlink" title="ast-grep VSCode: A Powerful Tool for Structural Search and Replace"></a>ast-grep VSCode: A Powerful Tool for Structural Search and Replace</h1><p>Hi, I’m <a target="_blank" rel="noopener" href="https://twitter.com/hd_nvim">Herrington</a>, the author of <a target="_blank" rel="noopener" href="https://ast-grep.github.io/">ast-grep</a>.</p>
+<p>If you’ve ever searched code with regular expressions, you may have struggled with matching multiple lines, nested structures, or ignoring comments.</p>
+<p>Let me introduce <a target="_blank" rel="noopener" href="https://marketplace.visualstudio.com/items?itemName=ast-grep.ast-grep-vscode">ast-grep VSCode</a>, a new extension leveraging the power of structural search and replace (SSR) to help you perform more precise and efficient search and replace.</p>
+<h2 id="The-Limitations-of-Textual-Search-and-Replace"><a href="#The-Limitations-of-Textual-Search-and-Replace" class="headerlink" title="The Limitations of Textual Search and Replace"></a>The Limitations of Textual Search and Replace</h2><p>Suppose you want to refactor your JavaScript code to replace the <a target="_blank" rel="noopener" href="https://lodash.com/">lodash</a> <code>_.filter</code> function with the native <code>Array.prototype.filter</code> <a target="_blank" rel="noopener" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter">method</a>. A simple text search and replace might look like this:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// Find</span><br><span class="line">_.filter\((\.+), (.+)\)</span><br><span class="line">// Replace</span><br><span class="line">$1.filter($2)</span><br></pre></td></tr></table></figure>
+
+<p>This might work for some cases, but it has several limitations:</p>
+<ul>
+<li>It can only match single-line expressions. If your code spans multiple lines, you’ll miss some matches or get incorrect replacements.</li>
+<li>It can’t handle nested structures like parentheses, brackets, or braces. If your code has complex expressions, you’ll get incorrect matches or replacements.</li>
+<li>It can’t ignore comments or other irrelevant parts of the code. If your code has comments that contain the search pattern, you’ll get unwanted matches or replacements.</li>
+<li>It requires you to use match groups or named capture groups to preserve the arguments of the function. This can be tedious and error-prone, especially with many arguments or nested functions.</li>
+</ul>
+<h2 id="Structural-Search-and-Replace-Comes-to-the-Rescue"><a href="#Structural-Search-and-Replace-Comes-to-the-Rescue" class="headerlink" title="Structural Search and Replace Comes to the Rescue"></a>Structural Search and Replace Comes to the Rescue</h2><p>Can we make our search algorithm smarter, understand our code better, and be easier to use? Yes! Structural search and replace (SSR) comes to the rescue!</p>
+<p><a target="_blank" rel="noopener" href="https://www.jetbrains.com/help/idea/structural-search-and-replace.html">Structural search and replace</a> (SSR) is a technique that allows you to find and modify code patterns based on their syntax and semantics, not just their text. Instead of treating code as plain text, SSR treats code as a collection of nodes with types, properties, and relationships.</p>
+<p><a target="_blank" rel="noopener" href="https://ast-grep.github.io/">ast-grep</a> is a command-line tool that implements SSR. The query for the lodash example above is quite simple.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Search pattern:</span></span><br><span class="line">_.<span class="title function_">filter</span>($ARR, $FUNC)</span><br><span class="line"><span class="comment">// Rewrite:</span></span><br><span class="line">$ARR.<span class="title function_">filter</span>($FUNC)</span><br></pre></td></tr></table></figure>
+
+<p>The pattern illustrates the basic usage of ast-grep. <code>$ARR</code> and <code>$FUNC</code> are <a target="_blank" rel="noopener" href="https://ast-grep.github.io/guide/pattern-syntax.html#meta-variable">meta-variables</a>. Meta-variables are like the dot <code>.</code> in regular expressions, except they match AST nodes instead of characters. You can also use captured meta-variables in the rewrite pattern.</p>
+<p>Other than the meta-variables, I hope the pattern and rewrite are self-explanatory.</p>
+<p>This query has several advantages over the text search and replace:</p>
+<ul>
+<li>It can match expressions across multiple lines, as long as they are syntactically valid.</li>
+<li>It can handle nested structures like parentheses, brackets, or braces, as they are part of the AST.</li>
+<li>It can ignore comments or other irrelevant parts of the code, as they are not part of the AST.</li>
+<li>It does not require match groups or named capture groups, as the meta-variables are accessed by their names in the search pattern.</li>
+</ul>
+<h3 id="Unique-Features-of-ast-grep"><a href="#Unique-Features-of-ast-grep" class="headerlink" title="Unique Features of ast-grep"></a>Unique Features of ast-grep</h3><p>ast-grep uses the tree-sitter library, a fast and robust parser for many programming languages. ast-grep allows you to write queries using a simple <a target="_blank" rel="noopener" href="https://ast-grep.github.io/guide/pattern-syntax.html#meta-variable">pattern syntax</a> that resembles code and apply them to files or directories of code. Some of the unique features of ast-grep are:</p>
+<ul>
+<li>It supports many languages, including JavaScript, TypeScript, Python, Ruby, Java, C#, Go, Rust, and more. You can also add support for new languages by <a target="_blank" rel="noopener" href="https://ast-grep.github.io/advanced/custom-language.html">registering tree-sitter grammars</a> in the configuration.</li>
+<li>It is <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep">written in Rust</a>, which makes it very fast and memory-efficient. It can process large codebases in a matter of seconds.</li>
+<li>It has a <a target="_blank" rel="noopener" href="https://ast-grep.github.io/reference/cli.html">rich set of options</a> and flags, such as dry run, interactive mode, color output, and more. You can customize your SSR experience to suit your needs and preferences.</li>
+</ul>
+<p>But, ast-grep until now only has a command-line interface. Can we have its power right near our hands instead of switching between terminals and editors?</p>
+<h2 id="ast-grep-VSCode-Bridging-the-CLI-and-the-Editor"><a href="#ast-grep-VSCode-Bridging-the-CLI-and-the-Editor" class="headerlink" title="ast-grep VSCode: Bridging the CLI and the Editor"></a>ast-grep VSCode: Bridging the CLI and the Editor</h2><p>ast-grep VSCode is a new extension that integrates ast-grep with Visual Studio Code, one of the most popular code editors. With ast-grep VSCode, you can use SSR within your editor, without leaving your workflow.</p>
+<h3 id="Structural-Search-Replace-and-More"><a href="#Structural-Search-Replace-and-More" class="headerlink" title="Structural Search, Replace, and More"></a>Structural Search, Replace, and More</h3><p>Some features of ast-grep VSCode include:</p>
+<ul>
+<li>It provides a user interface for writing and executing SSR queries, and you can see the results of your queries in a sidebar, with previews and diffs.</li>
+<li>It also supports linting and code fix. You can set up an ast-grep project and write custom rules tailored to your needs.</li>
+<li>It feels like a native VSCode feature, with seamless integration and consistent design.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Screenshot</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Search Pattern</td>
+<td><img src="https://github.com/ast-grep/ast-grep-vscode/blob/main/readme/search-pattern.png?raw=true"></td>
+</tr>
+<tr>
+<td>Search In Folder</td>
+<td><img src="https://github.com/ast-grep/ast-grep-vscode/blob/main/readme/search-in-folder.png?raw=true"></td>
+</tr>
+<tr>
+<td>Replace Preview</td>
+<td><img src="https://github.com/ast-grep/ast-grep-vscode/blob/main/readme/replace.png?raw=true"></td>
+</tr>
+<tr>
+<td>Commit Replace</td>
+<td><img src="https://github.com/ast-grep/ast-grep-vscode/blob/main/readme/commit-replace.png?raw=true"></td>
+</tr>
+<tr>
+<td>Code Linting</td>
+<td><img src="https://github.com/ast-grep/ast-grep-vscode/blob/main/readme/linter.png?raw=true"></td>
+</tr>
+</tbody></table>
+<h2 id="Comparing-with-Other-SSR-Tools"><a href="#Comparing-with-Other-SSR-Tools" class="headerlink" title="Comparing with Other SSR Tools"></a>Comparing with Other SSR Tools</h2><p>There are other SSR tools and extensions available. However, I believe ast-grep VSCode is one of the best SSR extensions for VSCode because:</p>
+<ul>
+<li>It has good performance, backed by a multi-threaded CLI written in a native language.</li>
+<li>It supports multiple languages, leveraging the tree-sitter grammars widely used and maintained by the community.</li>
+<li>It has a user-friendly and intuitive interface that feels like a VSCode built-in feature. See it in <a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=1ZM4RfIvWKc">action</a>.</li>
+</ul>
+<p>Finally, I want to highlight some React techniques used in ast-grep VSCode that make it fast and responsive:</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep-vscode/blob/789d27325fb9ce6a0bb969caefdc718942f6d2b3/src/webview/hooks/useSearch.tsx#L150-L159"><code>useSyncExternalStore</code></a> was used to manage streaming results from ast-grep CLI. This <a target="_blank" rel="noopener" href="https://react.dev/reference/react/useSyncExternalStore">hook</a> allows components to subscribe to an external mutable source of data and update the rendering accordingly. This way, the extension can show the results as soon as they are available.</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep-vscode/blob/main/src/webview/SearchSidebar/index.tsx#L13-L16"><code>useDeferredValue</code></a> deferred rendering the result list. This <a target="_blank" rel="noopener" href="https://react.dev/reference/react/useDeferredValue">hook</a> can avoid blocking user input and improve the perceived performance of the UI by delaying the update of a derived state until the next concurrent render.</li>
+<li>The extension carefully used plenty of <code>memo</code> and CSS tricks to reduce the JavaScript workload.</li>
+</ul>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>I hope this article helps you understand the benefits of SSR and the features of ast-grep VSCode. If you are interested in trying it out, you can install it from the <a target="_blank" rel="noopener" href="https://marketplace.visualstudio.com/items?itemName=ast-grep.ast-grep-vscode">VSCode Marketplace</a>. ast-grep VSCode is still in development and has a lot of room for improvement. I would love to hear your feedback and suggestions, so feel free to open an issue or a pull request on <a target="_blank" rel="noopener" href="https://github.com/ast-grep/ast-grep-vscode">GitHub</a>. I also want to thank <a target="_blank" rel="noopener" href="https://github.com/SoonIter">SoonIter</a>, <a target="_blank" rel="noopener" href="https://github.com/StevenLove">Steven Love</a>, <a target="_blank" rel="noopener" href="https://github.com/SigureMo">Nyakku Shigure</a>, and <a target="_blank" rel="noopener" href="https://github.com/cshuaimin/ssr.nvim">ssr.nvim</a> for their contribution and inspiration!</p>
+<p>Happy grepping!</p>
+
+      
+    </div>
+    
+    
+    
+  </div>
+</article>
+
+  
+<nav id="article-nav" class="article-nav">
+  
+    <span id="article-nav-newer" class="article-nav-link-wrap newer"></span>
+  
+  
+    <a href="/2026/04/20/ast-grep-6000/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+      </div>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+    </div>
+  </div>
+  
+
+
+
+
+<div id="settings-container">
+  <div id="dark-mode">dark</div>
+  <div id="sans-font">sans</div>
+</div>
+<script type="text/javascript">
+let d=document,r=d.documentElement.style,f=r.setProperty.bind(r),l=localStorage,s=l.getItem('s')||(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches),n=l.getItem('n'),m=d.getElementById("dark-mode"),b=()=>{f('--bg-color','#fafafa');f('--code-bg-color','#f4f4f4');f('--text-color','#212121');f('--secondary-color','#808080');f('--tertiary-color','#b0b0b0');f('--link-color','#b5c8cf');f('--link-hover-color','#618794');f('--link-bg-color','#dae4e7');f('--selection-color','#dae4e7');m.innerHTML="dark"},c=()=>{f('--bg-color','#212121');f('--code-bg-color','#292929');f('--text-color','#fff');f('--secondary-color','#c0c0c0');f('--tertiary-color','#6e6e6e');f('--link-color','#4d6b75');f('--link-hover-color','#96b1bb');f('--link-bg-color','#5d828e');f('--selection-color','#acc1c9');m.innerHTML="light"},o=d.getElementById("sans-font"),e=()=>{f('--body-stack','"Lora", "Georgia", "Times New Roman", serif');o.innerHTML="sans"},g=()=>{f('--body-stack','"Lato", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Verdana", sans-serif');o.innerHTML="serif"};m.onclick=()=>{if(s==2){s=1;l.setItem('s',s);c()}else{s=2;l.setItem('s',s);b()}};o.onclick=()=>{if(n==2){n=1;l.setItem('n',n);g()}else{n=2;l.setItem('n',n);e()}};if(!s){s=2;l.setItem('s',2)};if(s==1){c()};if(!n){n=2;l.setItem('n',2)};if(n==1){g()};
+</script>
+
+
+
+
+</body>
+</html>
