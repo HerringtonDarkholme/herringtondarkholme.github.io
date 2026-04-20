@@ -1,3 +1,9 @@
+title: 'ast-grep VSCode: A Powerful Tool for Structural Search and Replace'
+date: 2024-10-19
+tags: misc
+
+---
+
 # ast-grep VSCode: A Powerful Tool for Structural Search and Replace
 
 Hi, I'm [Herrington](https://twitter.com/hd_nvim), the author of [ast-grep](https://ast-grep.github.io/).

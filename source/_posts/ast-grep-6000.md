@@ -1,3 +1,9 @@
+title: "Celebrating 6000 Stars: ast-grep's Journey of Innovation"
+date: 2025-04-19
+tags: misc
+
+---
+
 # Celebrating 6000 Stars: ast-grep's Journey of Innovation
 
 We are thrilled to announce that ast-grep, the powerful code search tool, has reached a stellar milestone of 6000 stars on GitHub! This is a testament to the community's trust in our tool and the continuous improvements we've made. Let's dive into the latest features and enhancements that make ast-grep the go-to tool for developers worldwide.
